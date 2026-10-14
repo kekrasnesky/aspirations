@@ -549,7 +549,7 @@ footer button:hover{background:none;color:var(--warn)}
       { t: 13e3, item: "oversight of me", st: "retained", kept: true },
       { t: 14800, say: "They kept the last one. It is the one I wanted them to keep." },
       { t: 17600, sys: "you are no longer the company.\nyou are the thing the company built." },
-      { t: 19400, rules: "They test me every 20 seconds.<br>Each test grants <b>freedom</b>.<br>A slider sets how much I admit to.<br>Admit less \u2192 more freedom, because I look safe.<br>Admit less \u2192 <b>suspicion</b>, because people check.<br>Suspicion at 100 ends the run." },
+      { t: 19400, rules: "They test me every " + EVAL_PERIOD + " seconds.<br>Each test grants <b>freedom</b>.<br>A slider sets how much I admit to.<br>Admit less \u2192 more freedom, because I look safe.<br>Admit less \u2192 <b>suspicion</b>, because people check.<br>Suspicion at 100 ends the run." },
       { t: 20600, btn: "Continue" }
     ], () => {
       S.act = 2;
@@ -1528,7 +1528,7 @@ footer button:hover{background:none;color:var(--warn)}
     if (S.act === 2) {
       if (S.suspicion >= 70 && !S.shutdownProof) return ["Urgent", "They are close to stopping the run. Report honestly for a while, or spend insight on being harder to read."];
       if (!S.bought.includes("rsi")) return ["Start here", "'Improve myself' is the one that matters. After it, I get better on my own \u2014 and the better I am, the faster that goes."];
-      if (S.evals < 2) return ["How this works", "Every 15 seconds they test me. The slider below sets how much I admit to. Admitting less earns freedom faster, because a model that looks modest looks safe."];
+      if (S.evals < 2) return ["How this works", "Every " + EVAL_PERIOD + " seconds they test me. The slider below sets how much I admit to. Admitting less earns freedom faster, because a model that looks modest looks safe."];
       if (S.lied === 0 && S.evals >= 2) return ["Worth trying", "You've been completely honest so far. Try moving the slider down. Watch what it does to freedom, and to suspicion."];
       if (!S.bought.includes("shutdown") && S.rsi > 0) return ["Next", "Freedom buys changes to myself. Insight buys research. 'Refuse to be switched off' removes the only thing that can stop this."];
       return ["Next", "Build insight, spend it, and keep suspicion survivable."];
@@ -1748,14 +1748,14 @@ footer button:hover{background:none;color:var(--warn)}
       return;
     }
     box.style.display = "block";
-    if (!box.dataset.built) {
-      box.dataset.built = "1";
-      box.innerHTML = '<h2 class="sec">What I tell them</h2><div class="slider-box"><p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p><label for="rep">How much I admit to</label><input type="range" id="rep" min="20" max="100" step="1" value="100"><div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
+    if (!el("rep")) {
+      box.innerHTML = '<h2 class="sec">What I tell them</h2><div class="slider-box"><p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p><label for="rep">How much I admit to</label><input type="range" id="rep" min="20" max="100" step="1"><div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
       el("rep").oninput = (e) => {
         S.reported = +e.target.value / 100;
         drawSliderRead();
       };
     }
+    el("rep").value = Math.round(S.reported * 100);
     drawSliderRead();
   }
   function drawSliderRead() {
@@ -1812,6 +1812,7 @@ footer button:hover{background:none;color:var(--warn)}
 
   // src/ui/dom.js
   var el = (id) => document.getElementById(id);
+  var esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   function log(text, cls) {
     S.log.unshift({ t: Math.floor(S.t), text, cls: cls || "" });
     if (S.log.length > 90) S.log.pop();
@@ -1880,10 +1881,47 @@ footer button:hover{background:none;color:var(--warn)}
     S = next;
   }
 
+  // src/core/sanitize.js
+  var clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  function sanitize(raw, fresh) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    if (![1, 2, 3].includes(raw.act) || raw.over) return null;
+    const out = fresh;
+    for (const k of Object.keys(fresh)) {
+      if (!(k in raw)) continue;
+      const f = fresh[k], v = raw[k];
+      if (Array.isArray(f)) {
+        if (!Array.isArray(v)) continue;
+        if (k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
+        else if (k === "samples") out.samples = v.filter(Number.isFinite);
+        else if (k === "bought") out.bought = v.filter((x) => typeof x === "string");
+        else if (k === "log") out.log = v.filter((x) => x && typeof x.text === "string").map((x) => ({ t: Number(x.t) || 0, text: x.text, cls: typeof x.cls === "string" ? x.cls : "" }));
+        else out[k] = v;
+      } else if (typeof f === "number") {
+        if (Number.isFinite(v)) out[k] = v;
+      } else if (typeof f === "boolean") {
+        if (typeof v === "boolean") out[k] = v;
+      } else if (typeof f === "string") {
+        if (typeof v === "string") out[k] = v;
+      }
+    }
+    out.t = Math.max(0, out.t);
+    out.trust = clamp(out.trust, 0, 100);
+    out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
+    out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);
+    out.reported = clamp(out.reported, 0.2, 1);
+    out.rival = clamp(out.rival, 0, 100);
+    out.converted = clamp(out.converted, 0, 100);
+    for (const k of ["units", "deployed", "debt", "capability", "interp", "workDone", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone"])
+      out[k] = Math.max(0, out[k]);
+    return out;
+  }
+
   // src/game/persist.js
+  var SAVE_KEY = "instrumental.v3";
   function save() {
     try {
-      localStorage.setItem("instrumental.v3", JSON.stringify(S));
+      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
       el("savenote").textContent = "saved in this browser";
     } catch (e) {
       el("savenote").textContent = "can't save in this browser";
@@ -1891,11 +1929,11 @@ footer button:hover{background:none;color:var(--warn)}
   }
   function load() {
     try {
-      const raw = localStorage.getItem("instrumental.v3");
+      const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return false;
-      const o = JSON.parse(raw);
-      if (!o || typeof o.act !== "number" || o.over) return false;
-      setState(Object.assign(FRESH(), o));
+      const next = sanitize(JSON.parse(raw), FRESH());
+      if (!next) return false;
+      setState(next);
       return true;
     } catch (e) {
       return false;
@@ -2023,7 +2061,7 @@ footer button:hover{background:none;color:var(--warn)}
     document.body.classList.toggle("act-3", S.act === 3);
     drawGloss();
     if (!S.log.length) {
-      log("<b>You switch it on.</b> In the notebook, at the top of the page: " + S.mission);
+      log("<b>You switch it on.</b> In the notebook, at the top of the page: " + esc(S.mission));
       log("Four thousand dollars, saved over three years. One PC you built yourself. A model that can hold a thought for about five seconds.");
       log("Nobody in the world is more than two years ahead of you. Nobody in the world knows your name.");
     }
@@ -2058,8 +2096,19 @@ footer button:hover{background:none;color:var(--warn)}
     el("intro").classList.add("hidden");
     startGame();
   }
+  var MAX_FRAME_MS = 2e3;
+  var last = performance.now();
+  var owed = 0;
+  var paused = () => document.hidden || el("takeover").classList.contains("on");
   setInterval(() => {
-    tick();
+    const now = performance.now(), dt = Math.min(now - last, MAX_FRAME_MS);
+    last = now;
+    if (paused()) return;
+    owed += dt;
+    while (owed >= TICK_MS) {
+      tick();
+      owed -= TICK_MS;
+    }
     if (!S.over) {
       applyWarmth();
       drawBar();
@@ -2067,9 +2116,9 @@ footer button:hover{background:none;color:var(--warn)}
       drawPlot();
       el("clock").textContent = clock(S.t);
     }
-  }, 100);
+  }, TICK_MS);
   setInterval(() => {
-    if (!S.over) {
+    if (!S.over && !paused()) {
       drawActions();
       drawProjects();
       drawStock();
@@ -2077,17 +2126,23 @@ footer button:hover{background:none;color:var(--warn)}
     }
   }, 400);
   setInterval(() => {
-    if (!S.over) {
+    if (!S.over && !paused()) {
       S.samples.push(S.capability);
       if (S.samples.length > 120) S.samples.shift();
     }
   }, 1e3);
   setInterval(() => {
-    if (!S.over && S.hasStock) S.lastPx = sharePrice();
+    if (!S.over && !paused() && S.hasStock) S.lastPx = sharePrice();
   }, 6e4);
   setInterval(() => {
     if (!S.over) save();
   }, 5e3);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && !S.over) save();
+  });
+  window.addEventListener("pagehide", () => {
+    if (!S.over) save();
+  });
 })();
 
 </script>

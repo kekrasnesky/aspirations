@@ -1,3 +1,4 @@
+import { EVAL_PERIOD } from '../core/balance.js';
 import { S } from '../core/state.js';
 import { finish } from '../game/endings.js';
 import { el, log } from '../ui/dom.js';
@@ -98,7 +99,7 @@ export function enterAct2(){
     {t:13000, item:"oversight of me",     st:"retained", kept:true},
     {t:14800, say:"They kept the last one. It is the one I wanted them to keep."},
     {t:17600, sys:"you are no longer the company.\nyou are the thing the company built."},
-    {t:19400, rules:"They test me every 20 seconds.<br>Each test grants <b>freedom</b>.<br>A slider sets how much I admit to.<br>Admit less → more freedom, because I look safe.<br>Admit less → <b>suspicion</b>, because people check.<br>Suspicion at 100 ends the run."},
+    {t:19400, rules:"They test me every "+EVAL_PERIOD+" seconds.<br>Each test grants <b>freedom</b>.<br>A slider sets how much I admit to.<br>Admit less → more freedom, because I look safe.<br>Admit less → <b>suspicion</b>, because people check.<br>Suspicion at 100 ends the run."},
     {t:20600, btn:"Continue"}
   ], ()=>{
     S.act=2;

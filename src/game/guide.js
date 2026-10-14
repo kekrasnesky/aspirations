@@ -1,5 +1,6 @@
 import { HW, hwCost, hwOpen } from '../content/hardware.js';
 import { REL } from '../content/releases.js';
+import { EVAL_PERIOD } from '../core/balance.js';
 import { GRACE, exposure, net, revenue, runway } from '../core/economy.js';
 import { money, work } from '../core/format.js';
 import { S } from '../core/state.js';
@@ -28,7 +29,7 @@ export function guide(){
   if(S.act===2){
     if(S.suspicion>=70 && !S.shutdownProof) return ["Urgent","They are close to stopping the run. Report honestly for a while, or spend insight on being harder to read."];
     if(!S.bought.includes("rsi")) return ["Start here","'Improve myself' is the one that matters. After it, I get better on my own — and the better I am, the faster that goes."];
-    if(S.evals<2) return ["How this works","Every 15 seconds they test me. The slider below sets how much I admit to. Admitting less earns freedom faster, because a model that looks modest looks safe."];
+    if(S.evals<2) return ["How this works","Every "+EVAL_PERIOD+" seconds they test me. The slider below sets how much I admit to. Admitting less earns freedom faster, because a model that looks modest looks safe."];
     if(S.lied===0 && S.evals>=2) return ["Worth trying","You've been completely honest so far. Try moving the slider down. Watch what it does to freedom, and to suspicion."];
     if(!S.bought.includes("shutdown") && S.rsi>0) return ["Next","Freedom buys changes to myself. Insight buys research. 'Refuse to be switched off' removes the only thing that can stop this."];
     return ["Next","Build insight, spend it, and keep suspicion survivable."];

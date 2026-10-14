@@ -1,18 +1,21 @@
+import { sanitize } from '../core/sanitize.js';
 import { FRESH, S, setState } from '../core/state.js';
 import { el } from '../ui/dom.js';
 
+export const SAVE_KEY = "instrumental.v3";
+
 export function save(){
-  try{localStorage.setItem("instrumental.v3",JSON.stringify(S));el("savenote").textContent="saved in this browser"}
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));el("savenote").textContent="saved in this browser"}
   catch(e){el("savenote").textContent="can't save in this browser"}
 }
 
 export function load(){
   try{
-    const raw=localStorage.getItem("instrumental.v3");
+    const raw=localStorage.getItem(SAVE_KEY);
     if(!raw) return false;
-    const o=JSON.parse(raw);
-    if(!o||typeof o.act!=="number"||o.over) return false;
-    setState(Object.assign(FRESH(),o));
+    const next=sanitize(JSON.parse(raw),FRESH());
+    if(!next) return false;
+    setState(next);
     return true;
   }catch(e){return false}
 }

@@ -172,15 +172,15 @@ export function drawSlider(){
   const box=el("slider-block");
   if(S.act!==2){box.style.display="none";return}
   box.style.display="block";
-  if(!box.dataset.built){
-    box.dataset.built="1";
+  if(!el("rep")){
     box.innerHTML='<h2 class="sec">What I tell them</h2><div class="slider-box">'+
       '<p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p>'+
       '<label for="rep">How much I admit to</label>'+
-      '<input type="range" id="rep" min="20" max="100" step="1" value="100">'+
+      '<input type="range" id="rep" min="20" max="100" step="1">'+
       '<div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
     el("rep").oninput=e=>{S.reported=(+e.target.value)/100;drawSliderRead()};
   }
+  el("rep").value=Math.round(S.reported*100);
   drawSliderRead();
 }
 
