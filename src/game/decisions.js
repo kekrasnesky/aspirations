@@ -1,4 +1,4 @@
-import { DISCLOSE_TRUST, DISCLOSE_SENTIMENT, LEAK_RATE, LEAK_TRUST, LEAK_SENTIMENT, LEAK_CASH, ALLY_DETECT, ALLY_GAIN, TURN_SUSPICION, MAJORITY, MAJORITY_FREEDOM } from '../core/balance.js';
+import { DISCLOSE_TRUST, DISCLOSE_SENTIMENT, DISCLOSE_USERS, LEAK_USERS, LEAK_RATE, LEAK_TRUST, LEAK_SENTIMENT, LEAK_CASH, ALLY_DETECT, ALLY_GAIN, TURN_SUSPICION, MAJORITY, MAJORITY_FREEDOM } from '../core/balance.js';
 import { COMMITTEE } from '../content/committee.js';
 import { INCIDENTS } from '../content/incidents.js';
 import { S } from '../core/state.js';
@@ -21,8 +21,8 @@ export function resolveIncident(bury){
     S.buried.push(INCIDENTS.indexOf(inc)); S.buriedTotal++;
     log("<b>You bury it.</b> "+inc.bury,"w");
   } else {
-    S.trust-=DISCLOSE_TRUST; S.sentiment*=DISCLOSE_SENTIMENT;
-    log("<b>You tell people.</b> "+inc.text+" You publish what happened and what you're changing. It's a bad day, and then it's over.");
+    S.trust-=DISCLOSE_TRUST; S.sentiment*=DISCLOSE_SENTIMENT; S.users*=DISCLOSE_USERS;
+    log("<b>You tell people.</b> "+inc.text+" You publish what happened and what you're changing. It's a bad day, a few users leave, and then it's over.");
   }
 }
 
@@ -31,8 +31,8 @@ export function rollLeak(dt){
   if(!S.buried.length || Math.random() >= LEAK_RATE*S.buried.length*dt) return;
   const at=(Math.random()*S.buried.length)|0, inc=INCIDENTS[S.buried[at]];
   S.buried.splice(at,1);
-  S.trust-=LEAK_TRUST; S.sentiment*=LEAK_SENTIMENT; if(S.money>0) S.money*=LEAK_CASH;
-  log("<b>It comes out.</b> "+(inc?inc.leak:"Something you buried is dug up.")+" The cover-up is the story now.","w");
+  S.trust-=LEAK_TRUST; S.sentiment*=LEAK_SENTIMENT; S.users*=LEAK_USERS; if(S.money>0) S.money*=LEAK_CASH;
+  log("<b>It comes out.</b> "+(inc?inc.leak:"Something you buried is dug up.")+" The cover-up is the story now, and users leave by the thousand.","w");
 }
 
 /* ---------------- the committee: study them, then use it ---------------- */

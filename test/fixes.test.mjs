@@ -145,3 +145,61 @@ test('new save fields are validated', () => {
   assert.equal(out.need, 100);
   assert.equal(out.buriedTotal, 0);
 });
+
+test('users drift toward demand, capped by what the GPUs can serve, and only payers pay', async () => {
+  const { stepUsers, usersTarget, demand, capacity, revenueOf, takeStep } = await import('../src/core/economy.js');
+  const { REL } = await import('../src/content/releases.js');
+  const s = { ...FRESH(), params: 2e9, tflops: 1e4 };   // plenty of GPU, so demand decides
+  assert.equal(demand(s), 0, 'nobody uses a model that is not online');
+  takeStep(s, REL[0]);
+  assert.equal(s.money, 0, 'putting it online is not a lump sum');
+  stepUsers(s, 1);
+  assert.ok(s.users > 0 && s.users < usersTarget(s), 'users arrive gradually');
+  for (let i = 0; i < 2000; i++) stepUsers(s, 0.1);
+  assert.ok(Math.abs(s.users - usersTarget(s)) / usersTarget(s) < 0.01, 'and settle at the target');
+  assert.ok(Math.abs(revenueOf(s) - s.users * REL[0].conv * REL[0].price / 30) < 1e-6);
+  const tiny = { ...s, tflops: 0.001 };
+  assert.ok(usersTarget(tiny) === capacity(tiny) && capacity(tiny) < demand(tiny), 'too few GPUs caps users');
+  s.trust = 10; const before = s.users;
+  for (let i = 0; i < 20; i++) stepUsers(s, 0.1);
+  assert.ok(s.users < before, 'losing trust loses users');
+});
+
+test('a 2B model on the free site earns tips, not a salary', async () => {
+  const { stepUsers, revenueOf, takeStep } = await import('../src/core/economy.js');
+  const { REL } = await import('../src/content/releases.js');
+  const s = { ...FRESH(), params: 2.5e9, tflops: 1e4 };
+  takeStep(s, REL[0]);
+  for (let i = 0; i < 3000; i++) stepUsers(s, 0.1);
+  const perMonth = revenueOf(s) * 30;
+  assert.ok(perMonth < 50000, `a free 2.5B site makes $${Math.round(perMonth)} a month`);
+});
+
+test('letters arrive every so often once people use it, and suit the size of the model', async () => {
+  const { LETTERS, rollLetter } = await import('../src/content/world.js');
+  setState({ ...FRESH(), mission: 'x', rel: 1, params: 2e9, letterIn: 0 });
+  rollLetter(0.1);
+  assert.equal(state.S.world.length, 1);
+  assert.ok(LETTERS[0][2].includes(state.S.world[0].text), 'a small model gets small-model letters');
+  assert.ok(state.S.letterIn > 0);
+  rollLetter(0.1);
+  assert.equal(state.S.world.length, 1, 'not every tick');
+  for (let i = 0; i < 5000; i++) { state.S.letterIn = 0; rollLetter(0.1); }
+  assert.equal(new Set(state.S.world.map(w => w.text)).size, state.S.world.length, 'no letter twice');
+});
+
+test('project cards describe the decision; the outcome is told only afterwards', async () => {
+  const { P } = await import('../src/content/projects.js');
+  for (const p of P) assert.ok(!p.desc.includes(p.out), p.id);
+});
+
+test('a save from before subscribers gets the plan its steps would have set', async () => {
+  const { upgrade } = await import('../src/game/persist.js');
+  const old = sanitize({ ...FRESH(), act: 1, mission: 'x', rel: 5 }, FRESH());
+  delete old.planPrice; old.planPrice = 0;
+  upgrade(old);
+  assert.equal(old.planPrice, 20, 'five steps in, it sells to companies');
+  assert.ok(old.reach > 1);
+  const fresh = upgrade({ ...FRESH(), rel: 0 });
+  assert.equal(fresh.planPrice, 0);
+});

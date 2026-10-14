@@ -15,6 +15,8 @@ export const FRESH = () => ({
   evalTimer:EVAL_PERIOD, contracts:0, shutdownProof:false,
   matter:0, probes:0, converted:0, probeRate:0, assembly:0, need:100,
   incident:-1, buried:[], buriedTotal:0, committee:[0,0,0,0,0,0,0,0,0,0,0], majority:false,
+  // who uses it: users drift toward a target; a share of them pay planPrice a month
+  users:0, planPrice:0, planConv:0, reach:1, letterIn:12, letters:[],
   bought:[], log:[], evals:0, lied:0
 });
 

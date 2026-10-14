@@ -2,9 +2,9 @@ import { TICK_MS, TRUST_CEIL, TRUST_REGEN, INCIDENT_MAX, INCIDENT_HALF, SENTIMEN
 import { rollBreakthrough } from '../content/breakthroughs.js';
 import { MILES } from '../content/milestones.js';
 import { rollScrutiny } from '../content/scrutiny.js';
-import { rollWorld } from '../content/world.js';
+import { rollLetter, rollWorld } from '../content/world.js';
 import { maxFit, memLimit, nextTarget, trainTime } from '../core/compute.js';
-import { GRACE, capability, exposure, net } from '../core/economy.js';
+import { GRACE, capability, exposure, net, stepUsers } from '../core/economy.js';
 import { pcount, short } from '../core/format.js';
 import { S } from '../core/state.js';
 import { detectMult, gainMult, raiseIncident, rollLeak } from '../game/decisions.js';
@@ -45,6 +45,7 @@ export function tick(){
 
   if(S.act===1){
     train();
+    stepUsers(S,DT);
     S.money += net()*DT;
     if(S.money<0){
       S.debt+=DT;
@@ -54,7 +55,7 @@ export function tick(){
     const e=exposure();
     if(S.rel>0 && Math.random() < INCIDENT_MAX*(e/(e+INCIDENT_HALF))*(1-S.incidentShield)*DT) raiseIncident();
     rollLeak(DT);
-    rollWorld();
+    rollWorld(); rollLetter(DT);
     S.sentiment += (1-S.sentiment)*SENTIMENT_REVERT*DT;
     S.sentiment *= 1+(Math.random()-.5)*SENTIMENT_NOISE;
     rollScrutiny();

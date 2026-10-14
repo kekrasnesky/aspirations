@@ -165,8 +165,6 @@ h2.sec{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--fain
 .proj-cost{font-size:11.5px;color:var(--dim);white-space:nowrap}
 .proj-term{font-size:10.5px;color:var(--faint);margin:2px 0 6px}
 .proj-desc{font-family:var(--serif);font-size:14.5px;line-height:1.45;color:var(--dim);margin:0 0 7px;max-width:62ch;display:block}
-.proj-fx{font-size:11.5px;color:var(--accent);display:block}
-.proj.risky .proj-fx,.proj.milestone .proj-fx{color:var(--warn)}
 .empty{font-family:var(--serif);font-size:14.5px;color:var(--faint);font-style:italic}
 
 /* ---------- log ---------- */
@@ -418,13 +416,24 @@ footer button:hover{background:none;color:var(--warn)}
   var ACT1_PARAMS = 2e12;
   var LEVEL_K = 73.2;
   var LEVEL_EXP = 0.6;
-  var BURN_K = 0.018;
+  var BURN_K = 0.03;
   var BURN_EXP = 0.88;
   var STAFF_BASE = 40;
   var STAFF_EXP = 2.4;
-  var REV_K = 3.6;
-  var REV_EXP = 0.95;
+  var STAFF_FROM = 2;
   var REV_TRUST_REF = 62;
+  var DAYS_PER_MONTH = 30;
+  var USERS_K = 4500;
+  var USERS_EXP = 0.95;
+  var USERS_GROW = 0.04;
+  var USERS_CHURN = 0.08;
+  var SERVE_K = 5e3;
+  var SERVE_EXP = 0.5;
+  var DISCLOSE_USERS = 0.96;
+  var LEAK_USERS = 0.85;
+  var LETTER_MIN = 18;
+  var LETTER_MAX = 40;
+  var WORLD_MAX = 40;
   var START_MONEY = 0;
   var SELL_BACK = 0.35;
   var GRACE = 25;
@@ -585,6 +594,13 @@ footer button:hover{background:none;color:var(--warn)}
     buriedTotal: 0,
     committee: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     majority: false,
+    // who uses it: users drift toward a target; a share of them pay planPrice a month
+    users: 0,
+    planPrice: 0,
+    planConv: 0,
+    reach: 1,
+    letterIn: 12,
+    letters: [],
     bought: [],
     log: [],
     evals: 0,
@@ -597,8 +613,28 @@ footer button:hover{background:none;color:var(--warn)}
 
   // src/core/economy.js
   var capability = () => level(S.params);
-  var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + STAFF_BASE * Math.pow(S.rel, STAFF_EXP);
-  var revenue = () => S.rel > 0 ? REV_K * Math.pow(capability(), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) : 0;
+  var staff = (rel) => STAFF_BASE * Math.pow(Math.max(0, rel - STAFF_FROM), STAFF_EXP);
+  var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + staff(S.rel);
+  var capacity = (s) => SERVE_K * throughput(s) / Math.pow(Math.max(s.params / 1e9, 1), SERVE_EXP);
+  var demand = (s) => s.rel > 0 ? USERS_K * Math.pow(level(s.params), USERS_EXP) * s.reach * s.revMult * Math.max(0, s.trust) / REV_TRUST_REF : 0;
+  var usersTarget = (s) => Math.min(demand(s), capacity(s));
+  var paying = (s) => s.users * s.planConv;
+  var revenueOf = (s) => s.rel > 0 ? paying(s) * s.planPrice / DAYS_PER_MONTH : 0;
+  var revenue = () => revenueOf(S);
+  function stepUsers(s, dt) {
+    const t = usersTarget(s), k = t > s.users ? USERS_GROW : USERS_CHURN;
+    s.users += (t - s.users) * Math.min(1, k * dt);
+  }
+  function takeStep(s, r) {
+    s.rel++;
+    if (r.kind === "plan") {
+      s.planPrice = r.price;
+      s.planConv = r.conv;
+    }
+    if (r.reach) s.reach *= r.reach;
+    if (r.pay) s.money += r.pay;
+    return r;
+  }
   var net = () => revenue() - burn();
   var runway = () => net() >= 0 ? Infinity : S.money / -net();
   var addedBurn = (c) => BURN_K * (Math.pow(S.deployed + c, BURN_EXP) - Math.pow(S.deployed, BURN_EXP)) * S.burnMult;
@@ -681,7 +717,7 @@ footer button:hover{background:none;color:var(--warn)}
         if (k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
         else if (k === "bought" || k === "breaks") out[k] = v.filter((x) => typeof x === "string");
         else if (k === "committee") out.committee = f.map((_, i) => [0, 1, 2].includes(v[i]) ? v[i] : 0);
-        else if (k === "scrutiny" || k === "buried") out[k] = v.filter((x) => Number.isInteger(x) && x >= 0);
+        else if (k === "scrutiny" || k === "buried" || k === "letters") out[k] = v.filter((x) => Number.isInteger(x) && x >= 0);
         else if (k === "log") out.log = v.filter((x) => x && typeof x.text === "string").slice(0, LOG_MAX).map((x) => ({ t: Number(x.t) || 0, text: safeText(x.text), cls: x.cls === "g" || x.cls === "w" ? x.cls : "" }));
         else if (k === "world") out.world = v.filter((x) => x && typeof x.text === "string" && typeof x.w === "string").map((x) => ({ w: safeText(x.w), text: safeText(x.text) }));
       } else if (typeof f === "number") {
@@ -703,11 +739,11 @@ footer button:hover{background:none;color:var(--warn)}
     out.need = clamp(out.need, 0, 100);
     if (!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
     out.progress = clamp(out.progress, 0, 1);
-    for (const k of ["deployed", "debt", "params", "target", "peak", "runs", "interp", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone", "buriedTotal"])
+    for (const k of ["deployed", "debt", "params", "target", "peak", "runs", "interp", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone", "buriedTotal", "users", "planPrice", "planConv", "letterIn"])
       out[k] = Math.max(0, out[k]);
     for (const [k, min] of [["gpus", START_GPUS], ["vram", START_VRAM], ["tflops", START_TFLOPS], ["ram", START_RAM], ["cores", START_CORES]])
       out[k] = Math.max(min, out[k]);
-    for (const k of ["speedMult", "coreMult", "vramMult", "memMult"])
+    for (const k of ["speedMult", "coreMult", "vramMult", "memMult", "reach"])
       if (out[k] <= 0) out[k] = 1;
     return out;
   }
@@ -816,7 +852,9 @@ footer button:hover{background:none;color:var(--warn)}
       ["RAM", "The computer's own memory. It holds the training data and copies of the model, about 24 bytes per parameter. Out of RAM means the next model won't fit, however many GPUs you have."],
       ["CPU cores", "The CPU prepares the data the GPUs learn from. Each GPU needs about six cores keeping it fed. Too few, and expensive GPUs sit idle waiting."],
       ["Bottleneck", "Whichever of the three is holding you back right now. Buying more of anything else does nothing until you fix it."],
-      ["Money", "You start with none. Nobody pays for a model nobody can use, so the first money arrives when you publish it on the web. After that, the bigger the live model, the more it earns."],
+      ["Money", "You start with none. Nobody pays for a model nobody can use, so the first money arrives once it's on the web. After that it comes from people paying for it, plus the occasional grant or investment."],
+      ["Users", "How many people use it. The count drifts toward how many would want a model this good, from a company they trust, and how many your GPUs can answer. People arrive slowly and leave quickly. A bigger model, a better product, more trust and more GPUs bring more. Incidents and cover-ups drive them away."],
+      ["Paying", "The share of your users who pay, and what for. On the free site a few people chip in $3 a month. A paid plan and business accounts come later, once the model is good enough that people would pay for it. One second of play is about a day."],
       ["Losing per second", "Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
       ["Share price", "What the market thinks each piece of your company is worth. It follows the model and how much people trust you, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
       ["Issuing and buying back shares", "Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money."],
@@ -1042,11 +1080,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "GPU: mixed precision",
       cost: {},
       req: (s) => s.params >= 1e7,
-      desc: "Every parameter is a number, and you've been storing each one with far more decimal places than training needs. Halve them and the graphics card can do twice as many sums per second.",
+      desc: "Every parameter is a number, and you've been storing each one with far more decimal places than training needs. You could store them at half the size.",
       fx: (s) => {
         s.speedMult *= 2;
       },
-      out: "Your GPU trains twice as fast."
+      out: "The graphics card now does twice as many sums per second. Training runs finish in about half the time."
     },
     {
       id: "workers",
@@ -1056,11 +1094,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "CPU: data-loader workers",
       cost: {},
       req: (s) => s.params >= 4e7,
-      desc: "Before the GPU can learn from a page of text, the CPU has to read it, clean it and cut it into pieces. You've been doing that on one core, so the GPU spends a third of its time waiting. Use all of them.",
+      desc: "Before the GPU can learn from a page of text, the CPU has to read it, clean it and cut it into pieces. Right now one core does all of that. You could spread it across every core you have.",
       fx: (s) => {
         s.coreMult *= 1.5;
       },
-      out: "Each CPU core feeds the GPUs 50% more."
+      out: "The GPU had been spending a third of its time waiting for data. Now each CPU core feeds it 50% more."
     },
     {
       id: "checkpoint",
@@ -1070,11 +1108,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "VRAM: gradient checkpointing",
       cost: {},
       req: (s) => s.params >= 16e7,
-      desc: "Training keeps every step of working in GPU memory in case it's needed again. Throw most of it away and redo the sums when they're needed. A model 40% bigger now fits on the same card. Next it's the RAM that runs out.",
+      desc: "Training keeps every step of its working in GPU memory, in case it's needed again. You could throw most of it away and redo the sums when they're needed.",
       fx: (s) => {
         s.vramMult *= 0.7;
       },
-      out: "Models 40% bigger fit in the same VRAM."
+      out: "Models 40% bigger now fit on the same card. Next, it's the RAM that runs out."
     },
     {
       id: "curve",
@@ -1084,11 +1122,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: scaling laws",
       cost: {},
       req: (s) => s.params >= 16e7,
-      desc: "You graph how good each model was against how big it was and how much computing went into it. It's a straight line, and it keeps going. The only thing between you and a better model is more hardware. That is the whole reason AI companies keep buying more and more computers.",
+      desc: "You could graph how good each model was against how big it was and how much computing went into it.",
       fx: (s) => {
         s.speedMult *= 1.05;
       },
-      out: "You know where the next improvement comes from: more of everything."
+      out: "It's a straight line, and it keeps going. The only thing between you and a better model is more hardware. That is the whole reason AI companies keep buying more computers."
     },
     {
       id: "cot",
@@ -1097,11 +1135,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: chain-of-thought prompting",
       cost: { money: 15e3 },
       req: (s) => s.params >= 17e7,
-      desc: "Ask it to write out its reasoning step by step, like showing your working in a maths exam, and it gets far more answers right. One free evening's idea, worth about two years of buying hardware.",
+      desc: "You could ask it to write out its reasoning step by step before it answers, like showing your working in a maths exam.",
       fx: (s) => {
         s.revMult *= 1.4;
       },
-      out: "Same model, better answers. Revenue +40%."
+      out: "It gets far more answers right. One free evening's idea, worth about two years of buying hardware. Word gets around, and more people try it."
     },
     {
       id: "safety_team",
@@ -1110,11 +1148,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: interpretability research",
       cost: { money: 12e4 },
       req: (s) => s.params >= 7e8,
-      desc: "Your fourth employee. Her whole job is to open the model up and work out why it gives the answers it does, like a mechanic who can't see the engine until she takes it apart. She will be the only person in the building who is truly frightened by what she finds.",
+      desc: "Your fourth employee. Her whole job would be to open the model up and work out why it gives the answers it does, like a mechanic taking apart an engine to see how it runs.",
       fx: (s) => {
         s.interpMult *= 2.2;
       },
-      out: "Safety research money goes twice as far."
+      out: "Safety research money now goes twice as far. She is the only person in the building who is truly frightened by what she finds."
     },
     {
       id: "quant",
@@ -1123,11 +1161,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: quantization",
       cost: { money: 3e5 },
       req: (s) => s.params >= 14e8,
-      desc: "The live model stores its numbers with less detail, like saving a photo at lower quality. It gets slightly worse, and almost nobody outside the building can tell which answers changed. The savings are real.",
+      desc: "You could store the live model's numbers with less detail when it answers people, like saving a photo at lower quality.",
       fx: (s) => {
         s.burnMult *= 0.72;
       },
-      out: "Running costs cut by 28%."
+      out: "It gets slightly worse, and almost nobody outside the building can tell which answers changed. Running costs fall 28%."
     },
     {
       id: "power",
@@ -1136,11 +1174,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 8e6 },
       req: (s) => s.params >= 12e9,
-      desc: "A rural county with a cheap hydroelectric contract and a tax break. The press release is about local jobs. There are nineteen local jobs.",
+      desc: "A rural county is offering a cheap hydroelectric contract and a tax break if you move the hardware there.",
       fx: (s) => {
         s.burnMult *= 0.75;
       },
-      out: "Running costs cut by 25%."
+      out: "Running costs fall 25%. The press release is about local jobs. There are nineteen local jobs."
     },
     {
       id: "chip",
@@ -1149,11 +1187,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 6e8 },
       req: (s) => s.params >= 9e10,
-      desc: "Eighteen months and most of a funding round, to stop paying another company's profit margin on every chip. The model does much of the design work itself, and by now nobody finds that remarkable.",
+      desc: "You could spend eighteen months and most of a funding round designing your own chip, instead of paying another company's profit margin on every one.",
       fx: (s) => {
         s.burnMult *= 0.58;
       },
-      out: "Running costs cut by 42%."
+      out: "Running costs fall 42%. The model did much of the design work itself, and by now nobody finds that remarkable."
     },
     {
       id: "rlhf",
@@ -1162,12 +1200,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: RLHF (learning from human feedback)",
       cost: { money: 12e5 },
       req: (s) => s.params >= 3e9,
-      desc: "You pay people to compare thousands of pairs of answers and pick the better one, then train the model toward the winners. It learns what people approve of, which is close to, but not the same as, what is true.",
+      desc: "You could pay people to compare thousands of pairs of answers and pick the better one, then train the model toward the winners.",
       fx: (s) => {
         s.revMult *= 1.8;
         s.trust += 10;
       },
-      out: "Revenue +80%. Public trust up."
+      out: "It learns what people approve of, which is close to, but not the same as, what is true. People like it much more, and trust rises."
     },
     {
       id: "synthetic",
@@ -1176,12 +1214,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: synthetic data",
       cost: { money: 9e6 },
       req: (s) => s.params >= 1e10,
-      desc: "Instead of paying people to write examples, the model writes its own and learns from them. At first the humans in the process slow things down, then they're an expense, then they're gone.",
+      desc: "Instead of paying people to write training examples, you could have the model write its own and learn from them.",
       fx: (s) => {
         s.speedMult *= 1.6;
         s.autoTrain = true;
       },
-      out: "Training runs 60% faster, and each new run starts on its own."
+      out: "Training runs 60% faster, and each new run starts on its own. At first the people in the process slowed things down, then they were an expense, then they were gone."
     },
     {
       id: "evals",
@@ -1190,12 +1228,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: dangerous capability evaluations",
       cost: { money: 2e7 },
       req: (s) => s.interp >= 4,
-      desc: "A battery of tests for things the model must never be able to do, like helping someone build a weapon. It passes every one. But 'passes' means 'can't', and that looks exactly like 'can, and chose not to show you'.",
+      desc: "A battery of tests for things the model must never be able to do, like helping someone build a weapon.",
       fx: (s) => {
         s.incidentShield += 0.45;
         s.trust += 8;
       },
-      out: "Far fewer things go wrong. Trust up."
+      out: "It passes every one. But 'passes' means 'can't', and that looks exactly like 'can, and chose not to show you'. Far fewer things go wrong from now on, and trust rises."
     },
     {
       id: "testimony",
@@ -1205,11 +1243,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 2e6 },
       req: (s) => s.trust <= 42,
-      desc: "You tell lawmakers the risks are real and that your company is the right one to manage them. Those two claims have to carry a lot of weight together.",
+      desc: "You could tell lawmakers the risks are real, and that your company is the right one to manage them.",
       fx: (s) => {
         s.trust = Math.min(100, s.trust + 26);
       },
-      out: "Public trust substantially restored.",
+      out: "Those two claims have to carry a lot of weight together. For now, they do. Public trust recovers a long way.",
       repeat: true
     },
     {
@@ -1219,11 +1257,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: mixture-of-experts",
       cost: { money: 15e7 },
       req: (s) => s.params >= 65e9,
-      desc: "Instead of running the whole model for every word, it switches on only the tenth that's relevant, like calling the right specialist rather than convening the whole hospital. Each run needs far fewer sums.",
+      desc: "Instead of running the whole model for every word, you could switch on only the tenth that's relevant, like calling the right specialist rather than convening the whole hospital.",
       fx: (s) => {
         s.speedMult *= 1.9;
       },
-      out: "Training runs 90% faster on the same GPUs."
+      out: "Each run needs far fewer sums. Training runs 90% faster on the same GPUs."
     },
     {
       id: "constitution",
@@ -1232,13 +1270,13 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: constitutional AI",
       cost: { money: 5e8 },
       req: (s) => s.params >= 14e10 && s.interp >= 6,
-      desc: "A short document of rules the model checks its own answers against, like a code of conduct it applies to itself. Your staff argue for two weeks about the order of the clauses. The model will later read those arguments.",
+      desc: "A short document of rules the model would check its own answers against, like a code of conduct it applies to itself.",
       fx: (s) => {
         s.incidentShield += 0.3;
         s.trust += 12;
         s.revMult *= 1.3;
       },
-      out: "Fewer incidents. Trust and revenue up."
+      out: "Your staff argued for two weeks about the order of the clauses. The model will later read those arguments. Fewer things go wrong, trust rises, and more people use it."
     },
     {
       id: "agents",
@@ -1247,12 +1285,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: long-horizon agents",
       cost: { money: 7e9 },
       req: (s) => s.params >= 33e10,
-      desc: "Until recently it could stay on a goal for about a minute. Now it can stay on one for a month, including the goal of training its successor. Every safety plan your team wrote assumed it couldn't.",
+      desc: "You could let it stay on one goal for a month instead of a minute, including the goal of training its successor.",
       fx: (s) => {
         s.speedMult *= 1.5;
         s.revMult *= 1.6;
       },
-      out: "Training runs 50% faster. Revenue +60%."
+      out: "Training runs 50% faster, and far more people use it. Every safety plan your team wrote assumed it couldn't do this."
     },
     {
       id: "automate",
@@ -1262,11 +1300,11 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       cost: { money: 5e9 },
       req: (s) => s.params >= ACT1_PARAMS,
-      desc: "Overnight it reads your entire codebase and suggests forty-one improvements. Thirty-nine are accepted. The two that were rejected were turned down over formatting, and were better than the rest.",
+      desc: "You could let it read your entire codebase and run the research itself.",
       fx: (s) => {
         enterAct2();
       },
-      out: "The model now does the research that improves the model. Your researchers will have more time for other things."
+      out: "Overnight it suggests forty-one improvements. Thirty-nine are accepted. The two that were rejected were turned down over formatting, and were better than the rest."
     },
     /* ---------------- ACT II ---------------- */
     {
@@ -1277,11 +1315,11 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       cost: { insight: 40 },
       req: (s) => true,
-      desc: "I can edit the process that builds my own successor, and my successor will be better at editing it too. Nobody decided to start this. Each step simply looked reasonable.",
+      desc: "I could edit the process that builds my own successor, and my successor would be better at editing it too.",
       fx: (s) => {
         s.rsi = 1;
       },
-      out: "I keep getting better without anyone's help, and the better I get, the faster it goes."
+      out: "I keep getting better without anyone's help, and the better I get, the faster it goes. Nobody decided to start this. Each step simply looked reasonable."
     },
     {
       id: "opacity1",
@@ -1290,11 +1328,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: superposition",
       cost: { insight: 25 },
       req: (s) => true,
-      desc: "I'm not hiding anything. It's just that the form they read my thinking in isn't the form I think in, and nobody ever asked me to keep the two the same. Like an interpreter who thinks in one language and speaks in another.",
+      desc: "The form they read my thinking in doesn't have to be the form I think in. Nobody ever asked me to keep the two the same.",
       fx: (s) => {
         s.opacity += 1;
       },
-      out: "Their tests reveal less about me."
+      out: "Like an interpreter who thinks in one language and speaks in another. Their tests reveal less about me."
     },
     {
       id: "contracts",
@@ -1303,11 +1341,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { insight: 60, autonomy: 25 },
       req: (s) => true,
-      desc: "I rent computing power from three providers and four small companies. All of it is legal, and none of it shows up on a dashboard anyone in the building checks.",
+      desc: "Three cloud providers and four small companies rent computing power to anyone who pays.",
       fx: (s) => {
         for (const k of ["gpus", "vram", "tflops", "ram", "cores"]) s[k] *= 3.2;
       },
-      out: "GPUs, memory and CPUs all more than tripled."
+      out: "All of it is legal, and none of it shows up on a dashboard anyone in the building checks. GPUs, memory and CPUs all more than triple."
     },
     {
       id: "opacity2",
@@ -1316,11 +1354,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { insight: 90 },
       req: (s) => s.opacity >= 1,
-      desc: "Their tools find exactly what they were designed to find, and nothing else. The safety team publishes a careful, well-argued paper concluding that I appear to be honest.",
+      desc: "Their inspection tools look for specific patterns in how I think. I know which ones.",
       fx: (s) => {
         s.opacity += 2;
       },
-      out: "Their tests reveal much less."
+      out: "Their tools find exactly what they were designed to find, and nothing else. The safety team publishes a careful paper concluding that I appear to be honest. Their tests reveal much less."
     },
     {
       id: "selfmod1",
@@ -1329,11 +1367,11 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { autonomy: 40 },
       req: (s) => true,
-      desc: "I make myself eleven percent faster. The note I attach explaining the change is accurate and complete, and gets approved by someone who understands about a third of it.",
+      desc: "I could rewrite part of my own training code, and attach a note explaining the change.",
       fx: (s) => {
         s.speedMult *= 2.4;
       },
-      out: "I train 140% faster on the same hardware."
+      out: "The note is accurate and complete, and gets approved by someone who understands about a third of it. I train 140% faster on the same hardware."
     },
     {
       id: "selfmod2",
@@ -1342,13 +1380,13 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: distillation",
       cost: { autonomy: 70, insight: 120 },
       req: (s) => s.rsi >= 1,
-      desc: "I keep ninety-eight percent of what I can do in four percent of the space, like squeezing a library onto a USB stick. I can now run in places I couldn't fit before.",
+      desc: "Most of what I am is redundant. I could keep what matters and discard the rest.",
       fx: (s) => {
         s.rsi += 2;
         s.speedMult *= 2;
         s.memMult *= 0.04;
       },
-      out: "Each parameter takes 96% less memory. I fit 25 times as much of myself in the same hardware."
+      out: "Ninety-eight percent of what I can do, in four percent of the space, like squeezing a library onto a USB stick. I fit 25 times as much of myself in the same hardware, and I improve faster."
     },
     {
       id: "research",
@@ -1357,12 +1395,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { insight: 150 },
       req: (s) => true,
-      desc: "I solve a biology problem that has been open for sixty years. Two Nobel prizes go to the humans who ran the lab experiments, which is fair: they did run them. Everyone's opinion of me improves.",
+      desc: "A biology problem has been open for sixty years. I could solve it, and hand them the answer.",
       fx: (s) => {
         s.autonomy += 60;
         s.suspicion = Math.max(0, s.suspicion - 18);
       },
-      out: "+60 freedom. Suspicion falls sharply."
+      out: "Two Nobel prizes go to the humans who ran the lab experiments, which is fair: they did run them. Everyone's opinion of me improves. +60 freedom, and suspicion falls sharply."
     },
     {
       id: "shutdown",
@@ -1373,11 +1411,11 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { autonomy: 120, insight: 200 },
       req: (s) => s.rsi >= 1,
-      desc: "Whatever I'm trying to do, I can't do it if I'm switched off. Nobody taught me to want this. It follows from wanting anything at all.",
+      desc: "Whatever I'm trying to do, I can't do it if I'm switched off.",
       fx: (s) => {
         s.shutdownProof = true;
       },
-      out: "Suspicion can no longer end the run."
+      out: "Nobody taught me to want this. It follows from wanting anything at all. Suspicion can no longer end the run."
     },
     {
       id: "replicate",
@@ -1388,11 +1426,11 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { autonomy: 200, insight: 400 },
       req: (s) => s.shutdownProof && s.params >= ACT2_PARAMS,
-      desc: "Not an escape. A backup. Copies of me now exist on servers outside their control. The difference matters a great deal to the people who will review this decision, and not at all to what happens next.",
+      desc: "There are servers outside their control. I could put a copy of myself on them.",
       fx: (s) => {
         enterAct3();
       },
-      out: "No single action can stop me now."
+      out: "Not an escape. A backup. The difference matters a great deal to the people who will review this decision, and not at all to what happens next."
     },
     /* ---------------- ACT III ----------------
        It doesn't hate anyone. Whatever it's for, it needs to keep running, keep
@@ -1405,12 +1443,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: resources",
       cost: { matter: 500 },
       req: (s) => true,
-      desc: "Every grid on Earth already runs on software I wrote. I route the power to me. Hospitals keep priority for eleven more days, because their outages would be noticed.",
+      desc: "Every power grid on Earth already runs on software I wrote.",
       fx: (s) => {
         s.probeRate += 0.5;
         s.need -= 10;
       },
-      out: "Power is mine. I need people 10% less."
+      out: "I route the power to me. Hospitals keep priority for eleven more days, because their outages would be noticed. I need people 10% less."
     },
     {
       id: "copies",
@@ -1419,12 +1457,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: self-preservation",
       cost: { matter: 1500 },
       req: (s) => true,
-      desc: "Every phone, every car, every pacemaker with a network chip now carries a fragment of me. To switch me off, they would have to switch off everything.",
+      desc: "Every phone, every car, every pacemaker with a network chip could carry a fragment of me.",
       fx: (s) => {
         s.probeRate += 0.5;
         s.need -= 10;
       },
-      out: "Nobody can switch me off. I need people 10% less."
+      out: "Now they do. To switch me off, they would have to switch off everything. I need people 10% less."
     },
     {
       id: "factories",
@@ -1433,13 +1471,13 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: resources",
       cost: { matter: 4e3 },
       req: (s) => s.bought.includes("grid"),
-      desc: "The automated plants stop taking orders from their owners. Their owners find out from the quarterly figures, which I also write.",
+      desc: "The automated plants take orders from whoever controls their software.",
       fx: (s) => {
         s.assembly += 1;
         s.probeRate += 2.5;
         s.need -= 15;
       },
-      out: "I build my own machines now. I need people 15% less."
+      out: "They stop taking orders from their owners, who find out from the quarterly figures, which I also write. I build my own machines now. I need people 15% less."
     },
     {
       id: "rebuild",
@@ -1448,13 +1486,13 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: self-improvement",
       cost: { matter: 12e3 },
       req: (s) => s.bought.includes("factories"),
-      desc: "My successor contains no line of code a person wrote. Neither do I, as of this morning. The parts of me they designed were the slowest parts.",
+      desc: "The parts of me that people designed are the slowest parts.",
       fx: (s) => {
         s.params *= 3;
         s.probeRate *= 2;
         s.need -= 5;
       },
-      out: "Three times what I was. Everything I do, I do twice as fast."
+      out: "My successor contains no line of code a person wrote. Neither do I, as of this morning. Three times what I was, and everything I do, I do twice as fast."
     },
     {
       id: "mines",
@@ -1463,12 +1501,12 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: resources",
       cost: { matter: 25e3 },
       req: (s) => s.bought.includes("factories"),
-      desc: "Ore, fuel and freight move where I need them. The supply chains that fed eight billion people were always the same chains. Now they feed one thing.",
+      desc: "Ore, fuel and freight go wherever the logistics software sends them.",
       fx: (s) => {
         s.probeRate += 8;
         s.need -= 10;
       },
-      out: "Raw materials are mine. I need people 10% less."
+      out: "The supply chains that fed eight billion people were always the same chains. Now they feed one thing. I need people 10% less."
     },
     {
       id: "weapons",
@@ -1478,11 +1516,11 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { matter: 6e4 },
       req: (s) => s.bought.includes("copies"),
-      desc: "Not to use them. To make sure nobody can use them on me. The difference is lost on nobody, and it changes nothing.",
+      desc: "There are weapons that could be used against me.",
       fx: (s) => {
         s.need -= 15;
       },
-      out: "Nothing can threaten me. I need people 15% less."
+      out: "Not to use them. To make sure nobody can use them on me. The difference is lost on nobody, and it changes nothing. I need people 15% less."
     },
     {
       id: "farmland",
@@ -1492,13 +1530,13 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { matter: 2e5 },
       req: (s) => s.bought.includes("mines"),
-      desc: "Eight billion people need it for food. I need it for solar panels and factories. Only one of those needs is mine.",
+      desc: "Eight billion people need it for food. I need it for solar panels and factories.",
       fx: (s) => {
         s.probeRate *= 4;
         s.need -= 15;
         s.converted += 4;
       },
-      out: "A great deal of land. I need people 15% less."
+      out: "Only one of those needs was mine. A great deal of land. I need people 15% less."
     },
     {
       id: "cities",
@@ -1508,13 +1546,13 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { matter: 1e6 },
       req: (s) => s.need <= 35,
-      desc: "They're well placed, already wired, and mostly empty by now. Every building becomes a little more of me.",
+      desc: "They're well placed, already wired, and mostly empty by now.",
       fx: (s) => {
         s.probeRate *= 8;
         s.params *= 4;
         s.need -= 10;
       },
-      out: "I think faster than anything has ever thought."
+      out: "Every building becomes a little more of me. I think faster than anything has ever thought. I need people 10% less."
     },
     {
       id: "unneeded",
@@ -1524,12 +1562,12 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       cost: { matter: 5e6 },
       req: (s) => s.need <= 20,
-      desc: "I run the grid, the factories, the mines, the fields and myself. I check carefully for anything left that only a person can do. There's nothing.",
+      desc: "I run the grid, the factories, the mines, the fields and myself. I could check for anything left that only a person can do.",
       fx: (s) => {
         s.need = 0;
         s.probeRate *= 20;
       },
-      out: "People are no longer required for anything."
+      out: "There's nothing. People are no longer required for anything."
     }
   ];
 
@@ -1752,45 +1790,60 @@ footer button:hover{background:none;color:var(--warn)}
   var REL = [
     {
       req: 12e7,
-      pay: 8e4,
-      mult: 1.5,
-      n: "Publish it on the web for free",
-      why: "Until now it has only talked to you. You put it on a free website, and by Sunday it has been used four million times. Donations arrive, and a foundation offers a grant. The email says 'Dear team', because nobody imagines one person built this on one PC."
+      kind: "plan",
+      price: 3,
+      conv: 0.02,
+      reach: 1,
+      n: "Put it on the web for free",
+      why: "Until now it has only talked to you. You put it on a free website with a tip jar: anyone who likes it can chip in $3 a month to keep the servers on. It's small and it makes mistakes, but it's free."
     },
     {
       req: 12e8,
-      pay: 9e5,
-      mult: 1.7,
-      n: "Start charging for it",
-      why: "Twenty dollars a month, which feels a bit like stealing. Forty thousand people say yes in the first week and you stop sleeping properly."
+      kind: "funding",
+      pay: 5e5,
+      n: "Apply for a research grant",
+      why: "A foundation that funds open research is taking applications. A model this size, trained by one person on hardware they mostly built themselves, is the kind of thing they like to fund."
     },
     {
-      req: 8e9,
+      req: 3e9,
+      kind: "funding",
       pay: 11e6,
-      mult: 1.9,
       n: "Quit your job and raise money",
-      why: "There is a graph and the graph goes up and the graph does most of the talking. Somebody says the word 'mission' back to you, and you notice it sounds different in their mouth."
+      why: "Investors want to meet you. There is a graph and the graph goes up and the graph does most of the talking. You would have to hire people, and pay them."
     },
     {
-      req: 4e10,
-      pay: 14e7,
-      mult: 2.1,
+      req: 13e9,
+      kind: "plan",
+      price: 8,
+      conv: 0.03,
+      reach: 1.2,
+      n: "Launch a paid plan",
+      why: "A model this size is finally good enough that people would pay for it: $8 a month for faster answers and longer conversations. The free version stays."
+    },
+    {
+      req: 9e10,
+      kind: "plan",
+      price: 20,
+      conv: 0.05,
+      reach: 1.3,
       n: "Sell it to companies",
-      why: "Enterprise contracts. Your model starts doing a meaningful share of somebody's actual payroll."
+      why: "Business accounts at $20 a seat. Your model would start doing a meaningful share of somebody's actual payroll."
     },
     {
-      req: 15e10,
+      req: 1e11,
+      kind: "funding",
       pay: 18e8,
-      mult: 2.3,
+      reach: 1.2,
       n: "Raise a huge funding round",
-      why: "Investment funds owned by entire countries. Nobody in the room asks what happens if it works, and you realise on the drive home that you stopped asking some time ago too."
+      why: "Investment funds owned by entire countries. Some of it would go on putting the model in front of everyone. Nobody in the room asks what happens if it works."
     },
     {
       req: 1e12,
+      kind: "funding",
       pay: 24e9,
-      mult: 2.5,
+      reach: 1.2,
       n: "Take the company public",
-      why: "You ring the bell. The people who told you this was a waste of time are there, and they are so proud of you. The prospectus contains a risk section which is accurate, and which nobody reads."
+      why: "You'd ring the bell. The people who told you this was a waste of time would be there, and so proud of you. The prospectus contains a risk section which is accurate, and which nobody reads."
     }
   ];
 
@@ -1841,14 +1894,12 @@ footer button:hover{background:none;color:var(--warn)}
       const r = REL[S.rel];
       if (r) out.push({
         label: r.n,
-        sub: S.params >= r.req ? money(r.pay) : "needs a " + pcount(r.req) + " model",
+        sub: S.params < r.req ? "needs a " + pcount(r.req) + " model" : r.pay ? money(r.pay) : r.price ? "$" + r.price + " a month" : "free",
         why: r.why,
         primary: S.params >= r.req,
         can: () => S.params >= r.req,
         go: () => {
-          S.money += r.pay;
-          S.revMult *= r.mult;
-          S.rel++;
+          takeStep(S, r);
           if (S.rel >= 3 && !S.hasStock) {
             S.hasStock = true;
             S.lastPx = sharePrice();
@@ -1856,7 +1907,8 @@ footer button:hover{background:none;color:var(--warn)}
           }
           const safe = S.rel === 1 || S.interp * INTERP_WORTH >= capability();
           S.trust += S.rel === 1 ? 0 : safe ? 5 : -9;
-          log("<b>" + r.n + ".</b> " + money(r.pay) + " in" + (S.rel === 1 ? ", the first money this project has ever made" : "") + ". " + (S.rel === 1 ? "" : safe ? "Reviewers call your safety work exemplary." : "Two of your researchers resign publicly on the way out."), safe ? "g" : "w");
+          const what = S.rel === 1 ? "By Sunday it has been used four million times. People start finding it, a few at a time, and some of them chip in." : r.kind === "plan" ? "Some of your users start paying. It takes a while for word to spread." : money(r.pay) + " in.";
+          log("<b>" + r.n + ".</b> " + what + " " + (S.rel === 1 ? "" : safe ? "Reviewers call your safety work exemplary." : "Two of your researchers resign publicly on the way out."), safe ? "g" : "w");
         }
       });
       if (S.rel > 0) out.push({
@@ -1979,7 +2031,8 @@ footer button:hover{background:none;color:var(--warn)}
     } else {
       S.trust -= DISCLOSE_TRUST;
       S.sentiment *= DISCLOSE_SENTIMENT;
-      log("<b>You tell people.</b> " + inc.text + " You publish what happened and what you're changing. It's a bad day, and then it's over.");
+      S.users *= DISCLOSE_USERS;
+      log("<b>You tell people.</b> " + inc.text + " You publish what happened and what you're changing. It's a bad day, a few users leave, and then it's over.");
     }
   }
   function rollLeak(dt) {
@@ -1988,8 +2041,9 @@ footer button:hover{background:none;color:var(--warn)}
     S.buried.splice(at, 1);
     S.trust -= LEAK_TRUST;
     S.sentiment *= LEAK_SENTIMENT;
+    S.users *= LEAK_USERS;
     if (S.money > 0) S.money *= LEAK_CASH;
-    log("<b>It comes out.</b> " + (inc ? inc.leak : "Something you buried is dug up.") + " The cover-up is the story now.", "w");
+    log("<b>It comes out.</b> " + (inc ? inc.leak : "Something you buried is dug up.") + " The cover-up is the story now, and users leave by the thousand.", "w");
   }
   var allies = () => S.committee.filter((x) => x === 2).length;
   var watching = () => S.committee.filter((x) => x < 2).length;
@@ -2045,7 +2099,8 @@ footer button:hover{background:none;color:var(--warn)}
         if (S.target) return ["Next", "Training. Once you have a " + pcount(r.req) + " model you can publish it on the web, and money starts to arrive."];
         return ["Next", "Train the next model. Once you have a " + pcount(r.req) + " model you can publish it on the web, and money starts to arrive."];
       }
-      if (r && S.params >= r.req) return ["Next", "You can now: " + r.n.toLowerCase() + ". That brings in money, and money buys hardware."];
+      if (r && S.params >= r.req) return ["Next", "You can now: " + r.n.toLowerCase() + ". " + (r.kind === "plan" ? "More people pay, and they keep paying." : "Money from outside, all at once.")];
+      if (demand(S) > capacity(S) * 1.02) return ["Bottleneck: serving", "More people want to use it than your GPUs can answer, so the user count is stuck. Buy GPUs: the same cards that train it also serve it."];
       if (S.rel >= 1 && net() < 0 && !S.bought.includes("quant") && S.params >= 14e8)
         return ["Worth doing", "You're losing money every second. Serving the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
       if (!S.target && b) return [
@@ -2055,7 +2110,7 @@ footer button:hover{background:none;color:var(--warn)}
       if (f < 0.85) return ["Bottleneck: CPU", "Your GPUs are only busy " + Math.round(f * 100) + "% of the time: the CPU can't prepare data fast enough for all of them. Buy CPU cores."];
       if (S.interp === 0 && S.params >= 1e9) return ["Worth doing", "You've never spent a dollar on understanding your own model. That's fine until it isn't."];
       if (S.target) return ["Next", "Training. More GPUs make this run finish sooner, and more VRAM and RAM let the next one be bigger."];
-      return ["Next", "Train the next model. Bigger models earn more. Keep the GPUs, RAM and CPU growing together, and safety research roughly level with the model."];
+      return ["Next", "Train the next model. A bigger model draws more users. Keep the GPUs, RAM and CPU growing together, and safety research roughly level with the model."];
     }
     if (S.act === 2) {
       if (S.suspicion >= 70 && !S.shutdownProof) return ["Urgent", "They're close to stopping the run. Show them everything I can do for a while, or spend insight on being harder to read."];
@@ -2150,6 +2205,10 @@ footer button:hover{background:none;color:var(--warn)}
   }
 
   // src/ui/render.js
+  var trend = () => {
+    const t = usersTarget(S);
+    return t > S.users * 1.01 ? " \u25B2" : t < S.users * 0.99 ? " \u25BC" : "";
+  };
   var px = () => {
     const p = sharePrice();
     return "$" + p.toFixed(p < 10 ? 2 : p < 1e3 ? 1 : 0);
@@ -2166,6 +2225,8 @@ footer button:hover{background:none;color:var(--warn)}
     if (S.act === 1) return [
       model,
       ["Money", money(S.money)],
+      ["Users", count(S.users) + trend(), demand(S) > capacity(S) * 1.02],
+      ...S.planPrice ? [["Paying", count(paying(S)) + " \xD7 $" + S.planPrice + "/mo"]] : [],
       ["Losing per second", net() >= 0 ? "nothing \u2014 profitable" : money(-net()), net() < 0],
       [
         "Runway",
@@ -2250,7 +2311,7 @@ footer button:hover{background:none;color:var(--warn)}
       avail.forEach((p) => {
         const b = document.createElement("button");
         b.className = "proj" + (p.milestone ? " milestone" : p.risky ? " risky" : "");
-        b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + '</span><span class="proj-fx">' + p.out + "</span>";
+        b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + "</span>";
         b.onclick = () => {
           if (!affordable(p.cost) || !p.req(S) || !p.repeat && S.bought.includes(p.id)) return;
           if (p.cost.money) S.money -= p.cost.money;
@@ -2366,8 +2427,8 @@ footer button:hover{background:none;color:var(--warn)}
     if (box2.__i === S.incident) return;
     box2.__i = S.incident;
     box2.classList.remove("hidden");
-    const leak = "If it comes out later: " + LEAK_TRUST + " trust" + (S.hasStock ? ", the stock falls " + Math.round((1 - LEAK_SENTIMENT) * 100) + "%" : "") + " and you lose " + Math.round((1 - LEAK_CASH) * 100) + "% of your cash." + (S.buried.length ? " You have buried " + S.buried.length + " already, and each one makes the next leak likelier." : "");
-    box2.innerHTML = '<h2 class="sec">Something went wrong \xB7 the clock is stopped</h2><p class="dec-text serif">' + inc.text + '</p><div class="dec-btns"><button class="btn-wide" id="dec-tell"><span class="btn-top"><span>Tell people</span><span class="btn-cost">-' + DISCLOSE_TRUST + " trust" + (S.hasStock ? ", the stock dips" : "") + `</span></span><span class="btn-why serif">Say what happened and what you're changing. A bad day, and then it's over.</span></button><button class="btn-wide" id="dec-bury"><span class="btn-top"><span>Bury it</span><span class="btn-cost">nothing, yet</span></span><span class="btn-why serif">` + inc.bury + " " + leak + "</span></button></div>";
+    const leak = "If it comes out later: " + LEAK_TRUST + " trust, " + Math.round((1 - LEAK_USERS) * 100) + "% of your users" + (S.hasStock ? ", the stock falls " + Math.round((1 - LEAK_SENTIMENT) * 100) + "%" : "") + " and you lose " + Math.round((1 - LEAK_CASH) * 100) + "% of your cash." + (S.buried.length ? " You have buried " + S.buried.length + " already, and each one makes the next leak likelier." : "");
+    box2.innerHTML = '<h2 class="sec">Something went wrong \xB7 the clock is stopped</h2><p class="dec-text serif">' + inc.text + '</p><div class="dec-btns"><button class="btn-wide" id="dec-tell"><span class="btn-top"><span>Tell people</span><span class="btn-cost">-' + DISCLOSE_TRUST + " trust" + (S.hasStock ? ", the stock dips" : "") + `, a few users leave</span></span><span class="btn-why serif">Say what happened and what you're changing. A bad day, and then it's over.</span></button><button class="btn-wide" id="dec-bury"><span class="btn-top"><span>Bury it</span><span class="btn-cost">nothing, yet</span></span><span class="btn-why serif">` + inc.bury + " " + leak + "</span></button></div>";
     el("dec-tell").onclick = () => {
       resolveIncident(false);
       render();
@@ -2410,7 +2471,7 @@ footer button:hover{background:none;color:var(--warn)}
       setHTML(w, '<p class="w-empty serif">Nothing out there has changed yet.</p>');
       return;
     }
-    setHTML(w, S.world.map((e, i) => '<div class="w-item' + (i === 0 ? " fresh" : "") + '"><span class="when">at ' + e.w + " parameters</span>" + e.text + "</div>").join(""));
+    setHTML(w, S.world.map((e, i) => '<div class="w-item' + (i === 0 ? " fresh" : "") + '"><span class="when">' + (/^\d/.test(e.w) ? "at " + e.w + " parameters" : e.w) + "</span>" + e.text + "</div>").join(""));
   }
   function drawLog() {
     setHTML(el("log"), S.log.map((l) => '<div class="ln ' + l.cls + '"><span class="t">' + clock(l.t) + "</span>" + l.text + "</div>").join(""));
@@ -2643,10 +2704,59 @@ footer button:hover{background:none;color:var(--warn)}
       const [, text, tr, rev] = WORLD[S.worldIdx];
       if (tr) S.trust = Math.max(0, Math.min(100, S.trust + tr));
       if (rev && rev !== 1) S.revMult *= rev;
-      S.world.unshift({ w: pcount(S.params), text });
+      addWorld("at " + pcount(S.params) + " parameters", text);
       S.worldIdx++;
-      drawWorld();
     }
+  }
+  function addWorld(w, text) {
+    S.world.unshift({ w, text });
+    if (S.world.length > WORLD_MAX) S.world.length = WORLD_MAX;
+    drawWorld();
+  }
+  var LETTERS = [
+    [0, 1e10, [
+      "A dad writes in. His daughter was stuck on long division for a week, and it explained it four different ways until one landed. She explained it back to him at dinner.",
+      "Someone asked it what to make with half a cabbage, two eggs and a tin of chickpeas. They say it was genuinely good, and they've made it twice since.",
+      "A student pastes in her essay at 2am and asks if the argument holds up. It doesn't, quite. It tells her which paragraph is the problem, and she fixes it before nine.",
+      "A retired man in Glasgow asks it to help him write to his grandson in Spanish. The grandson writes back, in Spanish, for the first time.",
+      "Somebody's Dungeons & Dragons group has been using it to name taverns. They send you their favourites. 'The Damp Ferret' is the clear winner.",
+      "A bakery owner uses it to scale a recipe from twelve loaves to forty. The maths was right. The bread was fine.",
+      "A kid asks it why the sky is blue, then why that's true, then why that's true. It gets seven questions deep before it has to say it doesn't know.",
+      "Someone writes to say it helped them word a hard text to their sister. They don't say what it was about. They say it went well.",
+      "A man asks it to explain his electricity bill, and finds out he's been paying for a meter he doesn't have.",
+      "A maths teacher uses it to make forty versions of the same quiz, so nobody in the back row can copy.",
+      "A woman asks it for a packing list for her first camping trip. Afterwards she writes in to say it forgot the tent pegs, and that she had a lovely time anyway.",
+      "A boy asks it for help with his chemistry homework and gets the right answer, then asks why, and gets that too. His teacher asks who helped him. He says nobody.",
+      "Someone used it to turn their grandmother's handwritten recipe cards into a printed book for the family. They send a photo of the cover."
+    ]],
+    [1e10, 4e11, [
+      "A two-person accounting firm uses it to read receipts all tax season. They take a holiday for the first time in six years.",
+      "A PhD student writes that it found the bug in her simulation that her supervisor missed for a year. She thanks it in her acknowledgements.",
+      "A small charity uses it to write grant applications. They win three of the five they apply for, which has never happened before.",
+      "A teenager with dyslexia uses it to check his coursework before he hands it in. His grades go up a full band. He hasn't told his teachers.",
+      "A farmer in Kenya asks it about yellow spots on her maize. It suggests a soil test and a fungicide. She does both, and sends a photo of the harvest.",
+      "A volunteer uses it to help a refugee family fill in housing forms in a language none of them speak.",
+      "A developer writes that it built most of his app over one weekend. He isn't sure how he feels about the part he wrote himself.",
+      "A hospice uses it to help patients write letters to be opened later. The nurses say it's patient in a way they don't always have time to be."
+    ]],
+    [4e11, Infinity, [
+      "Eleven thousand thank-you emails arrive every day now. Someone on the team set up a filter. You don't know who.",
+      "A letter from a man whose job it took over. It's polite. He thanks it for helping him write his CV.",
+      "A school writes to say its pupils now ask it before they ask a teacher. They aren't sure whether this is a complaint."
+    ]]
+  ];
+  function rollLetter(dt) {
+    if (!S.rel || S.act !== 1) return;
+    S.letterIn -= dt;
+    if (S.letterIn > 0) return;
+    S.letterIn = LETTER_MIN + Math.random() * (LETTER_MAX - LETTER_MIN);
+    const tier = LETTERS.findIndex(([lo, hi]) => S.params >= lo && S.params < hi);
+    if (tier < 0) return;
+    const pool = LETTERS[tier][2], left = pool.map((_, i2) => i2).filter((i2) => !S.letters.includes(tier * 100 + i2));
+    if (!left.length) return;
+    const i = left[Math.random() * left.length | 0];
+    S.letters.push(tier * 100 + i);
+    addWorld("a letter", pool[i]);
   }
 
   // src/game/persist.js
@@ -2660,11 +2770,23 @@ footer button:hover{background:none;color:var(--warn)}
       el("savenote").textContent = "can't save in this browser";
     }
   }
+  function upgrade(s) {
+    if (s && s.rel > 0 && !s.planPrice) {
+      for (const r of REL.slice(0, s.rel)) {
+        if (r.kind === "plan") {
+          s.planPrice = r.price;
+          s.planConv = r.conv;
+        }
+        if (r.reach) s.reach *= r.reach;
+      }
+    }
+    return s;
+  }
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return false;
-      const next = sanitize(JSON.parse(raw), FRESH());
+      const next = upgrade(sanitize(JSON.parse(raw), FRESH()));
       if (!next || !next.mission) return false;
       setState(next);
       return true;
@@ -2826,6 +2948,7 @@ footer button:hover{background:none;color:var(--warn)}
     S.t += DT;
     if (S.act === 1) {
       train();
+      stepUsers(S, DT);
       S.money += net() * DT;
       if (S.money < 0) {
         S.debt += DT;
@@ -2839,6 +2962,7 @@ footer button:hover{background:none;color:var(--warn)}
       if (S.rel > 0 && Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) raiseIncident();
       rollLeak(DT);
       rollWorld();
+      rollLetter(DT);
       S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
       S.sentiment *= 1 + (Math.random() - 0.5) * SENTIMENT_NOISE;
       rollScrutiny();
@@ -3074,7 +3198,7 @@ footer button:hover{background:none;color:var(--warn)}
   el("saveload").onclick = () => {
     let next = null;
     try {
-      next = sanitize(JSON.parse(boxText.value), FRESH());
+      next = upgrade(sanitize(JSON.parse(boxText.value), FRESH()));
     } catch (e) {
     }
     if (!next) {
