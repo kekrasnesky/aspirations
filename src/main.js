@@ -1,6 +1,7 @@
 import { sharePrice } from './core/economy.js';
 import { TICK_MS } from './core/balance.js';
 import { clock } from './core/format.js';
+import { sanitize } from './core/sanitize.js';
 import { FRESH, S, setState } from './core/state.js';
 import { tick } from './game/loop.js';
 import { load, save } from './game/persist.js';
@@ -33,6 +34,21 @@ el("reset").onclick=()=>{
   setState(FRESH()); document.body.className="";
   el("game").classList.add("hidden"); el("end").style.display="none";
   el("intro").classList.remove("hidden"); el("mission").value="";
+};
+el("export").onclick=async()=>{
+  const txt=JSON.stringify(S);
+  try{await navigator.clipboard.writeText(txt);el("savenote").textContent="save copied to the clipboard"}
+  catch(e){window.prompt("Copy this text and keep it somewhere safe:",txt)}
+};
+el("import").onclick=()=>{
+  const raw=window.prompt("Paste a save you copied earlier. This replaces your current game.");
+  if(!raw) return;
+  let next=null;
+  try{next=sanitize(JSON.parse(raw),FRESH())}catch(e){}
+  if(!next){window.alert("That doesn't look like a save from this game.");return}
+  setState(next); document.body.className="";
+  el("log").__html=el("world").__html=null;
+  startGame(); save();
 };
 el("again").onclick=()=>el("reset").click();
 if(load()){el("intro").classList.add("hidden");startGame()}

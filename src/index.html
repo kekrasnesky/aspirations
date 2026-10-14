@@ -38,7 +38,7 @@
 
 <main id="game" class="hidden">
   <div id="bar"></div>
-  <div id="guide"></div>
+  <div id="guide" role="status" aria-live="polite"></div>
   <div id="gloss"></div>
 
   <div id="plotwrap">
@@ -56,7 +56,7 @@
       <div class="block" id="slider-block" style="display:none"></div>
       <div class="block">
         <h2 class="sec">What's happening</h2>
-        <div id="log"></div>
+        <div id="log" role="log" aria-live="polite"></div>
       </div>
     </div>
     <div>
@@ -74,6 +74,8 @@
   <footer>
     <span id="clock">0:00</span>
     <button id="glossbtn">what the words mean</button>
+    <button id="export">copy my save</button>
+    <button id="import">load a save</button>
     <button id="reset">start over</button>
     <span id="savenote"></span>
   </footer>
