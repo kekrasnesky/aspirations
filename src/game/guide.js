@@ -14,17 +14,23 @@ export function guide(){
     if(S.trust<=25) return ["Urgent","Public trust is almost gone, and at zero you're shut down. Testify before Congress to win some back, and fund safety research so it stops falling."];
     if(S.rival>=55 && S.rivalRate>.12) return ["Worth doing","Rivals have taken "+Math.round(S.rival)+"% of your market, and every point is revenue you lose. Export controls or hiring their team can win some back. There's no deadline."];
     if(exposure()>900 && S.incidentShield<.4) return ["Warning","Your model is far ahead of your understanding of it, so things will keep going wrong. Fund safety research."];
-    if(S.capability<8) return ["Start here","You have $4,000 and a bedroom. Buy the gaming PC, because hardware trains the model around the clock without you. Click 'Train it by hand' in the meantime."];
+    if(S.rel===0){
+      const FREE=[["data",2],["train",6],["size",11],["curve",16]];
+      if(S.capability<2) return ["Start here","Click 'Train it by hand'. Every click teaches your model a little, and your gaming PC keeps training it slowly on its own."];
+      if(FREE.some(([id,cap])=>!S.bought.includes(id)&&S.capability>=cap)) return ["Next","Pick a free step under 'Training steps'. Each one makes your training work better."];
+      if(S.capability<r.req) return ["Next","Keep training. Once the model can work alone for "+work(r.req)+", you can publish it on the web. That is when people start using it and money starts to arrive."];
+      return ["Next","It's ready. Publish it on the web: that is when people start using it and money starts to arrive."];
+    }
     if(S.rel>=1 && net()<0 && !S.bought.includes("quant") && S.capability>=90)
       return ["Worth doing","You're losing money every second. Running the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
-    if(S.units<3 && S.money>=hwCost(0)) return ["Next","Buy hardware. Nearly everything else in this game is a way to get more of it, or to make what you have count for more."];
+    if(S.hw[0]===0 && S.money>=hwCost(0)) return ["Next","Spend money on a better graphics card. Nearly everything else in this game is a way to get more hardware, or to make what you have count for more."];
     if(r && S.capability>=r.req) return ["Next","You can now: "+r.n.toLowerCase()+". That brings in money, and money buys hardware."];
     if(S.rival>=14 && !S.bought.includes("pause")) return ["Worth doing","Rivals have taken "+Math.round(S.rival)+"% of your market, which cuts your income every second. The open letter slows them by nearly half and costs very little."];
     if(S.interp===0 && S.capability>60) return ["Worth doing","You've never spent a dollar on understanding your own model. That's fine until it isn't."];
     if(S.capability>=150 && S.breaks.length===0) return ["Next","The model is nearly capable enough to make real scientific discoveries. When that starts, your share price will react before the newspapers do."];
     const next=HW.findIndex((t,i)=>!hwOpen(i));
-    if(next>0) return ["Next","Keep buying hardware and keep releasing. "+HW[next].n.replace(/^an? /,"A ").replace(/^a /,"A ")+" unlocks once it can work for "+work(HW[next].req)+"."];
-    return ["Next","Keep buying hardware, keep releasing, and keep safety research roughly level with what the model can do."];
+    if(next>0) return ["Next","Keep upgrading your hardware and keep releasing. "+HW[next].n.replace(/^an? /,"A ").replace(/^a /,"A ")+" unlocks once it can work for "+work(HW[next].req)+"."];
+    return ["Next","Keep upgrading your hardware, keep releasing, and keep safety research roughly level with what the model can do."];
   }
   if(S.act===2){
     if(S.suspicion>=70 && !S.shutdownProof) return ["Urgent","They're close to stopping the run. Show them everything I can do for a while, or spend insight on being harder to read."];

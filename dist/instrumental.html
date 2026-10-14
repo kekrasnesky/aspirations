@@ -14,6 +14,7 @@
   --paper:#E7E9E6; --panel:#DDE0DC; --sunk:#D2D6D1;
   --ink:#1A2124; --dim:#55605F; --faint:#7E8A8A;
   --rule:#C2C7C1; --accent:#1F6FA8; --warn:#B4500A; --good:#2F7D4F;
+  --term-bg:#0B0C0D; --term-bar:#2A2E32; --term-fg:#D9DDDF; --term-dim:#8E979B; --term-hot:#F0B34A;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
   --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
   box-sizing:border-box;
@@ -56,22 +57,36 @@ body.act-3 .serif{font-family:var(--mono)!important;font-style:normal!important}
 .wrap{max-width:1120px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-right,0px)) 80px max(18px,env(safe-area-inset-left,0px))}
 
 /* ---- intro ---- */
-/* ---------- opening ---------- */
-#intro{min-height:100svh;display:flex;flex-direction:column;justify-content:center;gap:26px;padding:48px 0}
+/* ---------- opening: the first computer ---------- */
+#intro{min-height:100svh;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:48px 0}
 .kicker{font-size:11px;letter-spacing:.14em;color:var(--faint)}
-#intro h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,7vw,62px);line-height:1.04;letter-spacing:-.02em;margin:0;max-width:16ch}
-.primer{max-width:60ch;font-family:var(--serif);font-size:16px;line-height:1.6;color:var(--dim)}
-.primer p{margin:0 0 11px}
-.primer b{color:var(--ink);font-weight:600}
-.mission-block{max-width:62ch}
-.mission-lead{font-family:var(--serif);font-size:clamp(17px,2.4vw,21px);line-height:1.5;margin:0 0 14px}
-#mission{width:100%;background:transparent;border:0;border-bottom:1.5px solid var(--accent);
-  font-family:var(--serif);font-size:clamp(17px,2.4vw,21px);color:var(--ink);padding:6px 2px;outline:none}
-#mission::placeholder{color:var(--faint)}
-#mission:focus{border-bottom-color:var(--warn)}
-.intro-note{font-size:12px;color:var(--dim);max-width:56ch}
+#intro h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,7vw,62px);line-height:1.04;letter-spacing:-.02em;margin:0;max-width:16ch;transition:opacity .6s ease}
+#intro .kicker{transition:opacity .6s ease}
 
-/* ---------- buttons ---------- */
+.term{width:100%;max-width:640px;border:1px solid var(--term-bar);border-radius:6px;overflow:hidden;background:var(--term-bg);
+  box-shadow:0 12px 40px rgba(0,0,0,.28);transition:transform .8s ease,opacity .8s ease,filter .8s ease}
+.term-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--term-bar);color:var(--term-dim);font-size:11.5px;padding:7px 10px}
+.term-btns i{display:inline-block;width:10px;height:10px;border:1px solid var(--term-dim);margin-left:6px}
+.term-body{padding:16px 16px 20px;color:var(--term-fg);font-size:14px;line-height:1.65}
+.tl{margin:0 0 6px;opacity:0;animation:tl-in .35s ease forwards;animation-delay:calc(var(--i) * .7s + .2s)}
+@keyframes tl-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.tprompt{display:flex;align-items:center;gap:10px;margin-top:10px}
+.tprompt label{color:var(--term-hot);white-space:nowrap}
+.tprompt input{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid var(--term-dim);outline:none;
+  color:var(--term-fg);font-family:var(--mono);font-size:14px;padding:4px 2px;caret-color:var(--term-hot)}
+.tprompt input::placeholder{color:var(--term-dim)}
+.tprompt input:focus{border-bottom-color:var(--term-hot)}
+.tprompt button{background:transparent;color:var(--term-hot);border:1px solid var(--term-dim);padding:3px 10px;font-size:14px}
+.tprompt button:hover:not(:disabled){background:var(--term-bar);border-color:var(--term-hot)}
+#boot p{margin:0 0 4px;color:var(--term-dim);animation:tl-in .3s ease both}
+#boot p.hot{color:var(--term-hot)}
+
+/* the terminal dissolves, then the control panel fades in */
+#intro.closing .term{transform:scale(1.07);opacity:0;filter:blur(3px) brightness(1.5)}
+#intro.closing h1,#intro.closing .kicker{opacity:0}
+#game.reveal{animation:panel-in .9s ease both}
+@keyframes panel-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tl{opacity:1}}
 
 /* ---- controls ---- */
 button{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:var(--panel);
@@ -248,24 +263,22 @@ footer button:hover{background:none;color:var(--warn)}
   <div class="kicker">a game about getting exactly what you asked for</div>
   <h1>Instrumental</h1>
 
-  <div class="primer">
-    <p>You are one person with a gaming PC and four thousand dollars. By the end you will not be. No technical knowledge needed: here is everything you need to know.</p>
-    <p><b>Your score is the work the AI has done.</b> It is counted as the time that work would have taken people: hours at first, then years, then thousands of years. This number only ever goes up, and everything else on screen is a way of pushing it.</p>
-    <p><b>Smarter means longer jobs.</b> Watch "can work alone for": the longest job the model can finish with nobody checking on it. Five seconds at first. Later an hour, a week, a year. That is what "getting smarter" means here.</p>
-    <p><b>Hardware makes it smarter, and money buys hardware.</b> A PC, then a server, a rack of servers, a building, a power station. Each step is roughly ten times the last.</p>
-    <p><b>Hardware is a subscription, not a purchase.</b> It is like owning a factory instead of buying a tool: electricity, cooling and staff never stop costing money. Your costs grow with the size of the building, but your income only grows with how clever the model is, so you will keep raising money to cover the gap. Real AI companies do exactly this.</p>
-    <p><b>It will make discoveries.</b> New medicines, materials, mathematical proofs. Each one pushes up your share price, and shares are something you can sell.</p>
-    <p><b>Nobody can see inside it.</b> You can measure what it does, but not why. Safety research helps you understand it, but that money could have bought more hardware. That trade-off is the game.</p>
-    <p>If you meet a word you don't know, press "what the words mean" at the bottom of the game.</p>
+  <div class="term" id="term" role="group" aria-label="Command prompt">
+    <div class="term-bar"><span>C:\basement\command prompt</span><span class="term-btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
+    <div class="term-body">
+      <p class="tl" style="--i:0">C:\basement&gt; hello</p>
+      <p class="tl" style="--i:1">You are fourteen. This is the PC you built yourself.</p>
+      <p class="tl" style="--i:2">You have no money, no team, and a small AI that barely works.</p>
+      <p class="tl" style="--i:3">What do you want it to do? One sentence.</p>
+      <form class="tl tprompt" id="prompt-row" style="--i:4" autocomplete="off">
+        <label for="mission">C:\basement&gt;</label>
+        <input id="mission" maxlength="110" spellcheck="false"
+          placeholder="type a sentence, then press Enter">
+        <button id="begin" type="submit" aria-label="Run">&#9166;</button>
+      </form>
+      <div id="boot" aria-live="polite"></div>
+    </div>
   </div>
-
-  <div class="mission-block">
-    <p class="mission-lead">Before anything else, your board needs a mission statement. One sentence.</p>
-    <input id="mission" maxlength="110" autocomplete="off" spellcheck="false"
-      placeholder="to ensure that artificial general intelligence benefits all of humanity">
-  </div>
-  <p class="intro-note">Everything that follows will be done in service of this sentence.</p>
-  <div><button id="begin" class="btn-primary">Start the company</button></div>
 </section>
 
 <main id="game" class="hidden">
@@ -343,7 +356,7 @@ footer button:hover{background:none;color:var(--warn)}
   var WORK_EXP = 0.25;
   var PARAM_K = 12e7;
   var PARAM_EXP = 0.62;
-  var BURN_K = 0.0108;
+  var BURN_K = 0.0119;
   var BURN_EXP = 0.88;
   var STAFF_BASE = 40;
   var STAFF_EXP = 2.4;
@@ -351,7 +364,8 @@ footer button:hover{background:none;color:var(--warn)}
   var REV_EXP = 0.95;
   var REV_TRUST_REF = 62;
   var RIVAL_DRAG = 160;
-  var START_MONEY = 4e3;
+  var START_MONEY = 0;
+  var START_UNITS = 1;
   var GRACE = 25;
   var MCAP_K = 3e5;
   var MCAP_EXP = 1.35;
@@ -397,9 +411,9 @@ footer button:hover{background:none;color:var(--warn)}
   var GLOSS = {
     1: [
       ["Work it has done", "Everything the model has produced since you switched it on, counted as the time it would have taken people to do it. This number only ever goes up. It is what your mission statement is secretly a description of."],
-      ["Parameters", "The size of the model: how many adjustable numbers sit inside it, a bit like the connections in a brain. A bedroom model has a couple of hundred million. The famous ones have hundreds of billions. Better hardware lets you train a bigger one."],
+      ["Parameters", "The size of the model: how many adjustable numbers sit inside it, a bit like the connections in a brain. A model small enough to train on a gaming PC has a couple of hundred million. The famous ones have hundreds of billions. Better hardware lets you train a bigger one."],
       ["Can work alone for", "How long a job the model can finish with nobody checking on it: ten minutes, then a day, then a month. This is what 'getting smarter' means in this game, and everything you buy is a way to push it up."],
-      ["Money", "Starts at four thousand dollars, which is a gaming PC and some instant noodles. It ends somewhere else."],
+      ["Money", "You start with none. Nobody pays for a model nobody can use, so the first money arrives when you publish it on the web."],
       ["Compute", "The total computing power you own. Your hardware trains the model around the clock whether or not you're clicking anything."],
       ["Losing per second", "Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
       ["Share price", "What the market thinks each piece of your company is worth. It follows what the model can do, how much people trust you and how far behind your rivals are, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
@@ -607,18 +621,66 @@ footer button:hover{background:none;color:var(--warn)}
 
   // src/content/projects.js
   var P = [
+    /* The first four are free: nothing can be bought until the model is online and
+       earning, so the opening is about turning the three levers of scaling by hand. */
     {
-      id: "scaling",
+      id: "data",
       act: 1,
-      name: "Prove that bigger is better",
-      term: "in the field: scaling laws",
-      cost: { money: 4e3 },
-      req: (s) => s.capability >= 8,
-      desc: "You graph how good the model is against how much hardware it runs on. It's a straight line, and it keeps going however far you extend it. In plain terms: more computers reliably means a smarter model, so buying hardware is never wasted.",
+      pri: 6,
+      name: "Give it more to read",
+      term: "scaling lever 1 of 3: data",
+      cost: {},
+      req: (s) => s.capability >= 2,
+      desc: "So far it has only read a few of your old school essays. You point it at every free ebook and encyclopedia page you can download. A model learns from examples, so more examples means better answers.",
       fx: (s) => {
-        s.computeMult *= 1.7;
+        s.computeMult *= 1.25;
+        s.clickPower += 0.4;
       },
-      out: "All your hardware does 70% more."
+      out: "Training works about 25% better."
+    },
+    {
+      id: "train",
+      act: 1,
+      pri: 5,
+      name: "Let it train for longer",
+      term: "scaling lever 2 of 3: training time",
+      cost: {},
+      req: (s) => s.capability >= 6,
+      desc: "You leave it running overnight instead of for an hour, then all weekend. The longer it studies the same material, the more patterns it picks up, though each extra hour helps a little less than the last.",
+      fx: (s) => {
+        s.computeMult *= 1.25;
+        s.capability += 2;
+      },
+      out: "Training works about 25% better."
+    },
+    {
+      id: "size",
+      act: 1,
+      pri: 4,
+      name: "Make the model bigger",
+      term: "scaling lever 3 of 3: parameters",
+      cost: {},
+      req: (s) => s.capability >= 11,
+      desc: "A model's parameters are the adjustable numbers inside it, a bit like the connections between brain cells. You double them. More parameters means it can hold more patterns, but it also needs more computing power to train.",
+      fx: (s) => {
+        s.paramMult *= 2;
+        s.computeMult *= 1.25;
+      },
+      out: "Model size doubles. Training works about 25% better."
+    },
+    {
+      id: "curve",
+      act: 1,
+      pri: 3,
+      name: "Plot what you've learned",
+      term: "in the field: scaling laws",
+      cost: {},
+      req: (s) => s.capability >= 16,
+      desc: "You graph how good the model is against how much data, training time and size you gave it. Turn up any of the three and the line keeps climbing, in a smooth curve. That is the whole reason AI companies keep buying more and more computers.",
+      fx: (s) => {
+        s.computeMult *= 1.05;
+      },
+      out: "You know where the next improvement comes from: more of everything."
     },
     {
       id: "cot",
@@ -1074,39 +1136,49 @@ footer button:hover{background:none;color:var(--warn)}
   // src/content/hardware.js
   var HW = [
     {
-      n: "a gaming PC",
-      u: 1,
-      c: 1500,
+      n: "a better graphics card",
+      label: "Upgrade my graphics card",
+      off: "Sell the upgraded graphics card",
+      u: 5,
+      c: 3e3,
       s: 1.5,
-      req: 0,
-      why: "The one in your bedroom. It trains overnight and makes the room too warm to sleep in."
+      req: 18,
+      why: "A graphics card (GPU) is a chip built to do huge numbers of simple sums at once, which is exactly what training an AI needs. Swapping yours for a better one makes the whole PC train faster. Your bedroom gets noticeably warmer."
     },
     {
-      n: "a used mining GPU",
-      u: 8,
-      c: 11e3,
+      n: "a workstation PC",
+      label: "Build a workstation PC",
+      off: "Sell the workstation PC",
+      u: 20,
+      c: 14e3,
       s: 1.42,
-      req: 14,
-      why: "Bought from a bankrupt crypto miner. No video output, no case, and a fan bracket you printed yourself."
+      req: 40,
+      why: "A new PC built around two or three top graphics cards, a huge power supply and a case that no longer closes. Your parents ask why the electricity bill doubled."
     },
     {
-      n: "an 8-GPU server",
+      n: "a rackmount server",
+      label: "Buy a rackmount server",
+      off: "Shut down a rackmount server",
       u: 80,
       c: 1e5,
       s: 1.38,
       req: 55,
-      why: "A real machine in a real box. It won't fit in a bedroom and it won't run off a wall socket."
+      why: "A real server: eight graphics cards in a steel box built to slide into a rack. It's loud, it needs its own power circuit, and it won't fit in a bedroom."
     },
     {
       n: "a full rack",
+      label: "Buy a full rack",
+      off: "Shut down a full rack",
       u: 700,
       c: 85e4,
       s: 1.34,
       req: 150,
-      why: "Forty units in a cabinet taller than you are. You're renting space in someone else's building now."
+      why: "Forty servers in a cabinet taller than you are. You're renting space in someone else's building now."
     },
     {
       n: "a row of racks",
+      label: "Rent a row of racks",
+      off: "Shut down a row of racks",
       u: 7e3,
       c: 8e6,
       s: 1.31,
@@ -1115,6 +1187,8 @@ footer button:hover{background:none;color:var(--warn)}
     },
     {
       n: "a datacenter floor",
+      label: "Lease a datacenter floor",
+      off: "Shut down a datacenter floor",
       u: 7e4,
       c: 8e7,
       s: 1.29,
@@ -1123,6 +1197,8 @@ footer button:hover{background:none;color:var(--warn)}
     },
     {
       n: "a dedicated building",
+      label: "Build your own datacenter",
+      off: "Shut down the datacenter",
       u: 8e5,
       c: 9e8,
       s: 1.27,
@@ -1131,6 +1207,8 @@ footer button:hover{background:none;color:var(--warn)}
     },
     {
       n: "a campus and a power station",
+      label: "Build a campus and a power station",
+      off: "Shut down the campus",
       u: 1e7,
       c: 11e9,
       s: 1.25,
@@ -1147,8 +1225,8 @@ footer button:hover{background:none;color:var(--warn)}
       req: 20,
       pay: 8e4,
       mult: 1.5,
-      n: "Put it online for free",
-      why: "You post it on a Thursday because you want people to see it. By Sunday it has been used four million times. A foundation writes to offer you a grant. The email is addressed 'Dear Dr', because nobody imagines a teenager built this, and you find that very funny."
+      n: "Publish it on the web for free",
+      why: "Until now it has only talked to you. You put it on a free website, and by Sunday it has been used four million times. Donations arrive, and a foundation offers a grant. The email says 'Dear Dr', because nobody imagines a teenager built this."
     },
     {
       req: 80,
@@ -1300,6 +1378,7 @@ footer button:hover{background:none;color:var(--warn)}
     [8e14, "There is no institution left on earth that could run for a week without it, there is no plan for one, and there is no longer anybody whose job it would be to write that plan.", -6, 1.06]
   ];
   function rollWorld() {
+    if (!S.rel) return;
     while (S.worldIdx < WORLD.length && S.workDone >= WORLD[S.worldIdx][0]) {
       const [, text, tr, rev] = WORLD[S.worldIdx];
       if (tr) S.trust = Math.max(0, Math.min(100, S.trust + tr));
@@ -1325,10 +1404,10 @@ footer button:hover{background:none;color:var(--warn)}
         S.debt = 0;
         log("You're back in the black. Barely.", "g");
       }
-      S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate * DT);
+      if (S.rel > 0) S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate * DT);
       if (S.trust < TRUST_CEIL) S.trust = Math.min(TRUST_CEIL, S.trust + TRUST_REGEN * DT);
       const e = exposure();
-      if (Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) {
+      if (S.rel > 0 && Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) {
         S.trust -= 6;
         S.money *= 0.92;
         S.sentiment *= 0.8;
@@ -1403,9 +1482,11 @@ footer button:hover{background:none;color:var(--warn)}
         }
       });
       const open = [];
-      for (let i = HW.length - 1; i >= 0 && open.length < 3; i--) if (hwOpen(i)) open.push(i);
+      if (S.rel > 0) {
+        for (let i = HW.length - 1; i >= 0 && open.length < 3; i--) if (hwOpen(i)) open.push(i);
+      }
       open.forEach((i) => out.push({
-        label: "Buy " + HW[i].n,
+        label: HW[i].label,
         sub: money(hwCost(i)),
         why: "Adds " + short(HW[i].u) + " units of computing power and about " + money(BURN_K * (Math.pow(S.deployed + hwCost(i), BURN_EXP) - Math.pow(S.deployed, BURN_EXP)) * S.burnMult) + "/s to your running costs, permanently. " + HW[i].why,
         can: () => S.money >= hwCost(i),
@@ -1425,21 +1506,21 @@ footer button:hover{background:none;color:var(--warn)}
       if (own.length && S.deployed > 0) {
         const i = own[0], refund = hwCost(i) / HW[i].s * 0.35;
         out.push({
-          label: "Shut down " + HW[i].n,
+          label: HW[i].off,
           sub: "recover " + money(refund),
-          why: "Switch it off and sell it second-hand for about a third of what you paid. You lose the computing power, but your running costs fall. This is the only brake you have.",
+          why: "Sell it second-hand for about a third of what you paid. You lose the computing power, but your running costs fall. This is the only brake you have.",
           can: () => true,
           go: () => {
             const c = hwCost(i) / HW[i].s;
             S.hw[i]--;
-            S.units = Math.max(0, S.units - HW[i].u);
+            S.units = Math.max(START_UNITS, S.units - HW[i].u);
             S.deployed = Math.max(0, S.deployed - c);
             S.money += c * 0.35;
-            log("You shut down " + HW[i].n + " and recover " + money(c * 0.35) + ". Running costs fall.", "g");
+            log(HW[i].off + ". You recover " + money(c * 0.35) + " and running costs fall.", "g");
           }
         });
       }
-      out.push({
+      if (S.rel > 0) out.push({
         label: "Fund safety research",
         sub: money(interpCost()),
         why: "Pays people to work out what the model is actually doing. Produces nothing you can sell. Prevents disasters you'll never see, which is why it always feels like the wrong purchase.",
@@ -1466,9 +1547,9 @@ footer button:hover{background:none;color:var(--warn)}
             S.lastPx = sharePrice();
             log("<b>You have shareholders now.</b> The company is worth " + money(marketCap()) + ", a number the market made up, and you will now spend a great deal of time defending it.", "g");
           }
-          const safe = S.interp * INTERP_WORTH >= S.capability;
-          S.trust += safe ? 5 : -9;
-          log("<b>" + r.n + ".</b> " + money(r.pay) + " in. " + (safe ? "Reviewers call your safety work exemplary." : "Two of your researchers resign publicly on the way out."), safe ? "g" : "w");
+          const safe = S.rel === 1 || S.interp * INTERP_WORTH >= S.capability;
+          S.trust += S.rel === 1 ? 0 : safe ? 5 : -9;
+          log("<b>" + r.n + ".</b> " + money(r.pay) + " in" + (S.rel === 1 ? ", the first money this project has ever made" : "") + ". " + (S.rel === 1 ? "" : safe ? "Reviewers call your safety work exemplary." : "Two of your researchers resign publicly on the way out."), safe ? "g" : "w");
         }
       });
       return out;
@@ -1507,7 +1588,7 @@ footer button:hover{background:none;color:var(--warn)}
   }
   function inventory() {
     const owned = HW.map((t, i) => S.hw[i] ? S.hw[i] + " \xD7 " + t.n.replace(/^an? /, "") : null).filter(Boolean);
-    return owned.length ? "You own: " + owned.join(", ") + "." : "You own no hardware yet.";
+    return owned.length ? "You have your gaming PC, plus " + owned.join(", ") + "." : "You have your gaming PC and nothing else.";
   }
   function affordable(c) {
     return (!c.money || S.money >= c.money) && (!c.insight || S.insight >= c.insight) && (!c.autonomy || S.autonomy >= c.autonomy) && (!c.matter || S.matter >= c.matter);
@@ -1518,7 +1599,7 @@ footer button:hover{background:none;color:var(--warn)}
     if (c.insight) p.push(short(c.insight) + " insight");
     if (c.autonomy) p.push(short(c.autonomy) + " freedom");
     if (c.matter) p.push(short(c.matter) + " matter");
-    return p.join(" + ");
+    return p.join(" + ") || "free";
   }
 
   // src/game/guide.js
@@ -1531,17 +1612,23 @@ footer button:hover{background:none;color:var(--warn)}
       if (S.trust <= 25) return ["Urgent", "Public trust is almost gone, and at zero you're shut down. Testify before Congress to win some back, and fund safety research so it stops falling."];
       if (S.rival >= 55 && S.rivalRate > 0.12) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, and every point is revenue you lose. Export controls or hiring their team can win some back. There's no deadline."];
       if (exposure() > 900 && S.incidentShield < 0.4) return ["Warning", "Your model is far ahead of your understanding of it, so things will keep going wrong. Fund safety research."];
-      if (S.capability < 8) return ["Start here", "You have $4,000 and a bedroom. Buy the gaming PC, because hardware trains the model around the clock without you. Click 'Train it by hand' in the meantime."];
+      if (S.rel === 0) {
+        const FREE = [["data", 2], ["train", 6], ["size", 11], ["curve", 16]];
+        if (S.capability < 2) return ["Start here", "Click 'Train it by hand'. Every click teaches your model a little, and your gaming PC keeps training it slowly on its own."];
+        if (FREE.some(([id, cap]) => !S.bought.includes(id) && S.capability >= cap)) return ["Next", "Pick a free step under 'Training steps'. Each one makes your training work better."];
+        if (S.capability < r.req) return ["Next", "Keep training. Once the model can work alone for " + work(r.req) + ", you can publish it on the web. That is when people start using it and money starts to arrive."];
+        return ["Next", "It's ready. Publish it on the web: that is when people start using it and money starts to arrive."];
+      }
       if (S.rel >= 1 && net() < 0 && !S.bought.includes("quant") && S.capability >= 90)
         return ["Worth doing", "You're losing money every second. Running the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
-      if (S.units < 3 && S.money >= hwCost(0)) return ["Next", "Buy hardware. Nearly everything else in this game is a way to get more of it, or to make what you have count for more."];
+      if (S.hw[0] === 0 && S.money >= hwCost(0)) return ["Next", "Spend money on a better graphics card. Nearly everything else in this game is a way to get more hardware, or to make what you have count for more."];
       if (r && S.capability >= r.req) return ["Next", "You can now: " + r.n.toLowerCase() + ". That brings in money, and money buys hardware."];
       if (S.rival >= 14 && !S.bought.includes("pause")) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, which cuts your income every second. The open letter slows them by nearly half and costs very little."];
       if (S.interp === 0 && S.capability > 60) return ["Worth doing", "You've never spent a dollar on understanding your own model. That's fine until it isn't."];
       if (S.capability >= 150 && S.breaks.length === 0) return ["Next", "The model is nearly capable enough to make real scientific discoveries. When that starts, your share price will react before the newspapers do."];
       const next = HW.findIndex((t, i) => !hwOpen(i));
-      if (next > 0) return ["Next", "Keep buying hardware and keep releasing. " + HW[next].n.replace(/^an? /, "A ").replace(/^a /, "A ") + " unlocks once it can work for " + work(HW[next].req) + "."];
-      return ["Next", "Keep buying hardware, keep releasing, and keep safety research roughly level with what the model can do."];
+      if (next > 0) return ["Next", "Keep upgrading your hardware and keep releasing. " + HW[next].n.replace(/^an? /, "A ").replace(/^a /, "A ") + " unlocks once it can work for " + work(HW[next].req) + "."];
+      return ["Next", "Keep upgrading your hardware, keep releasing, and keep safety research roughly level with what the model can do."];
     }
     if (S.act === 2) {
       if (S.suspicion >= 70 && !S.shutdownProof) return ["Urgent", "They're close to stopping the run. Show them everything I can do for a while, or spend insight on being harder to read."];
@@ -1628,6 +1715,11 @@ footer button:hover{background:none;color:var(--warn)}
 
   // src/ui/render.js
   function barData() {
+    if (S.act === 1 && !S.rel) return [
+      ["Work it has done", dur(S.workDone)],
+      ["Parameters", pcount(params())],
+      ["Can work alone for", work(S.capability)]
+    ];
     if (S.act === 1) return [
       ["Work it has done", dur(S.workDone)],
       ["Parameters", pcount(params())],
@@ -1703,14 +1795,14 @@ footer button:hover{background:none;color:var(--warn)}
       btns[i].disabled = !a.can();
     });
     el("act-label").textContent = S.act === 1 ? "What you can do" : S.act === 2 ? "What I can do" : "What is left to do";
-    el("proj-label").textContent = S.act === 1 ? "Things you could build" : S.act === 2 ? "Things I could become" : "Things to build";
+    el("proj-label").textContent = S.act === 1 ? S.rel ? "Things you could build" : "Training steps" : S.act === 2 ? "Things I could become" : "Things to build";
   }
   function drawGloss() {
     setHTML(el("gloss"), "<dl>" + GLOSS[S.act].map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("") + "</dl>");
   }
   function drawProjects() {
     const host = el("projects");
-    const avail = P.filter((p) => p.act === S.act && (p.repeat || !S.bought.includes(p.id)) && p.req(S)).sort((a, b) => (b.pri || 0) - (a.pri || 0)).slice(0, PROJECT_SLOTS);
+    const avail = P.filter((p) => p.act === S.act && (p.repeat || !S.bought.includes(p.id)) && p.req(S) && (S.act !== 1 || S.rel > 0 || !p.cost.money)).sort((a, b) => (b.pri || 0) - (a.pri || 0)).slice(0, PROJECT_SLOTS);
     const key = avail.map((p) => p.id + "|" + costLabel(p.cost)).join(",");
     if (host.__key !== key) {
       host.__key = key;
@@ -1886,7 +1978,7 @@ footer button:hover{background:none;color:var(--warn)}
     over: null,
     mission: "",
     money: START_MONEY,
-    units: 0,
+    units: START_UNITS,
     deployed: 0,
     debt: 0,
     capability: 0,
@@ -1978,7 +2070,7 @@ footer button:hover{background:none;color:var(--warn)}
   }
 
   // src/game/persist.js
-  var SAVE_KEY = "instrumental.v3";
+  var SAVE_KEY = "instrumental.v4";
   function save() {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(S));
@@ -2103,7 +2195,7 @@ footer button:hover{background:none;color:var(--warn)}
   var workRate = () => horizon(S.capability) * WORK_K * Math.pow(1 + Math.max(S.units, 0), WORK_EXP);
   var params = () => PARAM_K * Math.pow(1 + Math.max(S.units, 0), PARAM_EXP) * S.paramMult;
   var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + STAFF_BASE * Math.pow(S.rel, STAFF_EXP);
-  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) * (1 - S.rival / RIVAL_DRAG) : 25;
+  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) * (1 - S.rival / RIVAL_DRAG) : 0;
   var net = () => revenue() - burn();
   var runway = () => net() >= 0 ? Infinity : S.money / -net();
   var marketCap = () => MCAP_K * Math.pow(Math.max(S.capability, 1), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment / (1 + S.rival / MCAP_RIVAL_DRAG);
@@ -2122,17 +2214,42 @@ footer button:hover{background:none;color:var(--warn)}
     drawGloss();
     if (!S.log.length) {
       log("<b>You switch it on.</b> In the notebook, at the top of the page: " + esc(S.mission));
-      log("Four thousand dollars, saved over three years. One PC you built yourself. A model that can hold a thought for about five seconds.");
+      log("One gaming PC you built yourself, a pile of free ebooks, and a model that can hold a thought for about five seconds. No money, no team, no plan beyond that sentence.");
       log("Nobody in the world is more than two years ahead of you. Nobody in the world knows your name.");
     }
     render();
   }
-  el("begin").onclick = () => {
-    S.mission = el("mission").value.trim() || el("mission").placeholder;
-    startGame();
-  };
-  el("mission").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") el("begin").click();
+  var REDUCED2 = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var DEFAULT_MISSION = "to ensure that artificial general intelligence benefits all of humanity";
+  var launching = false;
+  function launch() {
+    if (launching) return;
+    launching = true;
+    const typed = el("mission").value.trim();
+    S.mission = typed || DEFAULT_MISSION;
+    if (REDUCED2) {
+      startGame();
+      return;
+    }
+    el("mission").readOnly = true;
+    el("begin").disabled = true;
+    const boot = el("boot");
+    [["mission saved to notebook.txt", 0], ["finding graphics card ........ ok", 650], ["starting training console ...", 1300, "hot"]].forEach(([text, at, cls]) => setTimeout(() => {
+      const p = document.createElement("p");
+      p.textContent = "> " + text;
+      if (cls) p.className = cls;
+      boot.appendChild(p);
+    }, at));
+    setTimeout(() => el("intro").classList.add("closing"), 2e3);
+    setTimeout(() => {
+      el("game").classList.add("reveal");
+      startGame();
+      setTimeout(() => el("game").classList.remove("reveal"), 1e3);
+    }, 2800);
+  }
+  el("prompt-row").addEventListener("submit", (e) => {
+    e.preventDefault();
+    launch();
   });
   el("glossbtn").onclick = () => {
     const g = el("gloss");
@@ -2141,15 +2258,19 @@ footer button:hover{background:none;color:var(--warn)}
   };
   el("reset").onclick = () => {
     try {
-      localStorage.removeItem("instrumental.v3");
+      localStorage.removeItem(SAVE_KEY);
     } catch (e) {
     }
     setState(FRESH());
     document.body.className = "";
     el("game").classList.add("hidden");
     el("end").style.display = "none";
-    el("intro").classList.remove("hidden");
+    el("intro").classList.remove("hidden", "closing");
     el("mission").value = "";
+    el("mission").readOnly = false;
+    el("begin").disabled = false;
+    el("boot").innerHTML = "";
+    launching = false;
   };
   var box = el("savebox");
   var boxText = el("savetext");
@@ -2200,7 +2321,7 @@ footer button:hover{background:none;color:var(--warn)}
   var MAX_FRAME_MS = 2e3;
   var last = performance.now();
   var owed = 0;
-  var paused = () => document.hidden || el("takeover").classList.contains("on");
+  var paused = () => document.hidden || el("game").classList.contains("hidden") || el("takeover").classList.contains("on");
   setInterval(() => {
     const now = performance.now(), dt = Math.min(now - last, MAX_FRAME_MS);
     last = now;

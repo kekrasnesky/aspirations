@@ -1,8 +1,8 @@
 import { money } from '../core/format.js';
 
 export const REL = [
- {req:20,  pay:8e4,  mult:1.5, n:"Put it online for free",
-  why:"You post it on a Thursday because you want people to see it. By Sunday it has been used four million times. A foundation writes to offer you a grant. The email is addressed 'Dear Dr', because nobody imagines a teenager built this, and you find that very funny."},
+ {req:20,  pay:8e4,  mult:1.5, n:"Publish it on the web for free",
+  why:"Until now it has only talked to you. You put it on a free website, and by Sunday it has been used four million times. Donations arrive, and a foundation offers a grant. The email says 'Dear Dr', because nobody imagines a teenager built this."},
  {req:80,  pay:9e5,  mult:1.7, n:"Start charging for it",
   why:"Twenty dollars a month, which feels a bit like stealing. Forty thousand people say yes in the first week and you stop sleeping properly."},
  {req:260, pay:1.1e7,mult:1.9, n:"Drop out and raise money",

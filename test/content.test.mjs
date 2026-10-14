@@ -6,6 +6,13 @@ import { P } from '../src/content/projects.js';
 import { GLOSS } from '../src/content/glossary.js';
 import { MILES } from '../src/content/milestones.js';
 
+test('the opening steps are free, and the first one needs nothing but a little training', () => {
+  const free = P.filter(p => p.act === 1 && Object.keys(p.cost).length === 0);
+  assert.deepEqual(free.map(p => p.id), ['data', 'train', 'size', 'curve']);
+  assert.ok(free.every(p => p.req({ capability: 20 })));
+  assert.ok(!P.find(p => p.id === 'scaling'), 'the paid scaling project should be gone');
+});
+
 test('hardware ladder has eight rungs, each bigger, dearer and later than the last', () => {
   assert.equal(HW.length, 8);
   for (let i = 1; i < HW.length; i++) {
@@ -29,7 +36,7 @@ test('every project is well formed and ids are unique', () => {
     for (const f of ['name', 'desc', 'out']) assert.equal(typeof p[f], 'string', `${p.id}.${f}`);
     assert.equal(typeof p.req, 'function', p.id);
     assert.equal(typeof p.fx, 'function', p.id);
-    assert.ok(p.cost && Object.keys(p.cost).length, `${p.id} has no cost`);
+    assert.equal(typeof p.cost, 'object', `${p.id} needs a cost object ({} means free)`);
   }
 });
 

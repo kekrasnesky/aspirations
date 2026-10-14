@@ -23,10 +23,10 @@ export function tick(){
       S.debt+=DT;
       if(S.debt>GRACE) return lose("bankrupt");
     } else if(S.debt>0){ S.debt=0; log("You're back in the black. Barely.","g") }
-    S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate*DT);
+    if(S.rel>0) S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate*DT);   // rivals only matter once you have a market
     if(S.trust<TRUST_CEIL) S.trust=Math.min(TRUST_CEIL,S.trust+TRUST_REGEN*DT);
     const e=exposure();
-    if(Math.random() < INCIDENT_MAX*(e/(e+INCIDENT_HALF))*(1-S.incidentShield)*DT){
+    if(S.rel>0 && Math.random() < INCIDENT_MAX*(e/(e+INCIDENT_HALF))*(1-S.incidentShield)*DT){
       S.trust-=6; S.money*=.92; S.sentiment*=.80;
       log(INCIDENTS[(Math.random()*INCIDENTS.length)|0],"w");
     }

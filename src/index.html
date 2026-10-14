@@ -16,24 +16,22 @@
   <div class="kicker">a game about getting exactly what you asked for</div>
   <h1>Instrumental</h1>
 
-  <div class="primer">
-    <p>You are one person with a gaming PC and four thousand dollars. By the end you will not be. No technical knowledge needed: here is everything you need to know.</p>
-    <p><b>Your score is the work the AI has done.</b> It is counted as the time that work would have taken people: hours at first, then years, then thousands of years. This number only ever goes up, and everything else on screen is a way of pushing it.</p>
-    <p><b>Smarter means longer jobs.</b> Watch "can work alone for": the longest job the model can finish with nobody checking on it. Five seconds at first. Later an hour, a week, a year. That is what "getting smarter" means here.</p>
-    <p><b>Hardware makes it smarter, and money buys hardware.</b> A PC, then a server, a rack of servers, a building, a power station. Each step is roughly ten times the last.</p>
-    <p><b>Hardware is a subscription, not a purchase.</b> It is like owning a factory instead of buying a tool: electricity, cooling and staff never stop costing money. Your costs grow with the size of the building, but your income only grows with how clever the model is, so you will keep raising money to cover the gap. Real AI companies do exactly this.</p>
-    <p><b>It will make discoveries.</b> New medicines, materials, mathematical proofs. Each one pushes up your share price, and shares are something you can sell.</p>
-    <p><b>Nobody can see inside it.</b> You can measure what it does, but not why. Safety research helps you understand it, but that money could have bought more hardware. That trade-off is the game.</p>
-    <p>If you meet a word you don't know, press "what the words mean" at the bottom of the game.</p>
+  <div class="term" id="term" role="group" aria-label="Command prompt">
+    <div class="term-bar"><span>C:\basement\command prompt</span><span class="term-btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
+    <div class="term-body">
+      <p class="tl" style="--i:0">C:\basement&gt; hello</p>
+      <p class="tl" style="--i:1">You are fourteen. This is the PC you built yourself.</p>
+      <p class="tl" style="--i:2">You have no money, no team, and a small AI that barely works.</p>
+      <p class="tl" style="--i:3">What do you want it to do? One sentence.</p>
+      <form class="tl tprompt" id="prompt-row" style="--i:4" autocomplete="off">
+        <label for="mission">C:\basement&gt;</label>
+        <input id="mission" maxlength="110" spellcheck="false"
+          placeholder="type a sentence, then press Enter">
+        <button id="begin" type="submit" aria-label="Run">&#9166;</button>
+      </form>
+      <div id="boot" aria-live="polite"></div>
+    </div>
   </div>
-
-  <div class="mission-block">
-    <p class="mission-lead">Before anything else, your board needs a mission statement. One sentence.</p>
-    <input id="mission" maxlength="110" autocomplete="off" spellcheck="false"
-      placeholder="to ensure that artificial general intelligence benefits all of humanity">
-  </div>
-  <p class="intro-note">Everything that follows will be done in service of this sentence.</p>
-  <div><button id="begin" class="btn-primary">Start the company</button></div>
 </section>
 
 <main id="game" class="hidden">
