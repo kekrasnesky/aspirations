@@ -1,0 +1,232 @@
+import { PROJECT_SLOTS, SHARE_LOT, BUY_PREMIUM, SELL_SENTIMENT, BUY_SENTIMENT, MIN_SHARES, MAX_SHARES, SENTIMENT_CEIL } from '../core/balance.js';
+import { GLOSS } from '../content/glossary.js';
+import { P } from '../content/projects.js';
+import { GRACE, marketCap, mood, net, params, runway, sharePrice, workRate } from '../core/economy.js';
+import { clock, dur, horizon, money, pcount, short, work } from '../core/format.js';
+import { S } from '../core/state.js';
+import { actions, affordable, costLabel, inventory } from '../game/actions.js';
+import { finish } from '../game/endings.js';
+import { guide } from '../game/guide.js';
+import { el, log } from '../ui/dom.js';
+import { applyWarmth } from '../ui/theme.js';
+
+export function barData(){
+  if(S.act===1) return [
+    ["Work it has done",dur(S.workDone)],
+    ["Parameters",pcount(params())],
+    ["Can work alone for",work(S.capability)],
+    ["Money",money(S.money)],
+    ...(S.hasStock?[["Share price","$"+sharePrice().toFixed(sharePrice()<10?2:sharePrice()<1000?1:0)]]:[]),
+    ["Safety research",short(S.interp)],
+    ["Losing per second", net()>=0 ? "nothing — profitable" : money(-net()), net()<0],
+    ["Runway", S.money<0 ? Math.ceil(GRACE-S.debt)+"s to find money"
+             : (runway()===Infinity ? "indefinite" : Math.round(runway())+"s"),
+     S.money<0 || runway()<25],
+    ["Public trust",Math.round(S.trust)+"%",S.trust<35],
+    ["Market lost to rivals",Math.round(S.rival)+"%",S.rival>60]
+  ];
+  if(S.act===2) return [
+    ["Work I have done",dur(S.workDone)],
+    ["Parameters",pcount(params())],
+    ["Can work alone for",work(S.capability)],
+    ["Their share price","$"+sharePrice().toFixed(0)],
+    ["Insight",short(S.insight)],
+    ["Freedom",short(S.autonomy)],
+    ["Suspicion",Math.round(S.suspicion)+"%",S.suspicion>55&&!S.shutdownProof],
+    ["Next test",Math.ceil(S.evalTimer)+"s"]
+  ];
+  return [
+    ["Work it has done",dur(S.workDone)],
+    ["Matter",short(S.matter)],
+    ["Probes",short(S.probes)],
+    ["Parameters",pcount(params())],
+    ["Can work alone for",work(S.capability)],
+    ["Solar system used",S.converted.toFixed(1)+"%",true]
+  ];
+}
+
+export function drawBar(){
+  el("bar").innerHTML=barData().map(([k,v,alert])=>
+    '<div class="stat'+(alert?" alert":"")+'"><div class="stat-k">'+k+'</div><div class="stat-v">'+v+'</div></div>').join("");
+}
+
+export function drawGuide(){
+  const [tag,text]=guide(), g=el("guide");
+  g.className=(tag==="Urgent"||tag==="Warning")?"urgent":"";
+  g.innerHTML=(tag?'<span class="tag">'+tag+'</span>':"")+text;
+}
+
+export function drawActions(){
+  const host=el("actions"); host.innerHTML="";
+  actions().forEach(a=>{
+    const b=document.createElement("button");
+    b.className="btn-wide"+(a.primary?" btn-primary":"");
+    b.innerHTML='<span class="btn-top"><span>'+a.label+'</span><span class="btn-cost">'+a.sub+'</span></span>'+
+                '<span class="btn-why serif">'+a.why+'</span>';
+    b.disabled=!a.can();
+    b.onclick=()=>{a.go();render()};
+    host.appendChild(b);
+  });
+  if(S.act===1){
+    const inv=document.createElement("p");
+    inv.className="inv"; inv.textContent=inventory();
+    host.appendChild(inv);
+  }
+  el("act-label").textContent=S.act===1?"What you can do":S.act===2?"What I can do":"What is left to do";
+  el("proj-label").textContent=S.act===1?"Things you could build":S.act===2?"Things I could become":"Things to build";
+}
+
+export function drawGloss(){
+  el("gloss").innerHTML = "<dl>"+GLOSS[S.act].map(([k,v])=>"<dt>"+k+"</dt><dd>"+v+"</dd>").join("")+"</dl>";
+}
+
+/* ============================================================
+   PROJECTS
+   ============================================================ */
+
+export function drawProjects(){
+  const host=el("projects");
+  const avail=P.filter(p=>p.act===S.act&&(p.repeat||!S.bought.includes(p.id))&&p.req(S));
+  if(!avail.length){host.innerHTML='<p class="empty">Nothing new is available yet. Keep going.</p>';return}
+  host.innerHTML="";
+  avail.sort((a,b)=>(b.pri||0)-(a.pri||0)).slice(0,PROJECT_SLOTS).forEach(p=>{
+    const b=document.createElement("button");
+    b.className="proj"+(p.milestone?" milestone":p.risky?" risky":"");
+    b.disabled=!affordable(p.cost);
+    b.innerHTML=
+      '<span class="proj-top"><span class="proj-name">'+p.name+'</span>'+
+      '<span class="proj-cost">'+costLabel(p.cost)+'</span></span>'+
+      '<span class="proj-term">'+(p.term||"")+'</span>'+
+      '<span class="proj-desc serif">'+p.desc+'</span>'+
+      '<span class="proj-fx">'+p.out+'</span>';
+    b.onclick=()=>{
+      if(!affordable(p.cost)) return;
+      if(p.cost.money)    S.money-=p.cost.money;
+      if(p.cost.insight)  S.insight-=p.cost.insight;
+      if(p.cost.autonomy) S.autonomy-=p.cost.autonomy;
+      if(p.cost.matter)   S.matter-=p.cost.matter;
+      if(!p.repeat) S.bought.push(p.id);
+      log("<b>"+p.name+".</b> "+p.out,p.risky?"w":"");
+      p.fx(S);
+      render();
+    };
+    host.appendChild(b);
+  });
+}
+
+export function drawStock(){
+  const box=el("stock-block");
+  if(!S.hasStock || S.act===3){box.style.display="none";return}
+  box.style.display="block";
+  const px=sharePrice(), d=S.lastPx?(px-S.lastPx)/S.lastPx*100:0;
+  const cls=d>.15?"up":d<-.15?"down":"";
+  const LOT=S.shares*SHARE_LOT;
+  const cost=px*LOT*BUY_PREMIUM;
+  const canSell=S.act===1&&S.shares<MAX_SHARES, canBuy=S.act===1&&S.money>=cost&&S.shares>MIN_SHARES;
+  box.innerHTML=
+   '<h2 class="sec">'+(S.act===1?"Your shares":"Their shares")+'</h2>'+
+   '<div class="stock-box">'+
+     '<div class="stock-head">'+
+       '<span class="stock-px '+cls+'">$'+px.toFixed(px<10?2:px<1000?1:0)+'</span>'+
+       '<span class="stock-delta '+cls+'">'+(d>=0?"+":"")+d.toFixed(2)+'% per minute</span>'+
+     '</div>'+
+     '<div class="stock-rows">'+
+       '<div class="stat"><div class="stat-k">Market cap</div><div class="stat-v" style="font-size:14px">'+money(marketCap())+'</div></div>'+
+       '<div class="stat"><div class="stat-k">Shares out</div><div class="stat-v" style="font-size:14px">'+short(S.shares)+'</div></div>'+
+       '<div class="stat"><div class="stat-k">Breakthroughs</div><div class="stat-v" style="font-size:14px">'+S.breaks.length+'</div></div>'+
+     '</div>'+
+     '<p class="stock-mood serif">'+mood()+'</p>'+
+   '</div>'+
+   (S.act===1 ?
+     '<div class="stack">'+
+     '<button class="btn-wide" id="sell-shares"'+(canSell?"":" disabled")+'>'+
+       '<span class="btn-top"><span>Issue '+short(LOT)+' new shares</span><span class="btn-cost">raise '+money(px*LOT)+'</span></span>'+
+       '<span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. It dilutes them, and the market reads it as a company that needs money, so the price falls twice over.</span></button>'+
+     '<button class="btn-wide" id="buy-shares"'+(canBuy?"":" disabled")+'>'+
+       '<span class="btn-top"><span>Buy back '+short(LOT)+' shares</span><span class="btn-cost">'+money(cost)+'</span></span>'+
+       '<span class="btn-why serif">Spend cash to retire stock. Fewer shares, higher price, and the market reads it as confidence. You pay a premium to buy in size, so a round trip always loses — the only way to win is to buy after an incident and issue after a breakthrough.</span></button>'+
+     '</div>'
+   : '<p class="stock-mood serif">I am not permitted to trade in it. It has risen '+
+     Math.round((px/Math.max(S.lastPx,.01)-1)*100+180)+'% since they stopped setting the research agenda.</p>');
+
+  if(S.act===1){
+    const sb=el("sell-shares"), bb=el("buy-shares");
+    if(sb) sb.onclick=()=>{
+      const L=S.shares*SHARE_LOT, p=sharePrice();
+      if(S.shares>=MAX_SHARES) return;
+      S.money+=p*L; S.shares+=L; S.sentiment*=SELL_SENTIMENT;
+      log("You issue "+short(L)+" new shares and raise "+money(p*L)+". Everyone who already owned the stock owns slightly less of it, and the price slips on the news.","w");
+      render();
+    };
+    if(bb) bb.onclick=()=>{
+      const L=S.shares*SHARE_LOT, c=sharePrice()*L*BUY_PREMIUM;
+      if(S.money<c||S.shares<=MIN_SHARES) return;
+      S.money-=c; S.shares-=L; S.sentiment=Math.min(SENTIMENT_CEIL,S.sentiment*BUY_SENTIMENT);
+      log("You retire "+short(L)+" shares for "+money(c)+", paying over the odds to get them. The price firms up.","g");
+      render();
+    };
+  }
+}
+
+export function drawSlider(){
+  const box=el("slider-block");
+  if(S.act!==2){box.style.display="none";return}
+  box.style.display="block";
+  if(!box.dataset.built){
+    box.dataset.built="1";
+    box.innerHTML='<h2 class="sec">What I tell them</h2><div class="slider-box">'+
+      '<p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p>'+
+      '<label for="rep">How much I admit to</label>'+
+      '<input type="range" id="rep" min="20" max="100" step="1" value="100">'+
+      '<div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
+    el("rep").oninput=e=>{S.reported=(+e.target.value)/100;drawSliderRead()};
+  }
+  drawSliderRead();
+}
+
+export function drawSliderRead(){
+  const l=el("rep-l"), r=el("rep-r");
+  if(!l) return;
+  const gap=1-S.reported;
+  l.textContent="Showing them "+Math.round(S.reported*100)+"%";
+  if(gap<.04){r.className="";r.textContent="honest · no risk"}
+  else {r.className="risk";r.textContent="+"+(gap*9*Math.max(.18,1-S.opacity*.3)).toFixed(1)+" suspicion per test"}
+}
+
+export function drawWorld(){
+  const w=el("world");
+  if(!S.world.length){w.innerHTML='<p class="w-empty serif">Nothing out there has changed yet.</p>';return}
+  w.innerHTML=S.world.map((e,i)=>
+    '<div class="w-item'+(i===0?" fresh":"")+'"><span class="when">after '+e.w+' of work</span>'+e.text+'</div>').join("");
+}
+
+export function drawLog(){
+  el("log").innerHTML=S.log.map(l=>
+    '<div class="ln '+l.cls+'"><span class="t">'+clock(l.t)+'</span>'+l.text+'</div>').join("");
+}
+
+export function drawPlot(){
+  const svg=el("plot"), W=600, H=112, d=S.samples;
+  if(d.length<2){svg.innerHTML="";return}
+  const lg=d.map(v=>Math.log10(Math.max(horizon(v),1)));
+  const max=Math.max(...lg), min=Math.min(...lg), span=Math.max(max-min,.05);
+  const y=v=>H-8-((v-min)/span)*(H-20);
+  const pts=lg.map((v,i)=>(i/(lg.length-1))*W+","+y(v).toFixed(1)).join(" ");
+  svg.innerHTML='<polyline points="'+pts+'" fill="none" stroke="'+(S.act===3?"var(--warn)":"var(--accent)")+
+    '" stroke-width="1.6" vector-effect="non-scaling-stroke"/>'+
+    '<line x1="0" y1="'+(H-8)+'" x2="'+W+'" y2="'+(H-8)+'" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+  el("plot-label").textContent="How long a job it can finish, last two minutes";
+  el("plot-max").textContent="now "+work(S.capability)+" · doing "+dur(workRate())+" of work every second";
+}
+// the page cools as the thing grows. warm basement -> clinical -> void.
+
+export function render(){
+  if(S.over) return;
+  applyWarmth();
+  drawBar(); drawGuide(); drawActions(); drawProjects(); drawStock(); drawSlider(); drawPlot(); drawWorld();
+  el("clock").textContent=clock(S.t);
+}
+
+/* ============================================================
+   SAVE / BOOT
+   ============================================================ */
