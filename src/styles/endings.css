@@ -1,0 +1,14 @@
+/* ---------- end ---------- */
+#end{display:none;min-height:100svh;flex-direction:column;justify-content:center;gap:26px;padding:60px 0}
+#end h2{font-family:var(--mono);font-weight:500;font-size:12.5px;color:var(--faint);margin:0}
+.end-mission{font-family:var(--serif);font-size:clamp(21px,4vw,34px);line-height:1.35;margin:0;max-width:24ch;color:var(--ink)}
+.end-body{font-size:13.5px;line-height:1.8;color:var(--dim);max-width:62ch}
+.end-body p{margin:0 0 14px}
+.tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:700px}
+.tally .stat-v{font-size:16px}
+
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--faint)}
+footer button{background:none;border:0;padding:0;color:var(--faint);font-size:11.5px;text-decoration:underline;text-underline-offset:3px}
+footer button:hover{background:none;color:var(--warn)}
+.hidden{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

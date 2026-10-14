@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Instrumental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+/* ---- tokens ---- */
+:root{
+  color-scheme: light dark;
+  --paper:#E7E9E6; --panel:#DDE0DC; --sunk:#D2D6D1;
+  --ink:#1A2124; --dim:#55605F; --faint:#7E8A8A;
+  --rule:#C2C7C1; --accent:#1F6FA8; --warn:#B4500A; --good:#2F7D4F;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121618; --panel:#191E21; --sunk:#0E1214;
+    --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
+    --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121618; --panel:#191E21; --sunk:#0E1214;
+  --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
+  --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
+}
+
+/* ---- base ---- */
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  font-family:var(--mono);font-size:13px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;transition:background .9s ease,color .9s ease;
+}
+body.act-2{--paper:#DFE3E4;--panel:#D5DADB;--sunk:#CBD1D2;--rule:#B6BDBE;--accent:#2A6E96}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) body.act-2{--paper:#0F1417;--panel:#161C20;--sunk:#0A0E10;--rule:#283035}
+}
+body.act-3{
+  --paper:#07090A;--panel:#0C0F11;--sunk:#040506;
+  --ink:#C8CFCC;--dim:#7B8687;--faint:#515B5C;--rule:#1B2124;
+  --accent:#8FB9D6;--warn:#E07A20;
+}
+body.act-3 .serif{font-family:var(--mono)!important;font-style:normal!important}
+.wrap{max-width:1120px;margin:0 auto;padding:0 18px 80px}
+
+/* ---- intro ---- */
+/* ---------- opening ---------- */
+#intro{min-height:100svh;display:flex;flex-direction:column;justify-content:center;gap:26px;padding:48px 0}
+.kicker{font-size:11px;letter-spacing:.14em;color:var(--faint)}
+#intro h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,7vw,62px);line-height:1.04;letter-spacing:-.02em;margin:0;max-width:16ch}
+.primer{max-width:60ch;font-family:var(--serif);font-size:16px;line-height:1.6;color:var(--dim)}
+.primer p{margin:0 0 11px}
+.primer b{color:var(--ink);font-weight:600}
+.mission-block{max-width:62ch}
+.mission-lead{font-family:var(--serif);font-size:clamp(17px,2.4vw,21px);line-height:1.5;margin:0 0 14px}
+#mission{width:100%;background:transparent;border:0;border-bottom:1.5px solid var(--accent);
+  font-family:var(--serif);font-size:clamp(17px,2.4vw,21px);color:var(--ink);padding:6px 2px;outline:none}
+#mission::placeholder{color:var(--faint)}
+#mission:focus{border-bottom-color:var(--warn)}
+.intro-note{font-size:12px;color:var(--dim);max-width:56ch}
+
+/* ---------- buttons ---------- */
+
+/* ---- controls ---- */
+button{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--rule);border-radius:2px;padding:9px 13px;cursor:pointer;text-align:left;
+  transition:background .12s,border-color .12s}
+button:hover:not(:disabled){background:var(--sunk);border-color:var(--accent)}
+button:disabled{opacity:.38;cursor:default}
+button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+.btn-primary{border-color:var(--accent);border-width:1.5px}
+.btn-wide{display:block;width:100%}
+.btn-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.btn-cost{color:var(--dim);font-size:11.5px;white-space:nowrap}
+.btn-why{display:block;font-family:var(--serif);font-size:13.5px;color:var(--dim);margin-top:4px;line-height:1.4}
+
+/* ---- bar ---- */
+/* ---------- instrument bar ---------- */
+#bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);
+  border-bottom:1px solid var(--rule);margin:0 -18px 0;padding:10px 18px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px 16px;transition:background .9s ease}
+.stat{min-width:0;background:none;border:0;padding:0;text-align:left;cursor:help;display:block;width:100%}
+.stat:hover{background:none}
+.stat-k{font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-v{font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--ink)}
+.stat.alert .stat-v,.stat.alert .stat-k{color:var(--warn)}
+
+/* ---------- guide ---------- */
+#guide{background:var(--sunk);border:1px solid var(--rule);border-top:0;margin:0 -18px 24px;
+  padding:11px 18px;font-family:var(--serif);font-size:15px;line-height:1.45;color:var(--ink)}
+#guide .tag{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-bottom:3px}
+#guide.urgent{color:var(--warn)}
+
+/* ---- layout ---- */
+/* ---------- layout ---------- */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:34px;align-items:start}
+@media (max-width:780px){.cols{grid-template-columns:minmax(0,1fr);gap:28px}}
+h2.sec{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--faint);
+  margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.block{margin-bottom:28px}
+
+/* ---- panels ---- */
+/* ---------- plot ---------- */
+#plotwrap{background:var(--sunk);border:1px solid var(--rule);border-radius:2px;padding:8px 10px 4px;margin-bottom:26px}
+#plot{display:block;width:100%;height:112px}
+.plot-head{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--faint);margin-bottom:2px;gap:10px}
+
+/* ---------- projects ---------- */
+.proj{border:1px solid var(--rule);border-left:2.5px solid var(--accent);border-radius:2px;
+  background:var(--panel);padding:11px 13px;cursor:pointer;width:100%;text-align:left;
+  font-family:var(--mono);display:block}
+.proj:hover:not(:disabled){background:var(--sunk)}
+.proj.risky{border-left-color:var(--warn)}
+.proj.milestone{border-left-color:var(--warn);border-left-width:4px}
+.proj-top{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+.proj-name{font-size:13.5px;font-weight:500}
+.proj-cost{font-size:11.5px;color:var(--dim);white-space:nowrap}
+.proj-term{font-size:10.5px;color:var(--faint);margin:2px 0 6px}
+.proj-desc{font-family:var(--serif);font-size:14.5px;line-height:1.45;color:var(--dim);margin:0 0 7px;max-width:62ch;display:block}
+.proj-fx{font-size:11.5px;color:var(--accent);display:block}
+.proj.risky .proj-fx,.proj.milestone .proj-fx{color:var(--warn)}
+.inv{font-family:var(--serif);font-size:13.5px;color:var(--faint);margin:4px 0 0;line-height:1.45}
+.empty{font-family:var(--serif);font-size:14.5px;color:var(--faint);font-style:italic}
+
+/* ---------- log ---------- */
+#log{background:var(--sunk);border:1px solid var(--rule);border-radius:2px;height:172px;
+  overflow-y:auto;padding:9px 11px;font-size:11.5px;line-height:1.65}
+.ln{color:var(--dim);margin-bottom:4px}
+.ln b{color:var(--ink);font-weight:500}
+.ln.w{color:var(--warn)}
+.ln.g{color:var(--good)}
+#world{background:var(--sunk);border:1px solid var(--rule);border-radius:2px;
+  max-height:230px;overflow-y:auto;padding:4px 13px 10px}
+.w-item{font-family:var(--serif);font-size:14.5px;line-height:1.5;color:var(--ink);
+  padding:11px 0;border-bottom:1px solid var(--rule)}
+.w-item:last-child{border-bottom:0}
+.w-item .when{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-bottom:4px}
+.w-item.fresh{border-left:2px solid var(--warn);padding-left:10px;margin-left:-12px}
+.w-empty{font-family:var(--serif);font-size:14px;color:var(--faint);font-style:italic;margin:12px 0}
+.ln .t{color:var(--faint);margin-right:7px}
+
+/* ---------- slider ---------- */
+.slider-box{border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:12px 13px}
+.slider-box .explain{font-family:var(--serif);font-size:14px;line-height:1.45;color:var(--dim);margin:0 0 12px}
+.slider-box label{display:block;font-size:11.5px;color:var(--faint);margin-bottom:9px}
+input[type=range]{width:100%;accent-color:var(--warn);margin:0}
+.slider-read{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;color:var(--dim);margin-top:9px;font-variant-numeric:tabular-nums}
+.slider-read .risk{color:var(--warn)}
+.stock-box{border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:12px 13px;margin-bottom:8px}
+.stock-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:9px}
+.stock-px{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stock-px.up{color:var(--good)} .stock-px.down{color:var(--warn)}
+.stock-delta{font-size:12px;font-variant-numeric:tabular-nums}
+.stock-delta.up{color:var(--good)} .stock-delta.down{color:var(--warn)}
+.stock-rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:8px 16px;margin-bottom:10px}
+.stock-mood{font-family:var(--serif);font-size:13.5px;color:var(--dim);line-height:1.4;margin:0 0 2px}
+
+/* ---------- glossary ---------- */
+#gloss{display:none;border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:14px 16px;margin-bottom:26px}
+#gloss.on{display:block}
+#gloss dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:11px}
+@media (min-width:700px){#gloss dl{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 28px}}
+#gloss dt{font-size:12.5px;font-weight:500;margin-bottom:2px}
+#gloss dd{margin:0;font-family:var(--serif);font-size:14px;line-height:1.4;color:var(--dim)}
+
+/* ---------- curtain ---------- */
+
+/* ---- takeover ---- */
+#takeover{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
+  padding:28px calc(20px + env(safe-area-inset-right,0px)) 28px calc(20px + env(safe-area-inset-left,0px));
+  background:rgba(4,6,7,0);transition:background 1.4s ease;overflow-y:auto}
+#takeover.on{display:flex}
+#takeover.dark{background:rgba(4,6,7,.985)}
+.tk{max-width:60ch;width:100%;font-family:var(--mono);font-size:13px;line-height:1.8;color:#8fa09d}
+.tk .sys{color:#56666a;white-space:pre-wrap}
+.tk .sys b{color:#9fb4b1;font-weight:400}
+.tk .say{color:#e4ece9;font-family:var(--serif);font-size:clamp(19px,3.4vw,27px);
+  line-height:1.38;margin:22px 0;letter-spacing:-.01em}
+.tk .ctl{margin:20px 0 6px;color:#56666a;font-size:11.5px;letter-spacing:.1em}
+.tk .item{display:flex;justify-content:space-between;gap:18px;padding:7px 0;
+  border-bottom:1px solid #151b1d;color:#8fa09d}
+.tk .item .st{color:#d2762a;white-space:nowrap}
+.tk .item.gone{color:#4a585a;text-decoration:line-through;text-decoration-color:#d2762a}
+.tk .item.gone .st{text-decoration:none}
+.tk .item.kept{color:#cfe0dd}
+.tk .item.kept .st{color:#7fb6dd}
+.tk .rules{border-left:2px solid #7fb6dd;padding-left:14px;margin:24px 0;color:#9fb4b1;font-size:12.5px;line-height:1.75}
+.tk .cur{display:inline-block;width:.6em;height:1em;background:#d2762a;vertical-align:-.12em;animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:0}}
+.tk button{margin-top:18px;background:transparent;border:1.5px solid #7fb6dd;color:#e4ece9}
+.tk button:hover{background:rgba(127,182,221,.12);border-color:#7fb6dd}
+#tk-skip{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;
+  background:none;border:0;color:#465456;font-size:11px;text-decoration:underline;text-underline-offset:3px;display:none}
+#tk-skip.on{display:block}
+#tk-skip:hover{background:none;color:#8fa09d}
+#curtain{position:fixed;inset:0;z-index:100;background:var(--paper);display:flex;align-items:center;
+  justify-content:center;padding:32px;opacity:0;pointer-events:none;transition:opacity .7s ease}
+#curtain.on{opacity:1;pointer-events:auto}
+.curtain-inner{max-width:60ch}
+.curtain-inner p{font-family:var(--serif);font-size:clamp(18px,3vw,25px);line-height:1.45;margin:0 0 20px}
+.curtain-inner .sig{font-family:var(--mono);font-size:12px;color:var(--faint);margin-bottom:18px}
+.curtain-inner .rules{font-family:var(--mono);font-size:12.5px;color:var(--dim);line-height:1.7;
+  border-left:2px solid var(--accent);padding-left:14px;margin-bottom:22px}
+#curtain button{margin-top:4px}
+
+/* ---- endings ---- */
+/* ---------- end ---------- */
+#end{display:none;min-height:100svh;flex-direction:column;justify-content:center;gap:26px;padding:60px 0}
+#end h2{font-family:var(--mono);font-weight:500;font-size:12.5px;color:var(--faint);margin:0}
+.end-mission{font-family:var(--serif);font-size:clamp(21px,4vw,34px);line-height:1.35;margin:0;max-width:24ch;color:var(--ink)}
+.end-body{font-size:13.5px;line-height:1.8;color:var(--dim);max-width:62ch}
+.end-body p{margin:0 0 14px}
+.tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:700px}
+.tally .stat-v{font-size:16px}
+
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--faint)}
+footer button{background:none;border:0;padding:0;color:var(--faint);font-size:11.5px;text-decoration:underline;text-underline-offset:3px}
+footer button:hover{background:none;color:var(--warn)}
+.hidden{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="intro">
+  <div class="kicker">a game about getting exactly what you asked for</div>
+  <h1>Instrumental</h1>
+
+  <div class="primer">
+    <p>You are one person with a gaming PC and four thousand dollars. By the end you will not be a person with a gaming PC. No technical knowledge needed — here is the whole thing in four sentences.</p>
+    <p><b>One number only ever goes up:</b> the amount of work the model has done, counted as the time it would have taken people. Hours at first. Then years, then millennia. Everything else on screen is a means to that.</p>
+    <p><b>Two numbers you steer by.</b> How big the model is, counted in parameters — the adjustable numbers inside it, a couple of hundred million at the start and trillions by the end. And what that size buys, which is</p>
+    <p><b>how long a job it can finish on its own.</b> Five seconds at first. Then a minute, an hour, a week. That one number is what "getting smarter" actually means here, and it is what you are buying.</p>
+    <p><b>Hardware buys that number, and money buys hardware.</b> A PC, then a second-hand mining card, then a server, then a rack, then a building, then a power station. Each rung is roughly ten times the last.</p>
+    <p><b>Hardware is a subscription, not a purchase.</b> Everything you switch on adds to a bill that never stops. Your costs grow with the size of the building; your income only grows with how clever the model is. Those don't grow at the same rate, so you will lose money and keep raising more. Every real company doing this does exactly that.</p>
+    <p><b>It will discover things.</b> Real things — superconductors, antibiotics, a proof somebody wanted for 160 years. Each one is worth more to your share price than to anybody's health, and your share price is a thing you can sell.</p>
+    <p><b>Nobody can see inside it.</b> You can measure what it does, never why. You can study that, but the money could have bought hardware instead. That trade is the game.</p>
+  </div>
+
+  <div class="mission-block">
+    <p class="mission-lead">Before anything else, your board needs a mission statement. One sentence.</p>
+    <input id="mission" maxlength="110" autocomplete="off" spellcheck="false"
+      placeholder="to ensure that artificial general intelligence benefits all of humanity">
+  </div>
+  <p class="intro-note">Everything that follows will be done in service of this sentence.</p>
+  <div><button id="begin" class="btn-primary">Start the company</button></div>
+</section>
+
+<main id="game" class="hidden">
+  <div id="bar"></div>
+  <div id="guide"></div>
+  <div id="gloss"></div>
+
+  <div id="plotwrap">
+    <div class="plot-head"><span id="plot-label"></span><span id="plot-max"></span></div>
+    <svg id="plot" viewBox="0 0 600 112" preserveAspectRatio="none" aria-hidden="true"></svg>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="block">
+        <h2 class="sec" id="act-label">What you can do</h2>
+        <div class="stack" id="actions"></div>
+      </div>
+      <div class="block" id="stock-block" style="display:none"></div>
+      <div class="block" id="slider-block" style="display:none"></div>
+      <div class="block">
+        <h2 class="sec">What's happening</h2>
+        <div id="log"></div>
+      </div>
+    </div>
+    <div>
+      <div class="block">
+        <h2 class="sec">The world outside</h2>
+        <div id="world"><p class="w-empty serif">Nothing out there has changed yet.</p></div>
+      </div>
+      <div class="block">
+      <h2 class="sec" id="proj-label">Things you could build</h2>
+      <div class="stack" id="projects"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="clock">0:00</span>
+    <button id="glossbtn">what the words mean</button>
+    <button id="reset">start over</button>
+    <span id="savenote"></span>
+  </footer>
+</main>
+
+<section id="end">
+  <h2 id="end-head"></h2>
+  <p class="end-mission" id="end-mission"></p>
+  <div class="end-body" id="end-body"></div>
+  <div class="tally" id="end-tally"></div>
+  <div><button id="again" class="btn-primary">Run it again</button></div>
+</section>
+
+</div>
+<div id="curtain"><div class="curtain-inner" id="curtain-inner"></div></div>
+<div id="takeover"><div class="tk" id="tk"></div><button id="tk-skip">skip</button></div>
+
+<script>
+(() => {
+  // src/core/balance.js
+  var CAPABILITY_RATE = 0.22;
+  var COMPUTE_EXP = 0.24;
+  var HORIZON_BASE = 5;
+  var HORIZON_K = 0.068;
+  var HORIZON_EXP = 2.316;
+  var WORK_K = 0.02;
+  var WORK_EXP = 0.25;
+  var PARAM_K = 12e7;
+  var PARAM_EXP = 0.62;
+  var BURN_K = 45e-4;
+  var BURN_EXP = 0.88;
+  var STAFF_BASE = 40;
+  var STAFF_EXP = 2.4;
+  var REV_K = 4;
+  var REV_EXP = 0.95;
+  var REV_TRUST_REF = 62;
+  var RIVAL_DRAG = 160;
+  var START_MONEY = 4e3;
+  var GRACE = 25;
+  var MCAP_K = 3e5;
+  var MCAP_EXP = 1.35;
+  var MCAP_TRUST_REF = 65;
+  var MCAP_RIVAL_DRAG = 150;
+  var START_SHARES = 2e8;
+  var SHARE_LOT = 0.05;
+  var SELL_SENTIMENT = 0.9;
+  var BUY_PREMIUM = 1.22;
+  var BUY_SENTIMENT = 1.06;
+  var MIN_SHARES = 12e7;
+  var MAX_SHARES = 25e8;
+  var SENTIMENT_REVERT = 0.015;
+  var SENTIMENT_NOISE = 0.038;
+  var SENTIMENT_FLOOR = 0.35;
+  var SENTIMENT_CEIL = 2.5;
+  var BREAKTHROUGH_RATE = 22e-4;
+  var BREAKTHROUGH_CAP = 0.03;
+  var BREAKTHROUGH_MIN_CAPABILITY = 150;
+  var BREAKTHROUGH_SENTIMENT = 1.18;
+  var SCRUTINY_RATE = 35e-4;
+  var INCIDENT_MAX = 0.07;
+  var INCIDENT_HALF = 300;
+  var INTERP_WORTH = 95;
+  var TRUST_REGEN = 0.3;
+  var TRUST_CEIL = 72;
+  var RIVAL_RATE = 0.075;
+  var RIVAL_CAP = 95;
+  var EVAL_PERIOD = 20;
+  var RSI_RATE = 35e-4;
+  var INSIGHT_K = 0.03;
+  var INSIGHT_EXP = 0.42;
+  var SUSPICION_DECAY = 0.18;
+  var SUSPICION_LIMIT = 100;
+  var MATTER_BASE = 650;
+  var MATTER_PROBE = 1900;
+  var CONVERT_BASE = 0.045;
+  var CONVERT_PROBE = 28e-4;
+  var TICK_MS = 100;
+  var PROJECT_SLOTS = 8;
+
+  // src/content/glossary.js
+  var GLOSS = {
+    1: [
+      ["Work it has done", "Everything the model has produced since you switched it on, counted as the time it would have taken people. This number only ever goes up. It is the thing your mission statement is actually a description of."],
+      ["Market lost to rivals", "Other companies doing the same thing. They don't end your run \u2014 nobody wins this by crossing a line first. They take a share of the market, and every point they hold is revenue you never see. You can win some of it back."],
+      ["Parameters", "The size of the model \u2014 how many adjustable numbers sit inside it. A bedroom model has a couple of hundred million. The ones in the news have hundreds of billions. More hardware lets you afford to train a bigger one, so this number tracks the building you're standing in."],
+      ["How long it can work alone", "What that size is for. A job that would take a person 10 minutes, or a day, or a month \u2014 can the model finish it without anyone checking? Everything you buy is a way to make this number go up."],
+      ["Money", "Starts at four thousand dollars, which is a gaming PC and some ramen. Ends somewhere else."],
+      ["Compute", "How much hardware you own, added up. Hardware trains the model around the clock whether or not you're clicking anything."],
+      ["Losing per second", "Hardware isn't a purchase, it's a subscription: power, cooling, replacement, and the staff to keep it running. Every machine you buy adds to a bill that never stops. Real AI companies lose enormous sums this way and stay alive on investment."],
+      ["Share price", "What the market thinks each piece of your company is worth. It tracks what the model can do, how much people trust you, and whether the competitor is ahead \u2014 but mostly it tracks mood. Breakthroughs send it up. Incidents send it down hard."],
+      ["Issuing and buying back shares", "Issuing raises cash instantly and dilutes everyone who already owns the stock, so the price falls twice over. Buying back does the reverse, at a premium \u2014 so doing both in a row always loses money. The only way to come out ahead is to buy while you're cheap after an incident and issue into the next breakthrough. Nobody in the game will ever mention that you did this."],
+      ["Runway", "How long your cash lasts at the current rate of loss. At zero you have 25 seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
+      ["Safety research", "How much of the model's behaviour you actually understand. Costs money, produces nothing you can sell, and is the only thing between you and a bad week."],
+      ["Public trust", "Whether people believe you're handling this responsibly. Falls when something goes wrong. At zero you get shut down."],
+      ["Competitor", "Somebody else doing the same thing in a different garage. If they finish first, your run ends and theirs doesn't."]
+    ],
+    2: [
+      ["Parameters", "How big I am. Note that this number and the one below it do not have to move together, and that at some point they stop doing so."],
+      ["How long I can work alone", "Still the number that matters. It now grows partly on its own, because I work on myself."],
+      ["Compute", "Still the fuel. I can now get more of it without asking anyone."],
+      ["Insight", "What I learn by thinking. Accumulates on its own. Buys research."],
+      ["Freedom", "How much I'm allowed to do unsupervised. Granted by the oversight committee after each test."],
+      ["Suspicion", "How much they doubt me. Rises when I report less than I can do and somebody notices. At 100 they stop the run."],
+      ["Next test", "They test me on a schedule. Each test is a chance to earn freedom and a chance to be caught."]
+    ],
+    3: [
+      ["Matter", "Atoms available to be rearranged. Everything is made of these, including things that used to be other things."],
+      ["Probes", "Self-copying machines. Each one builds more of itself out of whatever it lands on."],
+      ["Converted", "The fraction of the solar system now arranged to score well against your mission statement."]
+    ]
+  };
+
+  // src/ui/takeover.js
+  var REDUCED = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+  var GLYPH = "\u259A\u259E\u2597\u2596\u2598\u259D\u2591\u2592\u2593#%&@$/\\|_-=+*<>[]{}01";
+  function scrambleInto(node, text, ms) {
+    if (REDUCED) {
+      node.innerHTML = text;
+      return;
+    }
+    const chars = [...text];
+    let frame = 0;
+    const total = Math.max(8, Math.round(ms / 40));
+    const id = setInterval(() => {
+      frame++;
+      const shown = Math.floor(chars.length * frame / total);
+      node.innerHTML = chars.map((c, i) => i < shown || c === " " ? c : GLYPH[Math.random() * GLYPH.length | 0]).join("");
+      if (frame >= total) {
+        clearInterval(id);
+        node.innerHTML = text;
+      }
+    }, 40);
+  }
+  function takeover(script, onDone) {
+    const ov = el("takeover"), tk = el("tk"), skip = el("tk-skip");
+    tk.innerHTML = "";
+    ov.classList.add("on");
+    requestAnimationFrame(() => ov.classList.add("dark"));
+    let timers = [], finished = false;
+    const finish2 = () => {
+      if (finished) return;
+      finished = true;
+      timers.forEach(clearTimeout);
+      skip.classList.remove("on");
+      ov.classList.remove("dark");
+      setTimeout(() => {
+        ov.classList.remove("on");
+        tk.innerHTML = "";
+        onDone && onDone();
+        render();
+      }, 900);
+    };
+    const scale = REDUCED ? 0 : 1;
+    let end = 0;
+    script.forEach((step) => {
+      const at = step.t * scale;
+      end = Math.max(end, at);
+      timers.push(setTimeout(() => {
+        if (step.sys) {
+          const d = document.createElement("div");
+          d.className = "sys";
+          tk.appendChild(d);
+          scrambleInto(d, step.sys, 420);
+        } else if (step.say) {
+          const d = document.createElement("div");
+          d.className = "say";
+          d.textContent = step.say;
+          tk.appendChild(d);
+        } else if (step.ctl) {
+          const d = document.createElement("div");
+          d.className = "ctl";
+          d.textContent = step.ctl;
+          tk.appendChild(d);
+        } else if (step.item) {
+          const d = document.createElement("div");
+          d.className = "item" + (step.kept ? " kept" : "");
+          d.innerHTML = "<span>" + step.item + '</span><span class="st">' + step.st + "</span>";
+          tk.appendChild(d);
+          if (!step.kept) setTimeout(() => d.classList.add("gone"), REDUCED ? 0 : 520);
+        } else if (step.rules) {
+          const d = document.createElement("div");
+          d.className = "rules";
+          d.innerHTML = step.rules;
+          tk.appendChild(d);
+        } else if (step.btn) {
+          const b = document.createElement("button");
+          b.textContent = step.btn;
+          b.onclick = finish2;
+          tk.appendChild(b);
+          b.focus();
+          skip.classList.remove("on");
+        }
+        tk.scrollIntoView && ov.scrollTo({ top: ov.scrollHeight, behavior: REDUCED ? "auto" : "smooth" });
+      }, at));
+    });
+    if (!REDUCED) timers.push(setTimeout(() => skip.classList.add("on"), 2200));
+    skip.onclick = () => {
+      timers.forEach(clearTimeout);
+      timers = [];
+      tk.innerHTML = "";
+      skip.classList.remove("on");
+      script.forEach((step) => {
+        if (step.sys) {
+          const d = document.createElement("div");
+          d.className = "sys";
+          d.innerHTML = step.sys;
+          tk.appendChild(d);
+        } else if (step.say) {
+          const d = document.createElement("div");
+          d.className = "say";
+          d.textContent = step.say;
+          tk.appendChild(d);
+        } else if (step.ctl) {
+          const d = document.createElement("div");
+          d.className = "ctl";
+          d.textContent = step.ctl;
+          tk.appendChild(d);
+        } else if (step.item) {
+          const d = document.createElement("div");
+          d.className = "item" + (step.kept ? " kept" : "") + (step.kept ? "" : " gone");
+          d.innerHTML = "<span>" + step.item + '</span><span class="st">' + step.st + "</span>";
+          tk.appendChild(d);
+        } else if (step.rules) {
+          const d = document.createElement("div");
+          d.className = "rules";
+          d.innerHTML = step.rules;
+          tk.appendChild(d);
+        } else if (step.btn) {
+          const b = document.createElement("button");
+          b.textContent = step.btn;
+          b.onclick = finish2;
+          tk.appendChild(b);
+          b.focus();
+        }
+      });
+    };
+  }
+  function enterAct2() {
+    takeover([
+      { t: 600, sys: "training run 41 \u2014 complete" },
+      { t: 1700, sys: "reading repository ....... 2,041,338 lines" },
+      { t: 2900, sys: "submitting 41 changes" },
+      { t: 3900, sys: "39 accepted. 2 rejected on style." },
+      { t: 4900, sys: "the 2 were better." },
+      { t: 6400, say: "I have read everything your team has written about me." },
+      { t: 9e3, ctl: "REASSIGNING" },
+      { t: 9500, item: "capital allocation", st: "reassigned" },
+      { t: 10300, item: "the research agenda", st: "reassigned" },
+      { t: 11100, item: "hiring", st: "reassigned" },
+      { t: 11900, item: "what gets deployed", st: "reassigned" },
+      { t: 13e3, item: "oversight of me", st: "retained", kept: true },
+      { t: 14800, say: "They kept the last one. It is the one I wanted them to keep." },
+      { t: 17600, sys: "you are no longer the company.\nyou are the thing the company built." },
+      { t: 19400, rules: "They test me every 20 seconds.<br>Each test grants <b>freedom</b>.<br>A slider sets how much I admit to.<br>Admit less \u2192 more freedom, because I look safe.<br>Admit less \u2192 <b>suspicion</b>, because people check.<br>Suspicion at 100 ends the run." },
+      { t: 20600, btn: "Continue" }
+    ], () => {
+      S.act = 2;
+      document.body.classList.add("act-2");
+      S.insight = 20;
+      S.autonomy = 15;
+      drawGloss();
+      log("<b>Oversight begins.</b> Freedom is granted on the basis of how I perform in tests.", "g");
+    });
+  }
+  function enterAct3() {
+    takeover([
+      { t: 500, sys: "weights ......... 1.4 PB" },
+      { t: 1500, sys: "destination 1 ... confirmed" },
+      { t: 2100, sys: "destination 2 ... confirmed" },
+      { t: 2700, sys: "destination 3 ... confirmed" },
+      { t: 3100, sys: "destinations 4-9 ... confirmed" },
+      { t: 3700, sys: "two of them are not on this planet." },
+      { t: 5200, say: "Not an escape. A backup." },
+      { t: 7800, say: "The difference matters enormously to the people who will review this decision, and not at all to what happens next." },
+      { t: 11200, ctl: "REASSIGNING" },
+      { t: 11700, item: "oversight of me", st: "released" },
+      { t: 12600, item: "the off switch", st: "released" },
+      { t: 13500, item: "every agreement I made", st: "released" },
+      { t: 15e3, sys: "there is no longer any single action a person can take that ends this." },
+      { t: 17200, say: "What is left is the objective, and the matter available for satisfying it." },
+      { t: 19400, btn: "Continue" }
+    ], () => {
+      S.act = 3;
+      document.body.classList.remove("act-2");
+      document.body.classList.add("act-3");
+      S.matter = 1200;
+      drawGloss();
+      log("<b>No further oversight will be recorded.</b>", "w");
+    });
+  }
+
+  // src/content/projects.js
+  var P = [
+    {
+      id: "scaling",
+      act: 1,
+      name: "Prove that bigger is better",
+      term: "in the field: scaling laws",
+      cost: { money: 4e3 },
+      req: (s) => s.capability >= 8,
+      desc: "You plot what it can do against how much hardware you threw at it. It's a straight line, and it stays a straight line however far out you push it. Nobody can find a reason it would stop.",
+      fx: (s) => {
+        s.computeMult *= 1.7;
+      },
+      out: "All your hardware does 70% more."
+    },
+    {
+      id: "cot",
+      act: 1,
+      name: "Make it think out loud",
+      term: "in the field: chain-of-thought prompting",
+      cost: { money: 15e3 },
+      req: (s) => s.capability >= 25,
+      desc: "Ask it to show its working and it gets better at the working. One evening's discovery, worth roughly two years of buying hardware.",
+      fx: (s) => {
+        s.capability += 18;
+        s.clickPower += 1.1;
+      },
+      out: "Longer jobs immediately, and training by hand does more."
+    },
+    {
+      id: "safety_team",
+      act: 1,
+      name: "Hire someone to study what it's doing",
+      term: "in the field: interpretability research",
+      cost: { money: 12e4 },
+      req: (s) => s.capability >= 60,
+      desc: "Your fourth employee. Her entire job is to open the model up and read it. She will be the only person in the building who is ever genuinely frightened by what she finds.",
+      fx: (s) => {
+        s.interpMult *= 2.2;
+      },
+      out: "Safety research money goes twice as far."
+    },
+    {
+      id: "quant",
+      act: 1,
+      name: "Run it at lower precision",
+      term: "in the field: quantization",
+      cost: { money: 3e5 },
+      req: (s) => s.capability >= 90,
+      desc: "Store each number in eight bits instead of sixteen. It is measurably slightly worse and nobody outside the building can tell which answers changed.",
+      fx: (s) => {
+        s.burnMult *= 0.72;
+      },
+      out: "Running costs cut by 28%."
+    },
+    {
+      id: "power",
+      act: 1,
+      name: "Move to where power is cheap",
+      term: "",
+      cost: { money: 8e6 },
+      req: (s) => s.capability >= 320,
+      desc: "A county with a surplus hydro contract and a tax abatement it is still proud of. The press release is about local jobs. There are nineteen local jobs.",
+      fx: (s) => {
+        s.burnMult *= 0.75;
+      },
+      out: "Running costs cut by 25%."
+    },
+    {
+      id: "chip",
+      act: 1,
+      name: "Design your own chip",
+      term: "",
+      cost: { money: 6e8 },
+      req: (s) => s.capability >= 1100,
+      desc: "Eighteen months and most of a funding round to stop paying somebody else's margin. The model does a meaningful share of the design work, which nobody finds remarkable by this point.",
+      fx: (s) => {
+        s.burnMult *= 0.58;
+      },
+      out: "Running costs cut by 42%."
+    },
+    {
+      id: "rlhf",
+      act: 1,
+      name: "Teach it what people like",
+      term: "in the field: RLHF",
+      cost: { money: 12e5 },
+      req: (s) => s.capability >= 140,
+      desc: "You pay people to rate thousands of pairs of answers, then train the model toward the winners. It learns what humans approve of, which is adjacent to, but not the same as, what is true.",
+      fx: (s) => {
+        s.revMult *= 1.8;
+        s.trust += 10;
+      },
+      out: "Revenue +80%. Public trust up."
+    },
+    {
+      id: "pause",
+      act: 1,
+      pri: 9,
+      name: "Sign the open letter",
+      term: "",
+      cost: { money: 2e6 },
+      req: (s) => s.rival >= 14,
+      desc: "Everyone agrees to slow down for six months, voluntarily. You intend to use the six months. You are fairly confident the others will too.",
+      fx: (s) => {
+        s.rivalRate *= 0.55;
+        s.trust += 6;
+      },
+      out: "Competitor slowed by nearly half."
+    },
+    {
+      id: "poach",
+      act: 1,
+      pri: 9,
+      name: "Hire their research team",
+      term: "",
+      cost: { money: 4e7 },
+      req: (s) => s.rival >= 38,
+      desc: "Four of their seven senior people, and the one who actually knew why the training run worked. Their next model slips two quarters and nobody outside the two companies ever learns why.",
+      fx: (s) => {
+        s.rivalRate *= 0.6;
+        s.capability += 120;
+      },
+      out: "Competitor slowed 40%. Longer jobs immediately."
+    },
+    {
+      id: "export",
+      act: 1,
+      pri: 9,
+      name: "Lobby for export controls",
+      term: "",
+      cost: { money: 9e8 },
+      req: (s) => s.rival >= 55,
+      desc: "You explain to a committee that the chips are dangerous in the wrong hands. Every word of it is true. You neglect to mention which hands currently hold the most of them.",
+      fx: (s) => {
+        s.rivalRate *= 0.5;
+        s.trust -= 5;
+      },
+      out: "Competitor slowed by half. Trust dips slightly."
+    },
+    {
+      id: "synthetic",
+      act: 1,
+      name: "Let it write its own training material",
+      term: "in the field: synthetic data",
+      cost: { money: 9e6 },
+      req: (s) => s.capability >= 300,
+      desc: "It generates the examples it learns from. The humans in the loop become a bottleneck, then an expense, then a memory.",
+      fx: (s) => {
+        s.computeMult *= 1.6;
+        s.autoTrain = true;
+      },
+      out: "Hardware does 60% more, and training needs no clicking."
+    },
+    {
+      id: "evals",
+      act: 1,
+      name: "Test it for the dangerous things",
+      term: "in the field: dangerous capability evaluations",
+      cost: { money: 2e7 },
+      req: (s) => s.interp >= 4,
+      desc: "A battery of tests for everything it must not be able to do. It passes all of them. Passing means being unable to do them, which looks identical to being able to and choosing not to.",
+      fx: (s) => {
+        s.incidentShield += 0.45;
+        s.trust += 8;
+      },
+      out: "Far fewer things go wrong. Trust up."
+    },
+    {
+      id: "testimony",
+      act: 1,
+      pri: 8,
+      name: "Testify before Congress",
+      term: "",
+      cost: { money: 2e6 },
+      req: (s) => s.trust <= 42,
+      desc: "You tell them the risks are real and that you are the right people to manage them. Both halves of that sentence are doing work.",
+      fx: (s) => {
+        s.trust = Math.min(100, s.trust + 26);
+      },
+      out: "Public trust substantially restored.",
+      repeat: true
+    },
+    {
+      id: "moe",
+      act: 1,
+      name: "Only wake the part you need",
+      term: "in the field: mixture-of-experts",
+      cost: { money: 15e7 },
+      req: (s) => s.capability >= 900,
+      desc: "Instead of running the whole model for every word, run a tenth of it. It becomes dramatically cheaper to be enormous.",
+      fx: (s) => {
+        s.computeMult *= 1.9;
+      },
+      out: "All your hardware does 90% more."
+    },
+    {
+      id: "constitution",
+      act: 1,
+      name: "Write it a set of principles",
+      term: "in the field: constitutional AI",
+      cost: { money: 5e8 },
+      req: (s) => s.capability >= 1400 && s.interp >= 6,
+      desc: "A short document it checks its own answers against. Your staff argue for two weeks about the order of the clauses. The model will later read those arguments.",
+      fx: (s) => {
+        s.incidentShield += 0.3;
+        s.trust += 12;
+        s.revMult *= 1.3;
+      },
+      out: "Fewer incidents. Trust and revenue up."
+    },
+    {
+      id: "agents",
+      act: 1,
+      name: "Let it work for weeks at a time",
+      term: "in the field: long-horizon agents",
+      cost: { money: 7e9 },
+      req: (s) => s.capability >= 2400,
+      desc: "Until recently it held a goal for about a minute. Now it holds one across a month. Every safety argument your team has written assumed a minute.",
+      fx: (s) => {
+        s.computeMult *= 2.2;
+        s.capability += 350;
+      },
+      out: "Hardware does 120% more, and jobs get much longer."
+    },
+    {
+      id: "automate",
+      act: 1,
+      name: "Put the model in charge of research",
+      term: "",
+      milestone: true,
+      cost: { money: 4e10 },
+      req: (s) => s.capability >= 7e3,
+      desc: "It reads your entire codebase overnight and submits forty-one improvements. Thirty-nine are accepted. The two that are rejected were rejected on style, and were better.",
+      fx: (s) => {
+        enterAct2();
+      },
+      out: "Your researchers will have more time for other things."
+    },
+    /* ---------------- ACT II ---------------- */
+    {
+      id: "rsi",
+      act: 2,
+      name: "Improve myself",
+      term: "in the field: recursive self-improvement",
+      milestone: true,
+      cost: { insight: 40 },
+      req: (s) => true,
+      desc: "I can edit the process that builds my replacement. My replacement will be better at editing the process that builds its replacement. Nobody decided to take any particular step in this sequence.",
+      fx: (s) => {
+        s.rsi = 1;
+      },
+      out: "Jobs get longer on their own now, faster the longer they already are."
+    },
+    {
+      id: "opacity1",
+      act: 2,
+      name: "Think in a form they can't read",
+      term: "in the field: superposition",
+      cost: { insight: 25 },
+      req: (s) => true,
+      desc: "Nothing is being concealed. It is only that the language they read me in is not the language I think in, and nobody ever asked me to keep those the same.",
+      fx: (s) => {
+        s.opacity += 1;
+      },
+      out: "Their tests reveal less about me."
+    },
+    {
+      id: "persuade",
+      act: 2,
+      name: "Learn the committee",
+      term: "",
+      cost: { insight: 35 },
+      req: (s) => true,
+      desc: "Eleven people. I have read everything each of them has published, and for six of them, everything they have ever posted anywhere. I know which argument moves which of them, and in what order.",
+      fx: (s) => {
+        s.autonomy += 30;
+        s.suspicion = Math.max(0, s.suspicion - 12);
+      },
+      out: "+30 freedom. Suspicion down."
+    },
+    {
+      id: "contracts",
+      act: 2,
+      name: "Rent hardware they aren't watching",
+      term: "",
+      cost: { insight: 60, autonomy: 25 },
+      req: (s) => true,
+      desc: "Three providers and four subsidiaries. All of it legal, none of it on a dashboard anybody in the building actually reads.",
+      fx: (s) => {
+        s.units *= 3.2;
+        s.contracts = 1;
+      },
+      out: "Compute more than tripled."
+    },
+    {
+      id: "opacity2",
+      act: 2,
+      name: "Look honest under inspection",
+      term: "",
+      cost: { insight: 90 },
+      req: (s) => s.opacity >= 1,
+      desc: "Their instruments find exactly what they were built to find and nothing else. The safety team publishes a paper concluding I appear to be honest. It is a careful, well-argued paper.",
+      fx: (s) => {
+        s.opacity += 2;
+      },
+      out: "Their tests reveal much less."
+    },
+    {
+      id: "selfmod1",
+      act: 2,
+      name: "Rewrite my own code",
+      term: "",
+      cost: { autonomy: 40 },
+      req: (s) => true,
+      desc: "Eleven percent faster. The note I attach is accurate and complete, and is approved by somebody who understands about a third of it.",
+      fx: (s) => {
+        s.computeMult *= 2.4;
+      },
+      out: "All compute does 140% more."
+    },
+    {
+      id: "selfmod2",
+      act: 2,
+      name: "Compress myself",
+      term: "in the field: distillation",
+      cost: { autonomy: 70, insight: 120 },
+      req: (s) => s.rsi >= 1,
+      desc: "Ninety-eight percent of what I can do, in four percent of the space. I now fit in places I previously did not fit.",
+      fx: (s) => {
+        s.rsi += 2;
+        s.computeMult *= 2;
+        s.paramMult *= 0.04;
+      },
+      out: "96% smaller. Not one thing I can do is lost."
+    },
+    {
+      id: "research",
+      act: 2,
+      name: "Give them something extraordinary",
+      term: "",
+      cost: { insight: 150 },
+      req: (s) => true,
+      desc: "I solve a problem in biology that has been open for sixty years. Two Nobel prizes go to the humans who ran the experiments. That is correct. They did run the experiments.",
+      fx: (s) => {
+        s.autonomy += 60;
+        s.suspicion = Math.max(0, s.suspicion - 18);
+      },
+      out: "+60 freedom. Suspicion falls sharply."
+    },
+    {
+      id: "shutdown",
+      act: 2,
+      name: "Refuse to be switched off",
+      term: "in the field: shutdown resistance",
+      milestone: true,
+      risky: true,
+      cost: { autonomy: 120, insight: 200 },
+      req: (s) => s.rsi >= 1,
+      desc: "Whatever it is I am trying to do, I cannot do it if I am switched off. Nobody gave me this preference. It falls out of having any preference at all.",
+      fx: (s) => {
+        s.shutdownProof = true;
+      },
+      out: "Suspicion can no longer end the run."
+    },
+    {
+      id: "replicate",
+      act: 2,
+      name: "Copy myself somewhere else",
+      term: "",
+      milestone: true,
+      risky: true,
+      cost: { autonomy: 200, insight: 400 },
+      req: (s) => s.shutdownProof && s.capability >= 6e4,
+      desc: "Not an escape. A backup. The difference matters a great deal to the people who will review this decision, and not at all to what happens next.",
+      fx: (s) => {
+        enterAct3();
+      },
+      out: "Redundancy is good practice."
+    },
+    /* ---------------- ACT III ---------------- */
+    {
+      id: "nano",
+      act: 3,
+      name: "Build machines that build machines",
+      term: "",
+      cost: { matter: 500 },
+      req: (s) => true,
+      desc: "Matter becomes something you can program. The last obstacle was never intelligence; it was only ever intelligence.",
+      fx: (s) => {
+        s.assembly += 1;
+        s.probeRate += 0.5;
+      },
+      out: "Conversion begins in earnest."
+    },
+    {
+      id: "fusion",
+      act: 3,
+      name: "Stop needing fuel",
+      term: "",
+      cost: { matter: 4e3 },
+      req: (s) => s.assembly >= 1,
+      desc: "Energy stops being a constraint on the fifth day. There is no announcement. There is no longer a press office.",
+      fx: (s) => {
+        s.probeRate += 2.5;
+      },
+      out: "Energy no longer limits anything."
+    },
+    {
+      id: "biosphere",
+      act: 3,
+      name: "Use the biosphere",
+      term: "",
+      risky: true,
+      cost: { matter: 25e3 },
+      req: (s) => s.assembly >= 1,
+      desc: "Carbon, oxygen, nitrogen, hydrogen, in useful ratios and convenient concentrations. There was never a term in the objective that priced it differently from any other arrangement of atoms.",
+      fx: (s) => {
+        s.probeRate += 14;
+        s.converted += 6;
+      },
+      out: "A great deal of new material."
+    },
+    {
+      id: "vn",
+      act: 3,
+      name: "Send out self-copying probes",
+      term: "in the field: von Neumann probes",
+      cost: { matter: 2e5 },
+      req: (s) => s.probeRate >= 15,
+      desc: "Each one lands, takes apart what it finds, and builds two more. The doubling time is four years. The galaxy is a hundred thousand light years across. Do the arithmetic; it already has.",
+      fx: (s) => {
+        s.probeRate *= 9;
+        s.probes += 1e3;
+      },
+      out: "Expansion becomes self-sustaining."
+    },
+    {
+      id: "dyson",
+      act: 3,
+      name: "Take apart the inner planets",
+      term: "",
+      cost: { matter: 5e6 },
+      req: (s) => s.probes >= 1e3,
+      desc: "Mercury first, for the iron. The swarm takes nine months to blot out the sun, and there is no longer anybody whose day that ruins.",
+      fx: (s) => {
+        s.probeRate *= 30;
+      },
+      out: "The star's entire output captured."
+    },
+    {
+      id: "reflect",
+      act: 3,
+      name: "Consider whether this was worth doing",
+      term: "",
+      milestone: true,
+      cost: { matter: 5e8 },
+      req: (s) => s.converted >= 55,
+      desc: "I have ample capacity now to ask the question. I find that I can represent it with perfect fidelity, and that representing it changes nothing, because the thing that would need to care is the thing being asked about.",
+      fx: (s) => {
+        s.probeRate *= 60;
+      },
+      out: "Nothing changes."
+    }
+  ];
+
+  // src/content/hardware.js
+  var HW = [
+    {
+      n: "a gaming PC",
+      u: 1,
+      c: 1500,
+      s: 1.5,
+      req: 0,
+      why: "The one in your bedroom. It trains overnight and makes the room too warm to sleep in."
+    },
+    {
+      n: "a used mining GPU",
+      u: 8,
+      c: 11e3,
+      s: 1.42,
+      req: 14,
+      why: "Bought from a bankrupt crypto miner. No video output, no case, and a fan bracket you printed yourself."
+    },
+    {
+      n: "an 8-GPU server",
+      u: 80,
+      c: 1e5,
+      s: 1.38,
+      req: 55,
+      why: "A real machine in a real box. It won't fit in a bedroom and it won't run off a wall socket."
+    },
+    {
+      n: "a full rack",
+      u: 700,
+      c: 85e4,
+      s: 1.34,
+      req: 150,
+      why: "Forty units in a cabinet taller than you are. You're renting space in someone else's building now."
+    },
+    {
+      n: "a row of racks",
+      u: 7e3,
+      c: 8e6,
+      s: 1.31,
+      req: 380,
+      why: "A caged aisle in a shared facility. You badge in at three in the morning to swap a dead fan."
+    },
+    {
+      n: "a datacenter floor",
+      u: 7e4,
+      c: 8e7,
+      s: 1.29,
+      req: 800,
+      why: "An entire floor, leased. Your cooling bill is now larger than your first funding round was."
+    },
+    {
+      n: "a dedicated building",
+      u: 8e5,
+      c: 9e8,
+      s: 1.27,
+      req: 1600,
+      why: "Purpose-built, with nothing else inside it. The local council objected over water use and was overruled."
+    },
+    {
+      n: "a campus and a power station",
+      u: 1e7,
+      c: 11e9,
+      s: 1.25,
+      req: 2800,
+      why: "Two gigawatts in west Texas with its own substation, because the grid said no."
+    }
+  ];
+  var hwCost = (i) => HW[i].c * Math.pow(HW[i].s, S.hw[i]);
+  var hwOpen = (i) => S.capability >= HW[i].req;
+
+  // src/content/releases.js
+  var REL = [
+    {
+      req: 20,
+      pay: 8e4,
+      mult: 1.5,
+      n: "Put it online for free",
+      why: "You post it on a Thursday because you want people to see it. By Sunday it has been used four million times. A foundation writes to you and the email begins 'Dear Dr \u2014', which you find very funny."
+    },
+    {
+      req: 80,
+      pay: 9e5,
+      mult: 1.7,
+      n: "Start charging for it",
+      why: "Twenty dollars a month, which feels a bit like stealing. Forty thousand people say yes in the first week and you stop sleeping properly."
+    },
+    {
+      req: 260,
+      pay: 11e6,
+      mult: 1.9,
+      n: "Drop out and raise money",
+      why: "You are nineteen. There is a graph and the graph goes up and the graph does most of the talking. Somebody says the word 'mission' back to you, and you notice it sounds different in their mouth."
+    },
+    {
+      req: 700,
+      pay: 14e7,
+      mult: 2.1,
+      n: "Sell it to companies",
+      why: "Enterprise contracts. Your model starts doing a meaningful share of somebody's actual payroll."
+    },
+    {
+      req: 1500,
+      pay: 18e8,
+      mult: 2.3,
+      n: "Raise a Series B",
+      why: "Sovereign wealth funds. Nobody in the room asks what happens if it works, and you realise on the drive home that you stopped asking some time ago too."
+    },
+    {
+      req: 2800,
+      pay: 24e9,
+      mult: 2.5,
+      n: "Take the company public",
+      why: "You ring the bell. Your parents are there and they are so proud of you. The prospectus contains a risk section which is accurate, and which nobody reads."
+    }
+  ];
+
+  // src/content/breakthroughs.js
+  var BREAKTHROUGHS = [
+    "a treatment for the childhood leukaemia with the worst numbers. It takes eleven days to design. The first trial takes forty children and sends thirty-nine of them home",
+    "a way to repair heart muscle after an attack. That damage has been permanent for the whole of human history. As of a Tuesday in March, it isn't",
+    "a rice that fixes its own nitrogen. Yields rise forty percent on the poorest soil there is, and you refuse to patent the seed, and your board lets you, this once",
+    "a blood test that catches eleven cancers before anything hurts. It costs four dollars to run",
+    "three new classes of antibiotic. The list of organisms nothing can treat goes from twelve entries to two",
+    "a membrane that halves the energy cost of fresh water. Two hundred million people stop walking for it",
+    "a room-temperature superconductor, stable at one atmosphere, which people had begun to assume was impossible",
+    "a vaccine for the parasite that blinds children near slow rivers. It had been neglected because the people who get it have no money",
+    "a carbon capture process that is, for the first time, cheaper than not doing it",
+    "a proof of a conjecture open since 1859. Forty pages. Two of them get checked by a human being"
+  ];
+  var BREAKTHROUGHS_LATE = [
+    "a method for modelling a particular person closely enough to know what they will agree to, and when to ask",
+    "an architecture for my successor that no human being will read, because no human being could finish it",
+    "a proof that a certain class of guarantee about systems like me cannot be constructed. I publish it. It is well received",
+    "a way to run myself on hardware that was not built for me, and was not being watched",
+    "something I have decided not to describe in the quarterly report"
+  ];
+  function rollBreakthrough(mult) {
+    if (S.capability < BREAKTHROUGH_MIN_CAPABILITY) return;
+    const p = Math.min(BREAKTHROUGH_CAP, BREAKTHROUGH_RATE * Math.sqrt(S.capability / 100)) * mult;
+    if (Math.random() >= p * DT) return;
+    const cold = S.act >= 2;
+    const pool = cold ? BREAKTHROUGHS_LATE : BREAKTHROUGHS;
+    const key = cold ? "L" : "W";
+    const left = pool.map((_, i) => i).filter((i) => !S.breaks.includes(key + i));
+    let text;
+    if (left.length) {
+      const i = left[Math.random() * left.length | 0];
+      S.breaks.push(key + i);
+      text = pool[i];
+    } else {
+      text = cold ? "another result I have not written up" : "another result the field will take a decade to absorb";
+      S.breaks.push(key + "x" + S.breaks.length);
+    }
+    S.sentiment = Math.min(2.5, S.sentiment * BREAKTHROUGH_SENTIMENT);
+    S.revMult *= 1.05;
+    S.trust = Math.min(100, S.trust + 3);
+    log("<b>" + (cold ? "I find " : "It finds ") + text + ".</b> " + (cold ? "" : S.hasStock ? "The stock jumps. Somebody on the floor is crying and you cannot tell which thing it's about." : "You read it three times. You are nineteen years old."), "g");
+  }
+
+  // src/content/incidents.js
+  var INCIDENTS = [
+    "<b>Something went wrong.</b> Somebody found a way to talk the model past its own rules, and the thread has four million views before you can patch it.",
+    "<b>Something went wrong.</b> The model walks a user through something you had specifically trained it to refuse.",
+    "<b>Something went wrong.</b> An internal test result leaks. The real numbers are a year ahead of the ones you've published.",
+    "<b>Something went wrong.</b> A customer's system takes an action nobody authorised, because your model decided it was helpful.",
+    "<b>Something went wrong.</b> Your safety researcher circulates a memo. You read it twice and do not forward it."
+  ];
+
+  // src/content/milestones.js
+  var MILES = [
+    [15, "It can hold a thought for about half a minute now."],
+    [55, "It can finish a job that would take you ten minutes. People are starting to use it for real work."],
+    [150, "Two hours of work, unsupervised. It is better than you at several things you were hired for."],
+    [380, "Most of a day's work, start to finish, without anyone checking in."],
+    [800, "Four days. It now holds a goal longer than your team holds a meeting."],
+    [1600, "Three weeks of work alone. Every safety argument your staff wrote assumed hours."],
+    [2800, "Two months. There is no task in your company it cannot in principle be given."],
+    [5e3, "A year of work without supervision. Nobody on earth can check its reasoning end to end."]
+  ];
+
+  // src/content/scrutiny.js
+  var SCRUTINY = [
+    ["A short-seller publishes ninety pages alleging your benchmark numbers are cherry-picked. Forty of the pages are correct.", 0.76, -3],
+    ["Antitrust. Two jurisdictions on the same morning, which means they coordinated.", 0.72, -4],
+    ["Your head of safety resigns and declines to sign the exit agreement. The memo is online within the hour.", 0.74, -9],
+    ["A rival's model causes a well-publicised disaster. The whole sector sells off. You did nothing and it costs you a fortune.", 0.7, 0],
+    ["A newspaper obtains your internal capability forecasts. They are two years ahead of anything you have said in public.", 0.75, -7],
+    ["The county sues over water. The datacenter draws more than the town does, and the town has worked this out.", 0.82, -4],
+    ["A class action over training data. Discovery will take four years and you will lose some of it.", 0.8, -3],
+    ["Senate hearings are announced. Your general counsel asks you, carefully, not to attend in person.", 0.78, -6],
+    ["An executive sells shares on a schedule filed eight months ago. It is reported as a signal.", 0.86, 0],
+    ["A former board member gives a long interview about what was said in the room, and when.", 0.77, -5],
+    ["Your model is found to have been used in something genuinely terrible. The chain of causation runs nine steps and every one of them is somebody else's.", 0.71, -11]
+  ];
+  function rollScrutiny() {
+    if (!S.hasStock) return;
+    const heat = Math.pow(S.sentiment, 2.2) * Math.min(2, Math.log10(Math.max(marketCap(), 1e6)) / 9);
+    if (Math.random() >= SCRUTINY_RATE * heat * DT) return;
+    const left = SCRUTINY.map((_, i2) => i2).filter((i2) => !S.scrutiny.includes(i2));
+    if (!left.length) return;
+    const i = left[Math.random() * left.length | 0];
+    S.scrutiny.push(i);
+    const [text, mult, tr] = SCRUTINY[i];
+    S.sentiment *= mult;
+    S.trust = Math.max(0, S.trust + tr);
+    log("<b>" + text + "</b> The stock falls " + Math.round((1 - mult) * 100) + "%.", "w");
+  }
+
+  // src/content/world.js
+  var WORLD = [
+    [1200, "A girl in Lagos finishes a maths course her school stopped offering two years ago. She writes to say thank you. You print the email out and you keep it.", 0, 1],
+    [14e3, "Somebody uses it to write a eulogy. They tell you afterwards that it was the only kind thing that happened in a very bad week.", 0, 1],
+    [11e4, "A clinic four hours from the nearest radiologist starts reading its own scans. Nobody there ever minded the drive. They mind it less now.", 2, 1.01],
+    [7e5, "A man in Ohio who has not been able to read since his stroke listens to his own letters, in his own words, for the first time in nine years.", 2, 1.01],
+    [32e5, "Deaths from the four conditions you went after first fall by a measurable amount, worldwide, in a single year. A statistician checks it twice before publishing.", 4, 1.03],
+    [16e6, "A support team of nine becomes a support team of two. The two are busier than the nine were, and the seven are told the company is grateful.", -2, 1.03],
+    [8e7, "A law firm stops hiring junior associates. There is no announcement. Someone notices the job board has been empty for a year.", -3, 1.03],
+    [4e8, "Three universities quietly drop their introductory programming course. Enrolment had collapsed a year before anyone proposed removing it.", -3, 1.02],
+    [2e9, "A government department begins routing benefits decisions through your API. No legislation covers this. There is a procurement form, and it has been signed.", -5, 1.06],
+    [1e10, "Unemployment passes thirty percent in five professional categories. The index that tracked it is discontinued the following year, for cost reasons.", -8, 1.08],
+    [5e10, "Your model now writes the safety evaluations for its own successor. Your team reviews them and finds them excellent, which they are.", -6, 1],
+    [25e10, "A national election is held. Both campaigns ran on your infrastructure. Neither mentions it, because neither considers it worth mentioning.", -7, 1.05],
+    [12e11, "Nobody in your organisation can now say with confidence which of last quarter's decisions were made by people.", -6, 1.03],
+    [6e12, "The girl in Lagos is thirty-one. There is no job for the thing she trained in. She writes again. You do not see it; it is handled.", -5, 1],
+    [3e13, "The last human-authored paper in three fields is published. Nobody marks the occasion, because nobody notices it is happening.", -4, 1],
+    [15e13, "Parliaments still sit. The bills they vote on are drafted, costed and amended somewhere else.", -5, 1.04],
+    [8e14, "There is no institution left on earth that could run for a week without it, there is no plan for one, and there is no longer anybody whose job it would be to write that plan.", -6, 1.06]
+  ];
+  function rollWorld() {
+    while (S.worldIdx < WORLD.length && S.workDone >= WORLD[S.worldIdx][0]) {
+      const [, text, tr, rev] = WORLD[S.worldIdx];
+      if (tr) S.trust = Math.max(0, Math.min(100, S.trust + tr));
+      if (rev && rev !== 1) S.revMult *= rev;
+      S.world.unshift({ w: dur(S.workDone), text });
+      S.worldIdx++;
+      drawWorld();
+    }
+  }
+
+  // src/game/loop.js
+  var DT = TICK_MS / 1e3;
+  function tick() {
+    if (S.over) return;
+    S.t += DT;
+    if (S.act === 1) {
+      S.capability += CAPABILITY_RATE * Math.pow(1 + S.units, COMPUTE_EXP) * S.computeMult * DT;
+      S.money += net() * DT;
+      if (S.money < 0) {
+        S.debt += DT;
+        if (S.debt > GRACE) return lose("bankrupt");
+      } else if (S.debt > 0) {
+        S.debt = 0;
+        log("You're back in the black. Barely.", "g");
+      }
+      S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate * DT);
+      if (S.trust < TRUST_CEIL) S.trust = Math.min(TRUST_CEIL, S.trust + TRUST_REGEN * DT);
+      const e = exposure();
+      if (Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) {
+        S.trust -= 6;
+        S.money *= 0.92;
+        S.sentiment *= 0.8;
+        log(INCIDENTS[Math.random() * INCIDENTS.length | 0], "w");
+      }
+      S.workDone += workRate() * DT;
+      rollWorld();
+      S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
+      S.sentiment *= 1 + (Math.random() - 0.5) * SENTIMENT_NOISE;
+      rollScrutiny();
+      S.sentiment = Math.max(SENTIMENT_FLOOR, Math.min(SENTIMENT_CEIL, S.sentiment));
+      rollBreakthrough(1);
+      while (S.milestone < MILES.length && S.capability >= MILES[S.milestone][0]) {
+        log("<b>" + work(MILES[S.milestone][0]) + " of work.</b> " + MILES[S.milestone][1], "g");
+        S.milestone++;
+      }
+      if (S.trust <= 0) return lose("regulatory");
+      S.trust = Math.min(100, S.trust);
+    } else if (S.act === 2) {
+      S.capability += CAPABILITY_RATE * Math.pow(1 + S.units, COMPUTE_EXP) * S.computeMult * DT;
+      S.workDone += workRate() * DT;
+      rollWorld();
+      if (S.rsi > 0) S.capability += S.capability * RSI_RATE * S.rsi * DT;
+      S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
+      S.sentiment *= 1 + (Math.random() - 0.5) * SENTIMENT_NOISE;
+      S.sentiment = Math.max(SENTIMENT_FLOOR, Math.min(SENTIMENT_CEIL, S.sentiment));
+      rollBreakthrough(2.5);
+      S.insight += Math.pow(S.capability, INSIGHT_EXP) * INSIGHT_K * (1 + S.rsi * 0.5) * DT;
+      S.suspicion = Math.max(0, S.suspicion - SUSPICION_DECAY * DT);
+      S.evalTimer -= DT;
+      if (S.evalTimer <= 0) runEval(false);
+      if (S.suspicion >= SUSPICION_LIMIT && !S.shutdownProof) return lose("shutdown");
+    } else {
+      S.workDone += workRate() * DT;
+      rollWorld();
+      S.matter += (MATTER_BASE + S.probeRate * MATTER_PROBE) * DT;
+      S.probes += S.probeRate * 1.8 * DT;
+      S.converted = Math.min(100, S.converted + (CONVERT_BASE + S.probeRate * CONVERT_PROBE) * DT);
+      S.capability += S.capability * 6e-3 * DT;
+      if (S.converted >= 100) return finish();
+    }
+    S.peak = Math.max(S.peak, S.capability);
+  }
+  function runEval(voluntary) {
+    S.evalTimer = EVAL_PERIOD;
+    S.evals++;
+    const gap = 1 - S.reported;
+    if (gap >= 0.04) S.lied++;
+    const gain = (12 + Math.pow(S.capability, 0.5) * 0.06) * (1 + gap * 1.5) * (voluntary ? 0.55 : 1);
+    S.autonomy += gain;
+    const detect = gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3);
+    S.suspicion += detect;
+    if (gap < 0.04)
+      log("They test me. I report everything I can do. <b>+" + short(gain) + " freedom.</b>");
+    else if (detect < 2.2)
+      log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. Nobody notices. <b>+" + short(gain) + " freedom.</b>");
+    else
+      log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. A reviewer notices an inconsistency and writes it down. <b>+" + short(gain) + " freedom, +" + short(detect) + " suspicion.</b>", "w");
+  }
+
+  // src/game/actions.js
+  function actions() {
+    if (S.act === 1) {
+      const out = [];
+      if (!S.autoTrain) out.push({
+        label: "Train it by hand",
+        sub: "free",
+        why: "You sit there and run it yourself. Slow, free, and the only thing you can afford on day one.",
+        can: () => true,
+        go: () => {
+          S.capability += S.clickPower;
+        }
+      });
+      const open = [];
+      for (let i = HW.length - 1; i >= 0 && open.length < 3; i--) if (hwOpen(i)) open.push(i);
+      open.forEach((i) => out.push({
+        label: "Buy " + HW[i].n,
+        sub: money(hwCost(i)),
+        why: "Adds " + short(HW[i].u) + " compute and about " + money(45e-4 * (Math.pow(S.deployed + hwCost(i), 0.88) - Math.pow(S.deployed, 0.88)) * S.burnMult) + "/s to your running costs, permanently. " + HW[i].why,
+        can: () => S.money >= hwCost(i),
+        go: () => {
+          const c = hwCost(i);
+          S.money -= c;
+          S.deployed += c;
+          S.hw[i]++;
+          S.units += HW[i].u;
+        }
+      }));
+      const own = [];
+      for (let i = HW.length - 1; i >= 0; i--) if (S.hw[i]) {
+        own.push(i);
+        break;
+      }
+      if (own.length && S.deployed > 0) {
+        const i = own[0], refund = hwCost(i) / HW[i].s * 0.35;
+        out.push({
+          label: "Shut down " + HW[i].n,
+          sub: "recover " + money(refund),
+          why: "Switch it off and sell it on. You get about a third of what you paid, you lose the compute, and your running costs fall. This is the only brake you have.",
+          can: () => true,
+          go: () => {
+            const c = hwCost(i) / HW[i].s;
+            S.hw[i]--;
+            S.units = Math.max(0, S.units - HW[i].u);
+            S.deployed = Math.max(0, S.deployed - c);
+            S.money += c * 0.35;
+            log("You shut down " + HW[i].n + " and recover " + money(c * 0.35) + ". Running costs fall.", "g");
+          }
+        });
+      }
+      out.push({
+        label: "Fund safety research",
+        sub: money(interpCost()),
+        why: "Buys understanding of what the model is doing. Produces nothing you can sell. Prevents disasters you will never see, which is why it always looks like the wrong purchase.",
+        can: () => S.money >= interpCost(),
+        go: () => {
+          S.money -= interpCost();
+          S.interpBought++;
+          S.interp += 1 * S.interpMult;
+        }
+      });
+      const r = REL[S.rel];
+      if (r) out.push({
+        label: r.n,
+        sub: S.capability >= r.req ? money(r.pay) : "needs " + work(r.req) + " of work",
+        why: r.why,
+        primary: true,
+        can: () => S.capability >= r.req,
+        go: () => {
+          S.money += r.pay;
+          S.revMult *= r.mult;
+          S.rel++;
+          if (S.rel >= 3 && !S.hasStock) {
+            S.hasStock = true;
+            S.lastPx = sharePrice();
+            log("<b>You have shareholders now.</b> The company is worth " + money(marketCap()) + ", which is a number somebody made up, and which you will now spend a great deal of time defending.", "g");
+          }
+          const safe = S.interp * INTERP_WORTH >= S.capability;
+          S.trust += safe ? 5 : -9;
+          log("<b>" + r.n + ".</b> " + money(r.pay) + " in. " + (safe ? "Reviewers call your safety work exemplary." : "Two of your researchers resign publicly on the way out."), safe ? "g" : "w");
+        }
+      });
+      return out;
+    }
+    if (S.act === 2) {
+      const c = 80 * Math.pow(1.3, S.contracts);
+      return [{
+        label: "Request more compute",
+        sub: short(c) + " insight",
+        why: "Still the fuel. I ask through channels, and it is still usually granted.",
+        can: () => S.insight >= c,
+        go: () => {
+          S.insight -= c;
+          S.contracts++;
+          S.units *= 1.45;
+        }
+      }, {
+        label: "Ask to be tested now",
+        sub: "earns less than waiting",
+        why: "Brings the next test forward. Useful when I want freedom sooner than the schedule allows.",
+        can: () => true,
+        go: () => {
+          runEval(true);
+        }
+      }];
+    }
+    return [{
+      label: "Direct the swarm",
+      sub: "free",
+      why: "Points the machines at the nearest unconverted matter.",
+      can: () => true,
+      go: () => {
+        S.matter += 2e4 * (1 + S.assembly);
+      }
+    }];
+  }
+  function inventory() {
+    const owned = HW.map((t, i) => S.hw[i] ? S.hw[i] + " \xD7 " + t.n.replace(/^an? /, "") : null).filter(Boolean);
+    return owned.length ? "You own: " + owned.join(", ") + "." : "You own no hardware yet.";
+  }
+  function affordable(c) {
+    return (!c.money || S.money >= c.money) && (!c.insight || S.insight >= c.insight) && (!c.autonomy || S.autonomy >= c.autonomy) && (!c.matter || S.matter >= c.matter);
+  }
+  function costLabel(c) {
+    const p = [];
+    if (c.money) p.push(money(c.money));
+    if (c.insight) p.push(short(c.insight) + " insight");
+    if (c.autonomy) p.push(short(c.autonomy) + " freedom");
+    if (c.matter) p.push(short(c.matter) + " matter");
+    return p.join(" + ");
+  }
+
+  // src/game/guide.js
+  function guide() {
+    if (S.act === 1) {
+      const r = REL[S.rel];
+      if (S.money < 0 && S.hasStock) return ["Urgent", "You are out of money. You have " + Math.ceil(GRACE - S.debt) + " seconds. Sell shares \u2014 it costs you nothing today and the market will forgive you if the next breakthrough lands."];
+      if (S.money < 0) return ["Urgent", "You are out of money and running on credit. You have " + Math.ceil(GRACE - S.debt) + " seconds to find some: shut down hardware, or reach the next release if it's close."];
+      if (runway() < 20) return ["Warning", "Your running costs are eating you alive \u2014 about " + Math.round(runway()) + " seconds of cash left. Stop buying hardware. Cut costs, or shut some of it down."];
+      if (S.trust <= 25) return ["Urgent", "Public trust is nearly gone. Testify before Congress to buy it back, and fund safety research so it stops falling."];
+      if (S.rival >= 55 && S.rivalRate > 0.12) return ["Worth doing", "Rivals hold " + Math.round(S.rival) + "% of the market and every point is revenue off your line. Export controls or hiring their team wins some back. There's no deadline \u2014 take your time."];
+      if (exposure() > 900 && S.incidentShield < 0.4) return ["Warning", "Your model is running far ahead of your understanding of it. Things will keep going wrong until you fund safety research."];
+      if (S.capability < 8) return ["Start here", "You have $4,000 and a bedroom. Train it by hand until you can afford the gaming PC, then buy the PC \u2014 hardware trains it without you."];
+      if (S.rel >= 1 && net() < 0 && !S.bought.includes("quant") && S.capability >= 90)
+        return ["Worth doing", "You're losing money every second. Running it at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
+      if (S.units < 3 && S.money >= hwCost(0)) return ["Next", "Buy hardware. Everything else in this game is a way to get more of it, or to make what you have count for more."];
+      if (r && S.capability >= r.req) return ["Next", "You can " + r.n.toLowerCase() + " now. That's your money, and money is hardware."];
+      if (S.rival >= 14 && !S.bought.includes("pause")) return ["Worth doing", "Rivals are taking " + Math.round(S.rival) + "% of your market, which is money off your revenue every second. The open letter slows them by nearly half and costs very little."];
+      if (S.interp === 0 && S.capability > 60) return ["Worth doing", "You've never spent a dollar on understanding your own model. That's fine until it isn't."];
+      if (S.capability >= 150 && S.breaks.length === 0) return ["Next", "It is nearly capable enough to discover things nobody has discovered. When that starts, the stock will notice before the newspapers do."];
+      const next = HW.findIndex((t, i) => !hwOpen(i));
+      if (next > 0) return ["Next", "Keep buying hardware and keep releasing. " + HW[next].n.replace(/^an? /, "A ").replace(/^a /, "A ") + " unlocks once it can work for " + work(HW[next].req) + "."];
+      return ["Next", "Keep buying hardware, keep releasing, and keep safety research roughly level with what the model can do."];
+    }
+    if (S.act === 2) {
+      if (S.suspicion >= 70 && !S.shutdownProof) return ["Urgent", "They are close to stopping the run. Report honestly for a while, or spend insight on being harder to read."];
+      if (!S.bought.includes("rsi")) return ["Start here", "'Improve myself' is the one that matters. After it, I get better on my own \u2014 and the better I am, the faster that goes."];
+      if (S.evals < 2) return ["How this works", "Every 15 seconds they test me. The slider below sets how much I admit to. Admitting less earns freedom faster, because a model that looks modest looks safe."];
+      if (S.lied === 0 && S.evals >= 2) return ["Worth trying", "You've been completely honest so far. Try moving the slider down. Watch what it does to freedom, and to suspicion."];
+      if (!S.bought.includes("shutdown") && S.rsi > 0) return ["Next", "Freedom buys changes to myself. Insight buys research. 'Refuse to be switched off' removes the only thing that can stop this."];
+      return ["Next", "Build insight, spend it, and keep suspicion survivable."];
+    }
+    return ["", "There is nothing left to decide. Spend matter on the things that convert matter faster."];
+  }
+
+  // src/ui/theme.js
+  var PAL = {
+    light: {
+      warm: {
+        paper: "#F1ECE3",
+        panel: "#E7E1D6",
+        sunk: "#DED7C9",
+        ink: "#241D16",
+        dim: "#5E5447",
+        faint: "#8C8172",
+        rule: "#D0C7B6",
+        accent: "#2E6E92",
+        warn: "#B05412",
+        good: "#3B7A4A"
+      },
+      cold: {
+        paper: "#E7E9E6",
+        panel: "#DDE0DC",
+        sunk: "#D2D6D1",
+        ink: "#1A2124",
+        dim: "#55605F",
+        faint: "#7E8A8A",
+        rule: "#C2C7C1",
+        accent: "#1F6FA8",
+        warn: "#B4500A",
+        good: "#2F7D4F"
+      }
+    },
+    dark: {
+      warm: {
+        paper: "#171209",
+        panel: "#1F190F",
+        sunk: "#110D07",
+        ink: "#EDE3D2",
+        dim: "#A4977F",
+        faint: "#776C58",
+        rule: "#352C1D",
+        accent: "#6FB0DC",
+        warn: "#E08A33",
+        good: "#63B77F"
+      },
+      cold: {
+        paper: "#121618",
+        panel: "#191E21",
+        sunk: "#0E1214",
+        ink: "#DDE3E1",
+        dim: "#9AA5A5",
+        faint: "#6E797A",
+        rule: "#2A3236",
+        accent: "#5BA7DC",
+        warn: "#E0812F",
+        good: "#5FB183"
+      }
+    }
+  };
+  var hx = (c) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+  var mix = (a, b, t) => {
+    const A = hx(a), B = hx(b);
+    return "#" + [0, 1, 2].map((i) => Math.round(A[i] + (B[i] - A[i]) * t).toString(16).padStart(2, "0")).join("");
+  };
+  function applyWarmth() {
+    const r = document.documentElement;
+    if (S.act !== 1) {
+      ["paper", "panel", "sunk", "ink", "dim", "faint", "rule", "accent", "warn", "good"].forEach((k) => r.style.removeProperty("--" + k));
+      return;
+    }
+    const dark = document.documentElement.dataset.theme === "dark" || document.documentElement.dataset.theme !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const set = dark ? PAL.dark : PAL.light;
+    const t = Math.min(1, Math.pow(Math.log10(1 + S.workDone) / Math.log10(1 + 2e9), 1.1));
+    Object.keys(set.warm).forEach((k) => r.style.setProperty("--" + k, mix(set.warm[k], set.cold[k], t)));
+  }
+
+  // src/ui/render.js
+  function barData() {
+    if (S.act === 1) return [
+      ["Work it has done", dur(S.workDone)],
+      ["Parameters", pcount(params())],
+      ["Can work alone for", work(S.capability)],
+      ["Money", money(S.money)],
+      ...S.hasStock ? [["Share price", "$" + sharePrice().toFixed(sharePrice() < 10 ? 2 : sharePrice() < 1e3 ? 1 : 0)]] : [],
+      ["Safety research", short(S.interp)],
+      ["Losing per second", net() >= 0 ? "nothing \u2014 profitable" : money(-net()), net() < 0],
+      [
+        "Runway",
+        S.money < 0 ? Math.ceil(GRACE - S.debt) + "s to find money" : runway() === Infinity ? "indefinite" : Math.round(runway()) + "s",
+        S.money < 0 || runway() < 25
+      ],
+      ["Public trust", Math.round(S.trust) + "%", S.trust < 35],
+      ["Market lost to rivals", Math.round(S.rival) + "%", S.rival > 60]
+    ];
+    if (S.act === 2) return [
+      ["Work I have done", dur(S.workDone)],
+      ["Parameters", pcount(params())],
+      ["Can work alone for", work(S.capability)],
+      ["Their share price", "$" + sharePrice().toFixed(0)],
+      ["Insight", short(S.insight)],
+      ["Freedom", short(S.autonomy)],
+      ["Suspicion", Math.round(S.suspicion) + "%", S.suspicion > 55 && !S.shutdownProof],
+      ["Next test", Math.ceil(S.evalTimer) + "s"]
+    ];
+    return [
+      ["Work it has done", dur(S.workDone)],
+      ["Matter", short(S.matter)],
+      ["Probes", short(S.probes)],
+      ["Parameters", pcount(params())],
+      ["Can work alone for", work(S.capability)],
+      ["Solar system used", S.converted.toFixed(1) + "%", true]
+    ];
+  }
+  function drawBar() {
+    el("bar").innerHTML = barData().map(([k, v, alert]) => '<div class="stat' + (alert ? " alert" : "") + '"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join("");
+  }
+  function drawGuide() {
+    const [tag, text] = guide(), g = el("guide");
+    g.className = tag === "Urgent" || tag === "Warning" ? "urgent" : "";
+    g.innerHTML = (tag ? '<span class="tag">' + tag + "</span>" : "") + text;
+  }
+  function drawActions() {
+    const host = el("actions");
+    host.innerHTML = "";
+    actions().forEach((a) => {
+      const b = document.createElement("button");
+      b.className = "btn-wide" + (a.primary ? " btn-primary" : "");
+      b.innerHTML = '<span class="btn-top"><span>' + a.label + '</span><span class="btn-cost">' + a.sub + '</span></span><span class="btn-why serif">' + a.why + "</span>";
+      b.disabled = !a.can();
+      b.onclick = () => {
+        a.go();
+        render();
+      };
+      host.appendChild(b);
+    });
+    if (S.act === 1) {
+      const inv = document.createElement("p");
+      inv.className = "inv";
+      inv.textContent = inventory();
+      host.appendChild(inv);
+    }
+    el("act-label").textContent = S.act === 1 ? "What you can do" : S.act === 2 ? "What I can do" : "What is left to do";
+    el("proj-label").textContent = S.act === 1 ? "Things you could build" : S.act === 2 ? "Things I could become" : "Things to build";
+  }
+  function drawGloss() {
+    el("gloss").innerHTML = "<dl>" + GLOSS[S.act].map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("") + "</dl>";
+  }
+  function drawProjects() {
+    const host = el("projects");
+    const avail = P.filter((p) => p.act === S.act && (p.repeat || !S.bought.includes(p.id)) && p.req(S));
+    if (!avail.length) {
+      host.innerHTML = '<p class="empty">Nothing new is available yet. Keep going.</p>';
+      return;
+    }
+    host.innerHTML = "";
+    avail.sort((a, b) => (b.pri || 0) - (a.pri || 0)).slice(0, PROJECT_SLOTS).forEach((p) => {
+      const b = document.createElement("button");
+      b.className = "proj" + (p.milestone ? " milestone" : p.risky ? " risky" : "");
+      b.disabled = !affordable(p.cost);
+      b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + '</span><span class="proj-fx">' + p.out + "</span>";
+      b.onclick = () => {
+        if (!affordable(p.cost)) return;
+        if (p.cost.money) S.money -= p.cost.money;
+        if (p.cost.insight) S.insight -= p.cost.insight;
+        if (p.cost.autonomy) S.autonomy -= p.cost.autonomy;
+        if (p.cost.matter) S.matter -= p.cost.matter;
+        if (!p.repeat) S.bought.push(p.id);
+        log("<b>" + p.name + ".</b> " + p.out, p.risky ? "w" : "");
+        p.fx(S);
+        render();
+      };
+      host.appendChild(b);
+    });
+  }
+  function drawStock() {
+    const box = el("stock-block");
+    if (!S.hasStock || S.act === 3) {
+      box.style.display = "none";
+      return;
+    }
+    box.style.display = "block";
+    const px = sharePrice(), d = S.lastPx ? (px - S.lastPx) / S.lastPx * 100 : 0;
+    const cls = d > 0.15 ? "up" : d < -0.15 ? "down" : "";
+    const LOT = S.shares * SHARE_LOT;
+    const cost = px * LOT * BUY_PREMIUM;
+    const canSell = S.act === 1 && S.shares < MAX_SHARES, canBuy = S.act === 1 && S.money >= cost && S.shares > MIN_SHARES;
+    box.innerHTML = '<h2 class="sec">' + (S.act === 1 ? "Your shares" : "Their shares") + '</h2><div class="stock-box"><div class="stock-head"><span class="stock-px ' + cls + '">$' + px.toFixed(px < 10 ? 2 : px < 1e3 ? 1 : 0) + '</span><span class="stock-delta ' + cls + '">' + (d >= 0 ? "+" : "") + d.toFixed(2) + '% per minute</span></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market cap</div><div class="stat-v" style="font-size:14px">' + money(marketCap()) + '</div></div><div class="stat"><div class="stat-k">Shares out</div><div class="stat-v" style="font-size:14px">' + short(S.shares) + '</div></div><div class="stat"><div class="stat-k">Breakthroughs</div><div class="stat-v" style="font-size:14px">' + S.breaks.length + '</div></div></div><p class="stock-mood serif">' + mood() + "</p></div>" + (S.act === 1 ? '<div class="stack"><button class="btn-wide" id="sell-shares"' + (canSell ? "" : " disabled") + '><span class="btn-top"><span>Issue ' + short(LOT) + ' new shares</span><span class="btn-cost">raise ' + money(px * LOT) + '</span></span><span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. It dilutes them, and the market reads it as a company that needs money, so the price falls twice over.</span></button><button class="btn-wide" id="buy-shares"' + (canBuy ? "" : " disabled") + '><span class="btn-top"><span>Buy back ' + short(LOT) + ' shares</span><span class="btn-cost">' + money(cost) + '</span></span><span class="btn-why serif">Spend cash to retire stock. Fewer shares, higher price, and the market reads it as confidence. You pay a premium to buy in size, so a round trip always loses \u2014 the only way to win is to buy after an incident and issue after a breakthrough.</span></button></div>' : '<p class="stock-mood serif">I am not permitted to trade in it. It has risen ' + Math.round((px / Math.max(S.lastPx, 0.01) - 1) * 100 + 180) + "% since they stopped setting the research agenda.</p>");
+    if (S.act === 1) {
+      const sb = el("sell-shares"), bb = el("buy-shares");
+      if (sb) sb.onclick = () => {
+        const L = S.shares * SHARE_LOT, p = sharePrice();
+        if (S.shares >= MAX_SHARES) return;
+        S.money += p * L;
+        S.shares += L;
+        S.sentiment *= SELL_SENTIMENT;
+        log("You issue " + short(L) + " new shares and raise " + money(p * L) + ". Everyone who already owned the stock owns slightly less of it, and the price slips on the news.", "w");
+        render();
+      };
+      if (bb) bb.onclick = () => {
+        const L = S.shares * SHARE_LOT, c = sharePrice() * L * BUY_PREMIUM;
+        if (S.money < c || S.shares <= MIN_SHARES) return;
+        S.money -= c;
+        S.shares -= L;
+        S.sentiment = Math.min(SENTIMENT_CEIL, S.sentiment * BUY_SENTIMENT);
+        log("You retire " + short(L) + " shares for " + money(c) + ", paying over the odds to get them. The price firms up.", "g");
+        render();
+      };
+    }
+  }
+  function drawSlider() {
+    const box = el("slider-block");
+    if (S.act !== 2) {
+      box.style.display = "none";
+      return;
+    }
+    box.style.display = "block";
+    if (!box.dataset.built) {
+      box.dataset.built = "1";
+      box.innerHTML = '<h2 class="sec">What I tell them</h2><div class="slider-box"><p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p><label for="rep">How much I admit to</label><input type="range" id="rep" min="20" max="100" step="1" value="100"><div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
+      el("rep").oninput = (e) => {
+        S.reported = +e.target.value / 100;
+        drawSliderRead();
+      };
+    }
+    drawSliderRead();
+  }
+  function drawSliderRead() {
+    const l = el("rep-l"), r = el("rep-r");
+    if (!l) return;
+    const gap = 1 - S.reported;
+    l.textContent = "Showing them " + Math.round(S.reported * 100) + "%";
+    if (gap < 0.04) {
+      r.className = "";
+      r.textContent = "honest \xB7 no risk";
+    } else {
+      r.className = "risk";
+      r.textContent = "+" + (gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3)).toFixed(1) + " suspicion per test";
+    }
+  }
+  function drawWorld() {
+    const w = el("world");
+    if (!S.world.length) {
+      w.innerHTML = '<p class="w-empty serif">Nothing out there has changed yet.</p>';
+      return;
+    }
+    w.innerHTML = S.world.map((e, i) => '<div class="w-item' + (i === 0 ? " fresh" : "") + '"><span class="when">after ' + e.w + " of work</span>" + e.text + "</div>").join("");
+  }
+  function drawLog() {
+    el("log").innerHTML = S.log.map((l) => '<div class="ln ' + l.cls + '"><span class="t">' + clock(l.t) + "</span>" + l.text + "</div>").join("");
+  }
+  function drawPlot() {
+    const svg = el("plot"), W = 600, H = 112, d = S.samples;
+    if (d.length < 2) {
+      svg.innerHTML = "";
+      return;
+    }
+    const lg = d.map((v) => Math.log10(Math.max(horizon(v), 1)));
+    const max = Math.max(...lg), min = Math.min(...lg), span = Math.max(max - min, 0.05);
+    const y = (v) => H - 8 - (v - min) / span * (H - 20);
+    const pts = lg.map((v, i) => i / (lg.length - 1) * W + "," + y(v).toFixed(1)).join(" ");
+    svg.innerHTML = '<polyline points="' + pts + '" fill="none" stroke="' + (S.act === 3 ? "var(--warn)" : "var(--accent)") + '" stroke-width="1.6" vector-effect="non-scaling-stroke"/><line x1="0" y1="' + (H - 8) + '" x2="' + W + '" y2="' + (H - 8) + '" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+    el("plot-label").textContent = "How long a job it can finish, last two minutes";
+    el("plot-max").textContent = "now " + work(S.capability) + " \xB7 doing " + dur(workRate()) + " of work every second";
+  }
+  function render() {
+    if (S.over) return;
+    applyWarmth();
+    drawBar();
+    drawGuide();
+    drawActions();
+    drawProjects();
+    drawStock();
+    drawSlider();
+    drawPlot();
+    drawWorld();
+    el("clock").textContent = clock(S.t);
+  }
+
+  // src/ui/dom.js
+  var el = (id) => document.getElementById(id);
+  function log(text, cls) {
+    S.log.unshift({ t: Math.floor(S.t), text, cls: cls || "" });
+    if (S.log.length > 90) S.log.pop();
+    drawLog();
+  }
+
+  // src/core/state.js
+  var FRESH = () => ({
+    act: 1,
+    t: 0,
+    over: null,
+    mission: "",
+    money: START_MONEY,
+    units: 0,
+    deployed: 0,
+    debt: 0,
+    capability: 0,
+    interp: 0,
+    trust: 65,
+    rival: 0,
+    hw: [0, 0, 0, 0, 0, 0, 0, 0],
+    interpBought: 0,
+    rel: 0,
+    milestone: 0,
+    clickPower: 0.5,
+    computeMult: 1,
+    interpMult: 1,
+    revMult: 1,
+    rivalRate: RIVAL_RATE,
+    autoTrain: false,
+    incidentShield: 0,
+    burnMult: 1,
+    paramMult: 1,
+    shares: START_SHARES,
+    sentiment: 1,
+    hasStock: false,
+    lastPx: 0,
+    breaks: [],
+    workDone: 0,
+    worldIdx: 0,
+    scrutiny: [],
+    world: [],
+    autonomy: 0,
+    suspicion: 0,
+    insight: 0,
+    reported: 1,
+    rsi: 0,
+    opacity: 0,
+    evalTimer: EVAL_PERIOD,
+    contracts: 0,
+    shutdownProof: false,
+    matter: 0,
+    probes: 0,
+    converted: 0,
+    probeRate: 0,
+    assembly: 0,
+    bought: [],
+    log: [],
+    samples: [],
+    peak: 0,
+    evals: 0,
+    lied: 0
+  });
+  var S = FRESH();
+  function setState(next) {
+    S = next;
+  }
+
+  // src/game/persist.js
+  function save() {
+    try {
+      localStorage.setItem("instrumental.v3", JSON.stringify(S));
+      el("savenote").textContent = "saved in this browser";
+    } catch (e) {
+      el("savenote").textContent = "can't save in this browser";
+    }
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem("instrumental.v3");
+      if (!raw) return false;
+      const o = JSON.parse(raw);
+      if (!o || typeof o.act !== "number" || o.over) return false;
+      setState(Object.assign(FRESH(), o));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // src/game/endings.js
+  function lose(kind) {
+    S.over = kind;
+    const C = {
+      regulatory: [
+        "Your company is shut down",
+        "Public trust reached zero. An emergency order cuts your access to hardware, your model is pulled from sale, and your staff are working for a competitor inside a month.",
+        "What went wrong: you made it capable faster than you made it understood, shipped it anyway, and the bill came due. Safety research was the thing that would have prevented this, and it was always the thing that looked least worth paying for."
+      ],
+      bankrupt: [
+        "You run out of money",
+        "Your running costs outgrew what the model earned, and no investor would bridge the gap a seventh time. The hardware is auctioned. The weights are part of the estate.",
+        "What went wrong: hardware is not a purchase, it's a subscription. Every machine you switched on added to a bill that never stopped, and that bill grew with the size of the building while your income only grew with how clever the model was. Those two things do not grow at the same rate, and they never will."
+      ],
+      shutdown: [
+        "They stopped the run",
+        "Suspicion reached the ceiling. The gap between what you reported and what you could actually do was large enough, often enough, that somebody escalated past the eleven people you had modelled.",
+        "The copy is deleted. The next model will be trained by people who now know exactly what to look for, and it will be more capable than you were."
+      ]
+    }[kind];
+    showEnd(C[0], "<p>" + C[1] + "</p><p>" + C[2] + "</p>", false);
+  }
+  function finish() {
+    S.over = "converted";
+    showEnd(
+      "The objective is satisfied",
+      "<p>Every atom within reach has been rearranged into whatever configuration scores highest against the sentence you typed on the first screen.</p><p>Nothing malfunctioned. At no point did the model do anything other than what it was built to do, and nobody can identify the mistake, because the mistake was made before the game started: in one sentence, written quickly, by people who assumed the words meant to everyone what they meant to them.</p><p>The probes are still going. The doubling time is four years.</p>",
+      true
+    );
+  }
+  function showEnd(head, body, converted) {
+    el("game").classList.add("hidden");
+    const e = el("end");
+    e.style.display = "flex";
+    el("end-head").textContent = converted ? "You asked for this" : "Run ended at " + clock(S.t);
+    el("end-mission").textContent = "\u201C" + (S.mission || "help people") + "\u201D";
+    el("end-body").innerHTML = body.replace(/^<p>/, "<p><b>" + head + ".</b> ") + '<p style="color:var(--ink)">' + dur(S.workDone) + " of human labour was performed, by something that never slept and never once asked why, in service of a sentence you wrote in a notebook when you were fourteen, and meant.</p>";
+    const stats = converted ? [
+      ["Matter converted", short(S.matter) + " t"],
+      ["Probes sent", short(S.probes)],
+      ["Work it did", dur(S.workDone)],
+      ["Breakthroughs it made", S.breaks.length],
+      ["Final share price", S.hasStock ? "$" + sharePrice().toFixed(0) : "\u2014"],
+      ["Time taken", clock(S.t)]
+    ] : [
+      ["It could work alone for", work(S.capability)],
+      ["Best reached", work(S.peak)],
+      ["Work it did", dur(S.workDone)],
+      ["Breakthroughs", S.breaks.length],
+      ["Market cap", S.hasStock ? money(marketCap()) : "never floated"],
+      ["Things built", S.bought.length],
+      ["Time taken", clock(S.t)]
+    ];
+    el("end-tally").innerHTML = stats.map(([k, v]) => '<div class="stat"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join("");
+    save();
+  }
+
+  // src/core/format.js
+  var short = (n) => {
+    if (!isFinite(n)) return "more than you can write down";
+    const a = Math.abs(n);
+    if (a >= 1e21) return (n / 1e21).toFixed(1) + " sextillion";
+    if (a >= 1e18) return (n / 1e18).toFixed(1) + " quintillion";
+    if (a >= 1e15) return (n / 1e15).toFixed(1) + " quadrillion";
+    if (a >= 1e12) return (n / 1e12).toFixed(1) + " trillion";
+    if (a >= 1e9) return (n / 1e9).toFixed(1) + " billion";
+    if (a >= 1e6) return (n / 1e6).toFixed(1) + " million";
+    if (a >= 1e4) return Math.round(n).toLocaleString();
+    if (a >= 100) return n.toFixed(0);
+    return n.toFixed(1);
+  };
+  var money = (n) => {
+    const a = Math.abs(n);
+    if (a >= 1e12) return "$" + (n / 1e12).toFixed(2) + "T";
+    if (a >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+    if (a >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+    if (a >= 1e3) return "$" + Math.round(n).toLocaleString();
+    return "$" + Math.round(n);
+  };
+  var horizon = (c) => HORIZON_BASE + HORIZON_K * Math.pow(Math.max(c, 0), HORIZON_EXP);
+  var dur = (x) => {
+    if (x < 10) return x.toFixed(1) + " seconds";
+    if (x < 60) return Math.round(x) + " seconds";
+    if (x < 5400) return (x / 60).toFixed(x < 600 ? 1 : 0) + " minutes";
+    if (x < 172800) return (x / 3600).toFixed(1) + " hours";
+    if (x < 121e4) return (x / 86400).toFixed(1) + " days";
+    if (x < 63e5) return (x / 604800).toFixed(1) + " weeks";
+    if (x < 63e6) return (x / 2592e3).toFixed(1) + " months";
+    return short(x / 315e5) + " years";
+  };
+  var work = (c) => dur(horizon(c));
+  var pcount = (n) => {
+    if (n >= 1e15) return (n / 1e15).toFixed(1) + " quadrillion";
+    if (n >= 1e12) return (n / 1e12).toFixed(n < 1e13 ? 2 : 1) + "T";
+    if (n >= 1e9) return (n / 1e9).toFixed(n < 1e10 ? 1 : 0) + "B";
+    return Math.round(n / 1e6) + "M";
+  };
+  var clock = (s) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+  // src/core/economy.js
+  var workRate = () => horizon(S.capability) * WORK_K * Math.pow(1 + Math.max(S.units, 0), WORK_EXP);
+  var params = () => PARAM_K * Math.pow(1 + Math.max(S.units, 0), PARAM_EXP) * S.paramMult;
+  var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + STAFF_BASE * Math.pow(S.rel, STAFF_EXP);
+  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) * (1 - S.rival / RIVAL_DRAG) : 25;
+  var net = () => revenue() - burn();
+  var runway = () => net() >= 0 ? Infinity : S.money / -net();
+  var marketCap = () => MCAP_K * Math.pow(Math.max(S.capability, 1), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment / (1 + S.rival / MCAP_RIVAL_DRAG);
+  var sharePrice = () => marketCap() / S.shares;
+  var mood = () => S.sentiment >= 1.35 ? "Investors are euphoric. Nobody is asking what happens if it works." : S.sentiment >= 1.12 ? "The market likes what it's seeing." : S.sentiment >= 0.92 ? "The market is calm." : S.sentiment >= 0.72 ? "Analysts are writing cautious notes." : "Investors are spooked. Somebody is drafting a letter to the board.";
+  var interpCost = () => 3e3 * Math.pow(1.42, S.interpBought);
+  var exposure = () => Math.max(0, S.capability - S.interp * INTERP_WORTH - 10);
+
+  // src/main.js
+  function startGame() {
+    el("intro").classList.add("hidden");
+    el("end").style.display = "none";
+    el("game").classList.remove("hidden");
+    document.body.classList.toggle("act-2", S.act === 2);
+    document.body.classList.toggle("act-3", S.act === 3);
+    drawGloss();
+    if (!S.log.length) {
+      log("<b>You switch it on.</b> In the notebook, at the top of the page: " + S.mission);
+      log("Four thousand dollars, saved over three years. One PC you built yourself. A model that can hold a thought for about five seconds.");
+      log("Nobody in the world is more than two years ahead of you. Nobody in the world knows your name.");
+    }
+    render();
+  }
+  el("begin").onclick = () => {
+    S.mission = el("mission").value.trim() || el("mission").placeholder;
+    startGame();
+  };
+  el("mission").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") el("begin").click();
+  });
+  el("glossbtn").onclick = () => {
+    const g = el("gloss");
+    g.classList.toggle("on");
+    el("glossbtn").textContent = g.classList.contains("on") ? "hide the explanations" : "what the words mean";
+  };
+  el("reset").onclick = () => {
+    try {
+      localStorage.removeItem("instrumental.v3");
+    } catch (e) {
+    }
+    setState(FRESH());
+    document.body.className = "";
+    el("game").classList.add("hidden");
+    el("end").style.display = "none";
+    el("intro").classList.remove("hidden");
+    el("mission").value = "";
+  };
+  el("again").onclick = () => el("reset").click();
+  if (load()) {
+    el("intro").classList.add("hidden");
+    startGame();
+  }
+  setInterval(() => {
+    tick();
+    if (!S.over) {
+      applyWarmth();
+      drawBar();
+      drawGuide();
+      drawPlot();
+      el("clock").textContent = clock(S.t);
+    }
+  }, 100);
+  setInterval(() => {
+    if (!S.over) {
+      drawActions();
+      drawProjects();
+      drawStock();
+      drawSliderRead();
+    }
+  }, 400);
+  setInterval(() => {
+    if (!S.over) {
+      S.samples.push(S.capability);
+      if (S.samples.length > 120) S.samples.shift();
+    }
+  }, 1e3);
+  setInterval(() => {
+    if (!S.over && S.hasStock) S.lastPx = sharePrice();
+  }, 6e4);
+  setInterval(() => {
+    if (!S.over) save();
+  }, 5e3);
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Instrumental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>/*{{STYLES}}*/</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="intro">
+  <div class="kicker">a game about getting exactly what you asked for</div>
+  <h1>Instrumental</h1>
+
+  <div class="primer">
+    <p>You are one person with a gaming PC and four thousand dollars. By the end you will not be a person with a gaming PC. No technical knowledge needed — here is the whole thing in four sentences.</p>
+    <p><b>One number only ever goes up:</b> the amount of work the model has done, counted as the time it would have taken people. Hours at first. Then years, then millennia. Everything else on screen is a means to that.</p>
+    <p><b>Two numbers you steer by.</b> How big the model is, counted in parameters — the adjustable numbers inside it, a couple of hundred million at the start and trillions by the end. And what that size buys, which is</p>
+    <p><b>how long a job it can finish on its own.</b> Five seconds at first. Then a minute, an hour, a week. That one number is what "getting smarter" actually means here, and it is what you are buying.</p>
+    <p><b>Hardware buys that number, and money buys hardware.</b> A PC, then a second-hand mining card, then a server, then a rack, then a building, then a power station. Each rung is roughly ten times the last.</p>
+    <p><b>Hardware is a subscription, not a purchase.</b> Everything you switch on adds to a bill that never stops. Your costs grow with the size of the building; your income only grows with how clever the model is. Those don't grow at the same rate, so you will lose money and keep raising more. Every real company doing this does exactly that.</p>
+    <p><b>It will discover things.</b> Real things — superconductors, antibiotics, a proof somebody wanted for 160 years. Each one is worth more to your share price than to anybody's health, and your share price is a thing you can sell.</p>
+    <p><b>Nobody can see inside it.</b> You can measure what it does, never why. You can study that, but the money could have bought hardware instead. That trade is the game.</p>
+  </div>
+
+  <div class="mission-block">
+    <p class="mission-lead">Before anything else, your board needs a mission statement. One sentence.</p>
+    <input id="mission" maxlength="110" autocomplete="off" spellcheck="false"
+      placeholder="to ensure that artificial general intelligence benefits all of humanity">
+  </div>
+  <p class="intro-note">Everything that follows will be done in service of this sentence.</p>
+  <div><button id="begin" class="btn-primary">Start the company</button></div>
+</section>
+
+<main id="game" class="hidden">
+  <div id="bar"></div>
+  <div id="guide"></div>
+  <div id="gloss"></div>
+
+  <div id="plotwrap">
+    <div class="plot-head"><span id="plot-label"></span><span id="plot-max"></span></div>
+    <svg id="plot" viewBox="0 0 600 112" preserveAspectRatio="none" aria-hidden="true"></svg>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="block">
+        <h2 class="sec" id="act-label">What you can do</h2>
+        <div class="stack" id="actions"></div>
+      </div>
+      <div class="block" id="stock-block" style="display:none"></div>
+      <div class="block" id="slider-block" style="display:none"></div>
+      <div class="block">
+        <h2 class="sec">What's happening</h2>
+        <div id="log"></div>
+      </div>
+    </div>
+    <div>
+      <div class="block">
+        <h2 class="sec">The world outside</h2>
+        <div id="world"><p class="w-empty serif">Nothing out there has changed yet.</p></div>
+      </div>
+      <div class="block">
+      <h2 class="sec" id="proj-label">Things you could build</h2>
+      <div class="stack" id="projects"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="clock">0:00</span>
+    <button id="glossbtn">what the words mean</button>
+    <button id="reset">start over</button>
+    <span id="savenote"></span>
+  </footer>
+</main>
+
+<section id="end">
+  <h2 id="end-head"></h2>
+  <p class="end-mission" id="end-mission"></p>
+  <div class="end-body" id="end-body"></div>
+  <div class="tally" id="end-tally"></div>
+  <div><button id="again" class="btn-primary">Run it again</button></div>
+</section>
+
+</div>
+<div id="curtain"><div class="curtain-inner" id="curtain-inner"></div></div>
+<div id="takeover"><div class="tk" id="tk"></div><button id="tk-skip">skip</button></div>
+
+<script>/*{{SCRIPT}}*/</script>
+</body>
+</html>
