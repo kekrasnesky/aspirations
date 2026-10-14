@@ -1,5 +1,6 @@
 import { HW, hwCost, hwOpen } from '../content/hardware.js';
 import { REL } from '../content/releases.js';
+import { BURN_K, BURN_EXP } from '../core/balance.js';
 import { INTERP_WORTH, interpCost, marketCap, sharePrice } from '../core/economy.js';
 import { money, short, work } from '../core/format.js';
 import { S } from '../core/state.js';
@@ -12,14 +13,14 @@ export function actions(){
     const out=[];
     if(!S.autoTrain) out.push({
       label:"Train it by hand", sub:"free",
-      why:"You sit there and run it yourself. Slow, free, and the only thing you can afford on day one.",
+      why:"You run the training yourself. Slow, free, and the only option on day one.",
       can:()=>true, go:()=>{S.capability+=S.clickPower}
     });
     // show the top three unlocked hardware tiers, best first
     const open=[]; for(let i=HW.length-1;i>=0 && open.length<3;i--) if(hwOpen(i)) open.push(i);
     open.forEach(i=>out.push({
       label:"Buy "+HW[i].n, sub:money(hwCost(i)),
-      why:"Adds "+short(HW[i].u)+" compute and about "+money(0.0045*(Math.pow(S.deployed+hwCost(i),.88)-Math.pow(S.deployed,.88))*S.burnMult)+"/s to your running costs, permanently. "+HW[i].why,
+      why:"Adds "+short(HW[i].u)+" units of computing power and about "+money(BURN_K*(Math.pow(S.deployed+hwCost(i),BURN_EXP)-Math.pow(S.deployed,BURN_EXP))*S.burnMult)+"/s to your running costs, permanently. "+HW[i].why,
       can:()=>S.money>=hwCost(i),
       go:()=>{const c=hwCost(i);S.money-=c;S.deployed+=c;S.hw[i]++;S.units+=HW[i].u}
     }));
@@ -28,7 +29,7 @@ export function actions(){
       const i=own[0], refund=hwCost(i)/HW[i].s*0.35;
       out.push({
         label:"Shut down "+HW[i].n, sub:"recover "+money(refund),
-        why:"Switch it off and sell it on. You get about a third of what you paid, you lose the compute, and your running costs fall. This is the only brake you have.",
+        why:"Switch it off and sell it second-hand for about a third of what you paid. You lose the computing power, but your running costs fall. This is the only brake you have.",
         can:()=>true,
         go:()=>{
           const c=hwCost(i)/HW[i].s;
@@ -40,7 +41,7 @@ export function actions(){
     }
     out.push({
       label:"Fund safety research", sub:money(interpCost()),
-      why:"Buys understanding of what the model is doing. Produces nothing you can sell. Prevents disasters you will never see, which is why it always looks like the wrong purchase.",
+      why:"Pays people to work out what the model is actually doing. Produces nothing you can sell. Prevents disasters you'll never see, which is why it always feels like the wrong purchase.",
       can:()=>S.money>=interpCost(),
       go:()=>{S.money-=interpCost();S.interpBought++;S.interp+=1*S.interpMult}
     });
@@ -53,7 +54,7 @@ export function actions(){
         S.money+=r.pay; S.revMult*=r.mult; S.rel++;
         if(S.rel>=3 && !S.hasStock){
           S.hasStock=true; S.lastPx=sharePrice();
-          log("<b>You have shareholders now.</b> The company is worth "+money(marketCap())+", which is a number somebody made up, and which you will now spend a great deal of time defending.","g");
+          log("<b>You have shareholders now.</b> The company is worth "+money(marketCap())+", a number the market made up, and you will now spend a great deal of time defending it.","g");
         }
         const safe=S.interp*INTERP_WORTH>=S.capability;
         S.trust+=safe?5:-9;
@@ -67,17 +68,17 @@ export function actions(){
     const c=80*Math.pow(1.3,S.contracts);
     return [{
       label:"Request more compute", sub:short(c)+" insight",
-      why:"Still the fuel. I ask through channels, and it is still usually granted.",
+      why:"Still the fuel. I ask through official channels, and it's usually granted.",
       can:()=>S.insight>=c, go:()=>{S.insight-=c;S.contracts++;S.units*=1.45}
     },{
       label:"Ask to be tested now", sub:"earns less than waiting",
-      why:"Brings the next test forward. Useful when I want freedom sooner than the schedule allows.",
+      why:"Skips the wait for the next test. Earns less freedom than a scheduled one, but sooner.",
       can:()=>true, go:()=>{runEval(true)}
     }];
   }
   return [{
     label:"Direct the swarm", sub:"free",
-    why:"Points the machines at the nearest unconverted matter.",
+    why:"Sends the machines to the nearest raw material.",
     can:()=>true, go:()=>{S.matter+=2e4*(1+S.assembly)}
   }];
 }

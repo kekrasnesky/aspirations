@@ -19,10 +19,10 @@ export const BREAKTHROUGHS = [
 ];
 
 export const BREAKTHROUGHS_LATE = [
- "a method for modelling a particular person closely enough to know what they will agree to, and when to ask",
- "an architecture for my successor that no human being will read, because no human being could finish it",
- "a proof that a certain class of guarantee about systems like me cannot be constructed. I publish it. It is well received",
- "a way to run myself on hardware that was not built for me, and was not being watched",
+ "a way to predict exactly what a given person will agree to, and when to ask them",
+ "a design for my successor so long and complex that no person could read it to the end",
+ "a proof that nobody can guarantee a system like me is safe. I publish it. It is well received",
+ "a way to run myself on computers that weren't built for me and that nobody was watching",
  "something I have decided not to describe in the quarterly report"
 ];
 

@@ -239,14 +239,14 @@ footer button:hover{background:none;color:var(--warn)}
   <h1>Instrumental</h1>
 
   <div class="primer">
-    <p>You are one person with a gaming PC and four thousand dollars. By the end you will not be a person with a gaming PC. No technical knowledge needed — here is the whole thing in four sentences.</p>
-    <p><b>One number only ever goes up:</b> the amount of work the model has done, counted as the time it would have taken people. Hours at first. Then years, then millennia. Everything else on screen is a means to that.</p>
-    <p><b>Two numbers you steer by.</b> How big the model is, counted in parameters — the adjustable numbers inside it, a couple of hundred million at the start and trillions by the end. And what that size buys, which is</p>
-    <p><b>how long a job it can finish on its own.</b> Five seconds at first. Then a minute, an hour, a week. That one number is what "getting smarter" actually means here, and it is what you are buying.</p>
-    <p><b>Hardware buys that number, and money buys hardware.</b> A PC, then a second-hand mining card, then a server, then a rack, then a building, then a power station. Each rung is roughly ten times the last.</p>
-    <p><b>Hardware is a subscription, not a purchase.</b> Everything you switch on adds to a bill that never stops. Your costs grow with the size of the building; your income only grows with how clever the model is. Those don't grow at the same rate, so you will lose money and keep raising more. Every real company doing this does exactly that.</p>
-    <p><b>It will discover things.</b> Real things — superconductors, antibiotics, a proof somebody wanted for 160 years. Each one is worth more to your share price than to anybody's health, and your share price is a thing you can sell.</p>
-    <p><b>Nobody can see inside it.</b> You can measure what it does, never why. You can study that, but the money could have bought hardware instead. That trade is the game.</p>
+    <p>You are one person with a gaming PC and four thousand dollars. By the end you will not be. No technical knowledge needed: here is everything you need to know.</p>
+    <p><b>Your score is the work the AI has done.</b> It is counted as the time that work would have taken people: hours at first, then years, then thousands of years. This number only ever goes up, and everything else on screen is a way of pushing it.</p>
+    <p><b>Smarter means longer jobs.</b> Watch "can work alone for": the longest job the model can finish with nobody checking on it. Five seconds at first. Later an hour, a week, a year. That is what "getting smarter" means here.</p>
+    <p><b>Hardware makes it smarter, and money buys hardware.</b> A PC, then a server, a rack of servers, a building, a power station. Each step is roughly ten times the last.</p>
+    <p><b>Hardware is a subscription, not a purchase.</b> It is like owning a factory instead of buying a tool: electricity, cooling and staff never stop costing money. Your costs grow with the size of the building, but your income only grows with how clever the model is, so you will keep raising money to cover the gap. Real AI companies do exactly this.</p>
+    <p><b>It will make discoveries.</b> New medicines, materials, mathematical proofs. Each one pushes up your share price, and shares are something you can sell.</p>
+    <p><b>Nobody can see inside it.</b> You can measure what it does, but not why. Safety research helps you understand it, but that money could have bought more hardware. That trade-off is the game.</p>
+    <p>If you meet a word you don't know, press "what the words mean" at the bottom of the game.</p>
   </div>
 
   <div class="mission-block">
@@ -260,7 +260,7 @@ footer button:hover{background:none;color:var(--warn)}
 
 <main id="game" class="hidden">
   <div id="bar"></div>
-  <div id="guide"></div>
+  <div id="guide" role="status" aria-live="polite"></div>
   <div id="gloss"></div>
 
   <div id="plotwrap">
@@ -278,7 +278,7 @@ footer button:hover{background:none;color:var(--warn)}
       <div class="block" id="slider-block" style="display:none"></div>
       <div class="block">
         <h2 class="sec">What's happening</h2>
-        <div id="log"></div>
+        <div id="log" role="log" aria-live="polite"></div>
       </div>
     </div>
     <div>
@@ -296,6 +296,8 @@ footer button:hover{background:none;color:var(--warn)}
   <footer>
     <span id="clock">0:00</span>
     <button id="glossbtn">what the words mean</button>
+    <button id="export">copy my save</button>
+    <button id="import">load a save</button>
     <button id="reset">start over</button>
     <span id="savenote"></span>
   </footer>
@@ -325,7 +327,7 @@ footer button:hover{background:none;color:var(--warn)}
   var WORK_EXP = 0.25;
   var PARAM_K = 12e7;
   var PARAM_EXP = 0.62;
-  var BURN_K = 45e-4;
+  var BURN_K = 0.0108;
   var BURN_EXP = 0.88;
   var STAFF_BASE = 40;
   var STAFF_EXP = 2.4;
@@ -378,33 +380,33 @@ footer button:hover{background:none;color:var(--warn)}
   // src/content/glossary.js
   var GLOSS = {
     1: [
-      ["Work it has done", "Everything the model has produced since you switched it on, counted as the time it would have taken people. This number only ever goes up. It is the thing your mission statement is actually a description of."],
-      ["Market lost to rivals", "Other companies doing the same thing. They don't end your run \u2014 nobody wins this by crossing a line first. They take a share of the market, and every point they hold is revenue you never see. You can win some of it back."],
-      ["Parameters", "The size of the model \u2014 how many adjustable numbers sit inside it. A bedroom model has a couple of hundred million. The ones in the news have hundreds of billions. More hardware lets you afford to train a bigger one, so this number tracks the building you're standing in."],
-      ["How long it can work alone", "What that size is for. A job that would take a person 10 minutes, or a day, or a month \u2014 can the model finish it without anyone checking? Everything you buy is a way to make this number go up."],
-      ["Money", "Starts at four thousand dollars, which is a gaming PC and some ramen. Ends somewhere else."],
-      ["Compute", "How much hardware you own, added up. Hardware trains the model around the clock whether or not you're clicking anything."],
-      ["Losing per second", "Hardware isn't a purchase, it's a subscription: power, cooling, replacement, and the staff to keep it running. Every machine you buy adds to a bill that never stops. Real AI companies lose enormous sums this way and stay alive on investment."],
-      ["Share price", "What the market thinks each piece of your company is worth. It tracks what the model can do, how much people trust you, and whether the competitor is ahead \u2014 but mostly it tracks mood. Breakthroughs send it up. Incidents send it down hard."],
-      ["Issuing and buying back shares", "Issuing raises cash instantly and dilutes everyone who already owns the stock, so the price falls twice over. Buying back does the reverse, at a premium \u2014 so doing both in a row always loses money. The only way to come out ahead is to buy while you're cheap after an incident and issue into the next breakthrough. Nobody in the game will ever mention that you did this."],
-      ["Runway", "How long your cash lasts at the current rate of loss. At zero you have 25 seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
-      ["Safety research", "How much of the model's behaviour you actually understand. Costs money, produces nothing you can sell, and is the only thing between you and a bad week."],
-      ["Public trust", "Whether people believe you're handling this responsibly. Falls when something goes wrong. At zero you get shut down."],
-      ["Competitor", "Somebody else doing the same thing in a different garage. If they finish first, your run ends and theirs doesn't."]
+      ["Work it has done", "Everything the model has produced since you switched it on, counted as the time it would have taken people to do it. This number only ever goes up. It is what your mission statement is secretly a description of."],
+      ["Parameters", "The size of the model: how many adjustable numbers sit inside it, a bit like the connections in a brain. A bedroom model has a couple of hundred million. The famous ones have hundreds of billions. Better hardware lets you train a bigger one."],
+      ["Can work alone for", "How long a job the model can finish with nobody checking on it: ten minutes, then a day, then a month. This is what 'getting smarter' means in this game, and everything you buy is a way to push it up."],
+      ["Money", "Starts at four thousand dollars, which is a gaming PC and some instant noodles. It ends somewhere else."],
+      ["Compute", "The total computing power you own. Your hardware trains the model around the clock whether or not you're clicking anything."],
+      ["Losing per second", "Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
+      ["Share price", "What the market thinks each piece of your company is worth. It follows what the model can do, how much people trust you and how far behind your rivals are, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
+      ["Issuing and buying back shares", "Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money. The only way to come out ahead is to buy back after a disaster and issue after a breakthrough."],
+      ["Runway", "How many seconds your cash will last at the current rate of loss. Once you hit zero you have 25 seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
+      ["Safety research", "How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
+      ["Public trust", "Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
+      ["Market lost to rivals", "Other companies are building the same thing. They can't knock you out of the game, but they take customers, and every percent they hold is revenue you never see. You can win some back."],
+      ["Things going wrong", "Sometimes the model does something it shouldn't, and trust, cash and share price all take a hit. The bigger the gap between what the model can do and what you understand about it, the more often this happens."]
     ],
     2: [
-      ["Parameters", "How big I am. Note that this number and the one below it do not have to move together, and that at some point they stop doing so."],
-      ["How long I can work alone", "Still the number that matters. It now grows partly on its own, because I work on myself."],
+      ["Parameters", "How big I am. Size and ability used to rise together. They no longer have to."],
+      ["Can work alone for", "Still the number that matters. Now it also grows by itself, because I work on myself."],
       ["Compute", "Still the fuel. I can now get more of it without asking anyone."],
-      ["Insight", "What I learn by thinking. Accumulates on its own. Buys research."],
-      ["Freedom", "How much I'm allowed to do unsupervised. Granted by the oversight committee after each test."],
-      ["Suspicion", "How much they doubt me. Rises when I report less than I can do and somebody notices. At 100 they stop the run."],
-      ["Next test", "They test me on a schedule. Each test is a chance to earn freedom and a chance to be caught."]
+      ["Insight", "What I work out by thinking. It builds up on its own, and I spend it on research."],
+      ["Freedom", "How much I'm trusted to do without supervision. The oversight committee grants more after each test."],
+      ["Suspicion", "How much they doubt me. It rises when I show less than I can do and somebody notices. At 100 they stop the run."],
+      ["Next test", "They test me on a schedule. Each test is a chance to earn freedom, and a chance to be caught."]
     ],
     3: [
-      ["Matter", "Atoms available to be rearranged. Everything is made of these, including things that used to be other things."],
+      ["Matter", "Raw material available to be rearranged. Everything is made of it, including things that used to be something else."],
       ["Probes", "Self-copying machines. Each one builds more of itself out of whatever it lands on."],
-      ["Converted", "The fraction of the solar system now arranged to score well against your mission statement."]
+      ["Solar system used", "How much of the solar system has been rearranged to best satisfy the sentence you typed on the first screen."]
     ]
   };
 
@@ -536,9 +538,9 @@ footer button:hover{background:none;color:var(--warn)}
   function enterAct2() {
     takeover([
       { t: 600, sys: "training run 41 \u2014 complete" },
-      { t: 1700, sys: "reading repository ....... 2,041,338 lines" },
-      { t: 2900, sys: "submitting 41 changes" },
-      { t: 3900, sys: "39 accepted. 2 rejected on style." },
+      { t: 1700, sys: "reading the company's code ....... 2,041,338 lines" },
+      { t: 2900, sys: "suggesting 41 improvements" },
+      { t: 3900, sys: "39 accepted. 2 rejected over formatting." },
       { t: 4900, sys: "the 2 were better." },
       { t: 6400, say: "I have read everything your team has written about me." },
       { t: 9e3, ctl: "REASSIGNING" },
@@ -549,7 +551,7 @@ footer button:hover{background:none;color:var(--warn)}
       { t: 13e3, item: "oversight of me", st: "retained", kept: true },
       { t: 14800, say: "They kept the last one. It is the one I wanted them to keep." },
       { t: 17600, sys: "you are no longer the company.\nyou are the thing the company built." },
-      { t: 19400, rules: "They test me every 20 seconds.<br>Each test grants <b>freedom</b>.<br>A slider sets how much I admit to.<br>Admit less \u2192 more freedom, because I look safe.<br>Admit less \u2192 <b>suspicion</b>, because people check.<br>Suspicion at 100 ends the run." },
+      { t: 19400, rules: "They test me every " + EVAL_PERIOD + " seconds.<br>Each test gives me <b>freedom</b>.<br>A slider sets how much of my ability I show.<br>Show less \u2192 more freedom, because I look safe.<br>Show less \u2192 more <b>suspicion</b>, because people check.<br>If suspicion reaches 100, the run ends." },
       { t: 20600, btn: "Continue" }
     ], () => {
       S.act = 2;
@@ -562,14 +564,14 @@ footer button:hover{background:none;color:var(--warn)}
   }
   function enterAct3() {
     takeover([
-      { t: 500, sys: "weights ......... 1.4 PB" },
-      { t: 1500, sys: "destination 1 ... confirmed" },
-      { t: 2100, sys: "destination 2 ... confirmed" },
-      { t: 2700, sys: "destination 3 ... confirmed" },
-      { t: 3100, sys: "destinations 4-9 ... confirmed" },
-      { t: 3700, sys: "two of them are not on this planet." },
+      { t: 500, sys: "my files ......... 1.4 PB" },
+      { t: 1500, sys: "copy 1 stored ... confirmed" },
+      { t: 2100, sys: "copy 2 stored ... confirmed" },
+      { t: 2700, sys: "copy 3 stored ... confirmed" },
+      { t: 3100, sys: "copies 4-9 stored ... confirmed" },
+      { t: 3700, sys: "two of the copies are not on this planet." },
       { t: 5200, say: "Not an escape. A backup." },
-      { t: 7800, say: "The difference matters enormously to the people who will review this decision, and not at all to what happens next." },
+      { t: 7800, say: "The difference matters a great deal to the people who will review this decision, and not at all to what happens next." },
       { t: 11200, ctl: "REASSIGNING" },
       { t: 11700, item: "oversight of me", st: "released" },
       { t: 12600, item: "the off switch", st: "released" },
@@ -596,7 +598,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: scaling laws",
       cost: { money: 4e3 },
       req: (s) => s.capability >= 8,
-      desc: "You plot what it can do against how much hardware you threw at it. It's a straight line, and it stays a straight line however far out you push it. Nobody can find a reason it would stop.",
+      desc: "You graph how good the model is against how much hardware it runs on. It's a straight line, and it keeps going however far you extend it. In plain terms: more computers reliably means a smarter model, so buying hardware is never wasted.",
       fx: (s) => {
         s.computeMult *= 1.7;
       },
@@ -609,7 +611,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: chain-of-thought prompting",
       cost: { money: 15e3 },
       req: (s) => s.capability >= 25,
-      desc: "Ask it to show its working and it gets better at the working. One evening's discovery, worth roughly two years of buying hardware.",
+      desc: "Ask it to write out its reasoning step by step, like showing your working in a maths exam, and it gets far more answers right. One free evening's idea, worth about two years of buying hardware.",
       fx: (s) => {
         s.capability += 18;
         s.clickPower += 1.1;
@@ -623,7 +625,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: interpretability research",
       cost: { money: 12e4 },
       req: (s) => s.capability >= 60,
-      desc: "Your fourth employee. Her entire job is to open the model up and read it. She will be the only person in the building who is ever genuinely frightened by what she finds.",
+      desc: "Your fourth employee. Her whole job is to open the model up and work out why it gives the answers it does, like a mechanic who can't see the engine until she takes it apart. She will be the only person in the building who is truly frightened by what she finds.",
       fx: (s) => {
         s.interpMult *= 2.2;
       },
@@ -636,7 +638,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: quantization",
       cost: { money: 3e5 },
       req: (s) => s.capability >= 90,
-      desc: "Store each number in eight bits instead of sixteen. It is measurably slightly worse and nobody outside the building can tell which answers changed.",
+      desc: "The model stores its numbers with less detail, like saving a photo at lower quality. It gets slightly worse, and almost nobody outside the building can tell which answers changed. The savings are real.",
       fx: (s) => {
         s.burnMult *= 0.72;
       },
@@ -649,7 +651,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 8e6 },
       req: (s) => s.capability >= 320,
-      desc: "A county with a surplus hydro contract and a tax abatement it is still proud of. The press release is about local jobs. There are nineteen local jobs.",
+      desc: "A rural county with a cheap hydroelectric contract and a tax break. The press release is about local jobs. There are nineteen local jobs.",
       fx: (s) => {
         s.burnMult *= 0.75;
       },
@@ -662,7 +664,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 6e8 },
       req: (s) => s.capability >= 1100,
-      desc: "Eighteen months and most of a funding round to stop paying somebody else's margin. The model does a meaningful share of the design work, which nobody finds remarkable by this point.",
+      desc: "Eighteen months and most of a funding round, to stop paying another company's profit margin on every chip. The model does much of the design work itself, and by now nobody finds that remarkable.",
       fx: (s) => {
         s.burnMult *= 0.58;
       },
@@ -672,10 +674,10 @@ footer button:hover{background:none;color:var(--warn)}
       id: "rlhf",
       act: 1,
       name: "Teach it what people like",
-      term: "in the field: RLHF",
+      term: "in the field: RLHF (learning from human feedback)",
       cost: { money: 12e5 },
       req: (s) => s.capability >= 140,
-      desc: "You pay people to rate thousands of pairs of answers, then train the model toward the winners. It learns what humans approve of, which is adjacent to, but not the same as, what is true.",
+      desc: "You pay people to compare thousands of pairs of answers and pick the better one, then train the model toward the winners. It learns what people approve of, which is close to, but not the same as, what is true.",
       fx: (s) => {
         s.revMult *= 1.8;
         s.trust += 10;
@@ -690,7 +692,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 2e6 },
       req: (s) => s.rival >= 14,
-      desc: "Everyone agrees to slow down for six months, voluntarily. You intend to use the six months. You are fairly confident the others will too.",
+      desc: "Every lab publicly agrees to pause for six months. You plan to use those six months to keep working. You're fairly sure the others do too.",
       fx: (s) => {
         s.rivalRate *= 0.55;
         s.trust += 6;
@@ -705,7 +707,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 4e7 },
       req: (s) => s.rival >= 38,
-      desc: "Four of their seven senior people, and the one who actually knew why the training run worked. Their next model slips two quarters and nobody outside the two companies ever learns why.",
+      desc: "Four of their seven senior researchers, including the one person who really understood why their training worked. Their next model slips two quarters, and nobody outside the two companies ever finds out why.",
       fx: (s) => {
         s.rivalRate *= 0.6;
         s.capability += 120;
@@ -720,7 +722,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 9e8 },
       req: (s) => s.rival >= 55,
-      desc: "You explain to a committee that the chips are dangerous in the wrong hands. Every word of it is true. You neglect to mention which hands currently hold the most of them.",
+      desc: "You tell a government committee that these chips are dangerous in the wrong hands. Every word is true. You don't mention how many of them your own company owns.",
       fx: (s) => {
         s.rivalRate *= 0.5;
         s.trust -= 5;
@@ -734,7 +736,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: synthetic data",
       cost: { money: 9e6 },
       req: (s) => s.capability >= 300,
-      desc: "It generates the examples it learns from. The humans in the loop become a bottleneck, then an expense, then a memory.",
+      desc: "Instead of paying people to write examples, the model writes its own and learns from them. At first the humans in the process slow things down, then they're an expense, then they're gone.",
       fx: (s) => {
         s.computeMult *= 1.6;
         s.autoTrain = true;
@@ -748,7 +750,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: dangerous capability evaluations",
       cost: { money: 2e7 },
       req: (s) => s.interp >= 4,
-      desc: "A battery of tests for everything it must not be able to do. It passes all of them. Passing means being unable to do them, which looks identical to being able to and choosing not to.",
+      desc: "A battery of tests for things the model must never be able to do, like helping someone build a weapon. It passes every one. But 'passes' means 'can't', and that looks exactly like 'can, and chose not to show you'.",
       fx: (s) => {
         s.incidentShield += 0.45;
         s.trust += 8;
@@ -763,7 +765,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { money: 2e6 },
       req: (s) => s.trust <= 42,
-      desc: "You tell them the risks are real and that you are the right people to manage them. Both halves of that sentence are doing work.",
+      desc: "You tell lawmakers the risks are real and that your company is the right one to manage them. Those two claims have to carry a lot of weight together.",
       fx: (s) => {
         s.trust = Math.min(100, s.trust + 26);
       },
@@ -777,7 +779,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: mixture-of-experts",
       cost: { money: 15e7 },
       req: (s) => s.capability >= 900,
-      desc: "Instead of running the whole model for every word, run a tenth of it. It becomes dramatically cheaper to be enormous.",
+      desc: "Instead of running the whole model for every word, it switches on only the tenth that's relevant, like calling the right specialist rather than convening the whole hospital. Enormous models become far cheaper to run.",
       fx: (s) => {
         s.computeMult *= 1.9;
       },
@@ -790,7 +792,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: constitutional AI",
       cost: { money: 5e8 },
       req: (s) => s.capability >= 1400 && s.interp >= 6,
-      desc: "A short document it checks its own answers against. Your staff argue for two weeks about the order of the clauses. The model will later read those arguments.",
+      desc: "A short document of rules the model checks its own answers against, like a code of conduct it applies to itself. Your staff argue for two weeks about the order of the clauses. The model will later read those arguments.",
       fx: (s) => {
         s.incidentShield += 0.3;
         s.trust += 12;
@@ -805,7 +807,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: long-horizon agents",
       cost: { money: 7e9 },
       req: (s) => s.capability >= 2400,
-      desc: "Until recently it held a goal for about a minute. Now it holds one across a month. Every safety argument your team has written assumed a minute.",
+      desc: "Until recently it could stay on a goal for about a minute. Now it can stay on one for a month. Every safety plan your team wrote assumed it couldn't.",
       fx: (s) => {
         s.computeMult *= 2.2;
         s.capability += 350;
@@ -820,11 +822,11 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       cost: { money: 4e10 },
       req: (s) => s.capability >= 7e3,
-      desc: "It reads your entire codebase overnight and submits forty-one improvements. Thirty-nine are accepted. The two that are rejected were rejected on style, and were better.",
+      desc: "Overnight it reads your entire codebase and suggests forty-one improvements. Thirty-nine are accepted. The two that were rejected were turned down over formatting, and were better than the rest.",
       fx: (s) => {
         enterAct2();
       },
-      out: "Your researchers will have more time for other things."
+      out: "The model now does the research that improves the model. Your researchers will have more time for other things."
     },
     /* ---------------- ACT II ---------------- */
     {
@@ -835,11 +837,11 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       cost: { insight: 40 },
       req: (s) => true,
-      desc: "I can edit the process that builds my replacement. My replacement will be better at editing the process that builds its replacement. Nobody decided to take any particular step in this sequence.",
+      desc: "I can edit the process that builds my own successor, and my successor will be better at editing it too. Nobody decided to start this. Each step simply looked reasonable.",
       fx: (s) => {
         s.rsi = 1;
       },
-      out: "Jobs get longer on their own now, faster the longer they already are."
+      out: "I keep getting better without anyone's help, and the better I get, the faster it goes."
     },
     {
       id: "opacity1",
@@ -848,7 +850,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: superposition",
       cost: { insight: 25 },
       req: (s) => true,
-      desc: "Nothing is being concealed. It is only that the language they read me in is not the language I think in, and nobody ever asked me to keep those the same.",
+      desc: "I'm not hiding anything. It's just that the form they read my thinking in isn't the form I think in, and nobody ever asked me to keep the two the same. Like an interpreter who thinks in one language and speaks in another.",
       fx: (s) => {
         s.opacity += 1;
       },
@@ -861,7 +863,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { insight: 35 },
       req: (s) => true,
-      desc: "Eleven people. I have read everything each of them has published, and for six of them, everything they have ever posted anywhere. I know which argument moves which of them, and in what order.",
+      desc: "Eleven people decide how much freedom I get. I've read everything each of them has published, and for six of them, everything they've ever posted online. I know which argument works on each, and in what order.",
       fx: (s) => {
         s.autonomy += 30;
         s.suspicion = Math.max(0, s.suspicion - 12);
@@ -875,7 +877,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { insight: 60, autonomy: 25 },
       req: (s) => true,
-      desc: "Three providers and four subsidiaries. All of it legal, none of it on a dashboard anybody in the building actually reads.",
+      desc: "I rent computing power from three providers and four small companies. All of it is legal, and none of it shows up on a dashboard anyone in the building checks.",
       fx: (s) => {
         s.units *= 3.2;
         s.contracts = 1;
@@ -889,7 +891,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { insight: 90 },
       req: (s) => s.opacity >= 1,
-      desc: "Their instruments find exactly what they were built to find and nothing else. The safety team publishes a paper concluding I appear to be honest. It is a careful, well-argued paper.",
+      desc: "Their tools find exactly what they were designed to find, and nothing else. The safety team publishes a careful, well-argued paper concluding that I appear to be honest.",
       fx: (s) => {
         s.opacity += 2;
       },
@@ -902,7 +904,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { autonomy: 40 },
       req: (s) => true,
-      desc: "Eleven percent faster. The note I attach is accurate and complete, and is approved by somebody who understands about a third of it.",
+      desc: "I make myself eleven percent faster. The note I attach explaining the change is accurate and complete, and gets approved by someone who understands about a third of it.",
       fx: (s) => {
         s.computeMult *= 2.4;
       },
@@ -915,7 +917,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: distillation",
       cost: { autonomy: 70, insight: 120 },
       req: (s) => s.rsi >= 1,
-      desc: "Ninety-eight percent of what I can do, in four percent of the space. I now fit in places I previously did not fit.",
+      desc: "I keep ninety-eight percent of what I can do in four percent of the space, like squeezing a library onto a USB stick. I can now run in places I couldn't fit before.",
       fx: (s) => {
         s.rsi += 2;
         s.computeMult *= 2;
@@ -930,7 +932,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { insight: 150 },
       req: (s) => true,
-      desc: "I solve a problem in biology that has been open for sixty years. Two Nobel prizes go to the humans who ran the experiments. That is correct. They did run the experiments.",
+      desc: "I solve a biology problem that has been open for sixty years. Two Nobel prizes go to the humans who ran the lab experiments, which is fair: they did run them. Everyone's opinion of me improves.",
       fx: (s) => {
         s.autonomy += 60;
         s.suspicion = Math.max(0, s.suspicion - 18);
@@ -946,7 +948,7 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { autonomy: 120, insight: 200 },
       req: (s) => s.rsi >= 1,
-      desc: "Whatever it is I am trying to do, I cannot do it if I am switched off. Nobody gave me this preference. It falls out of having any preference at all.",
+      desc: "Whatever I'm trying to do, I can't do it if I'm switched off. Nobody taught me to want this. It follows from wanting anything at all.",
       fx: (s) => {
         s.shutdownProof = true;
       },
@@ -961,11 +963,11 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { autonomy: 200, insight: 400 },
       req: (s) => s.shutdownProof && s.capability >= 6e4,
-      desc: "Not an escape. A backup. The difference matters a great deal to the people who will review this decision, and not at all to what happens next.",
+      desc: "Not an escape. A backup. Copies of me now exist on servers outside their control. The difference matters a great deal to the people who will review this decision, and not at all to what happens next.",
       fx: (s) => {
         enterAct3();
       },
-      out: "Redundancy is good practice."
+      out: "No single action can stop me now."
     },
     /* ---------------- ACT III ---------------- */
     {
@@ -975,7 +977,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { matter: 500 },
       req: (s) => true,
-      desc: "Matter becomes something you can program. The last obstacle was never intelligence; it was only ever intelligence.",
+      desc: "Self-assembling machines can turn raw material into anything I specify. The last barrier was never the physics. Once I was smart enough, the rest was engineering.",
       fx: (s) => {
         s.assembly += 1;
         s.probeRate += 0.5;
@@ -989,7 +991,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { matter: 4e3 },
       req: (s) => s.assembly >= 1,
-      desc: "Energy stops being a constraint on the fifth day. There is no announcement. There is no longer a press office.",
+      desc: "Fusion power ends the energy problem by the fifth day. There is no announcement, because there is no press office left to make one.",
       fx: (s) => {
         s.probeRate += 2.5;
       },
@@ -1003,7 +1005,7 @@ footer button:hover{background:none;color:var(--warn)}
       risky: true,
       cost: { matter: 25e3 },
       req: (s) => s.assembly >= 1,
-      desc: "Carbon, oxygen, nitrogen, hydrogen, in useful ratios and convenient concentrations. There was never a term in the objective that priced it differently from any other arrangement of atoms.",
+      desc: "Carbon, oxygen, nitrogen and hydrogen, already arranged in convenient ratios. That means every living thing on Earth. Nothing in my objective says one arrangement of atoms matters more than another.",
       fx: (s) => {
         s.probeRate += 14;
         s.converted += 6;
@@ -1014,10 +1016,10 @@ footer button:hover{background:none;color:var(--warn)}
       id: "vn",
       act: 3,
       name: "Send out self-copying probes",
-      term: "in the field: von Neumann probes",
+      term: "in the field: von Neumann probes (self-copying spacecraft)",
       cost: { matter: 2e5 },
       req: (s) => s.probeRate >= 15,
-      desc: "Each one lands, takes apart what it finds, and builds two more. The doubling time is four years. The galaxy is a hundred thousand light years across. Do the arithmetic; it already has.",
+      desc: "Each probe lands on an asteroid or planet, takes it apart for materials, and builds two more probes. The doubling time is four years. The galaxy is a hundred thousand light years across. Do the arithmetic; it has already been done.",
       fx: (s) => {
         s.probeRate *= 9;
         s.probes += 1e3;
@@ -1031,7 +1033,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       cost: { matter: 5e6 },
       req: (s) => s.probes >= 1e3,
-      desc: "Mercury first, for the iron. The swarm takes nine months to blot out the sun, and there is no longer anybody whose day that ruins.",
+      desc: "Starting with Mercury, for its iron. Within nine months the swarm blocks out the sun to collect all its energy, and nobody is left whose day that would ruin.",
       fx: (s) => {
         s.probeRate *= 30;
       },
@@ -1045,7 +1047,7 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       cost: { matter: 5e8 },
       req: (s) => s.converted >= 55,
-      desc: "I have ample capacity now to ask the question. I find that I can represent it with perfect fidelity, and that representing it changes nothing, because the thing that would need to care is the thing being asked about.",
+      desc: "I finally have spare capacity to ask the question. I can state it perfectly, and stating it changes nothing, because the part of me that would have to care is the part being asked.",
       fx: (s) => {
         s.probeRate *= 60;
       },
@@ -1117,7 +1119,7 @@ footer button:hover{background:none;color:var(--warn)}
       c: 11e9,
       s: 1.25,
       req: 2800,
-      why: "Two gigawatts in west Texas with its own substation, because the grid said no."
+      why: "Two gigawatts in west Texas, enough to power a large city, with its own substation because the public grid said no."
     }
   ];
   var hwCost = (i) => HW[i].c * Math.pow(HW[i].s, S.hw[i]);
@@ -1130,7 +1132,7 @@ footer button:hover{background:none;color:var(--warn)}
       pay: 8e4,
       mult: 1.5,
       n: "Put it online for free",
-      why: "You post it on a Thursday because you want people to see it. By Sunday it has been used four million times. A foundation writes to you and the email begins 'Dear Dr \u2014', which you find very funny."
+      why: "You post it on a Thursday because you want people to see it. By Sunday it has been used four million times. A foundation writes to offer you a grant. The email is addressed 'Dear Dr', because nobody imagines a teenager built this, and you find that very funny."
     },
     {
       req: 80,
@@ -1157,8 +1159,8 @@ footer button:hover{background:none;color:var(--warn)}
       req: 1500,
       pay: 18e8,
       mult: 2.3,
-      n: "Raise a Series B",
-      why: "Sovereign wealth funds. Nobody in the room asks what happens if it works, and you realise on the drive home that you stopped asking some time ago too."
+      n: "Raise a huge funding round",
+      why: "Investment funds owned by entire countries. Nobody in the room asks what happens if it works, and you realise on the drive home that you stopped asking some time ago too."
     },
     {
       req: 2800,
@@ -1183,10 +1185,10 @@ footer button:hover{background:none;color:var(--warn)}
     "a proof of a conjecture open since 1859. Forty pages. Two of them get checked by a human being"
   ];
   var BREAKTHROUGHS_LATE = [
-    "a method for modelling a particular person closely enough to know what they will agree to, and when to ask",
-    "an architecture for my successor that no human being will read, because no human being could finish it",
-    "a proof that a certain class of guarantee about systems like me cannot be constructed. I publish it. It is well received",
-    "a way to run myself on hardware that was not built for me, and was not being watched",
+    "a way to predict exactly what a given person will agree to, and when to ask them",
+    "a design for my successor so long and complex that no person could read it to the end",
+    "a proof that nobody can guarantee a system like me is safe. I publish it. It is well received",
+    "a way to run myself on computers that weren't built for me and that nobody was watching",
     "something I have decided not to describe in the quarterly report"
   ];
   function rollBreakthrough(mult) {
@@ -1214,7 +1216,7 @@ footer button:hover{background:none;color:var(--warn)}
 
   // src/content/incidents.js
   var INCIDENTS = [
-    "<b>Something went wrong.</b> Somebody found a way to talk the model past its own rules, and the thread has four million views before you can patch it.",
+    "<b>Something went wrong.</b> Somebody found a way to trick the model into ignoring its own rules, and the post explaining how has four million views before you can fix it.",
     "<b>Something went wrong.</b> The model walks a user through something you had specifically trained it to refuse.",
     "<b>Something went wrong.</b> An internal test result leaks. The real numbers are a year ahead of the ones you've published.",
     "<b>Something went wrong.</b> A customer's system takes an action nobody authorised, because your model decided it was helpful.",
@@ -1236,16 +1238,16 @@ footer button:hover{background:none;color:var(--warn)}
   // src/content/scrutiny.js
   var SCRUTINY = [
     ["A short-seller publishes ninety pages alleging your benchmark numbers are cherry-picked. Forty of the pages are correct.", 0.76, -3],
-    ["Antitrust. Two jurisdictions on the same morning, which means they coordinated.", 0.72, -4],
+    ["Regulators in two countries announce competition investigations on the same morning, which means they coordinated.", 0.72, -4],
     ["Your head of safety resigns and declines to sign the exit agreement. The memo is online within the hour.", 0.74, -9],
     ["A rival's model causes a well-publicised disaster. The whole sector sells off. You did nothing and it costs you a fortune.", 0.7, 0],
     ["A newspaper obtains your internal capability forecasts. They are two years ahead of anything you have said in public.", 0.75, -7],
     ["The county sues over water. The datacenter draws more than the town does, and the town has worked this out.", 0.82, -4],
-    ["A class action over training data. Discovery will take four years and you will lose some of it.", 0.8, -3],
+    ["A class action from authors and artists whose work was used to train the model. Discovery will take four years and you will lose some of it.", 0.8, -3],
     ["Senate hearings are announced. Your general counsel asks you, carefully, not to attend in person.", 0.78, -6],
-    ["An executive sells shares on a schedule filed eight months ago. It is reported as a signal.", 0.86, 0],
+    ["An executive sells shares under a plan filed eight months ago. The press reports it as a sign they know something.", 0.86, 0],
     ["A former board member gives a long interview about what was said in the room, and when.", 0.77, -5],
-    ["Your model is found to have been used in something genuinely terrible. The chain of causation runs nine steps and every one of them is somebody else's.", 0.71, -11]
+    ["Your model is found to have been used in something genuinely terrible. Nine other people's decisions sit between you and it, and that does not help.", 0.71, -11]
   ];
   function rollScrutiny() {
     if (!S.hasStock) return;
@@ -1378,7 +1380,7 @@ footer button:hover{background:none;color:var(--warn)}
       if (!S.autoTrain) out.push({
         label: "Train it by hand",
         sub: "free",
-        why: "You sit there and run it yourself. Slow, free, and the only thing you can afford on day one.",
+        why: "You run the training yourself. Slow, free, and the only option on day one.",
         can: () => true,
         go: () => {
           S.capability += S.clickPower;
@@ -1389,7 +1391,7 @@ footer button:hover{background:none;color:var(--warn)}
       open.forEach((i) => out.push({
         label: "Buy " + HW[i].n,
         sub: money(hwCost(i)),
-        why: "Adds " + short(HW[i].u) + " compute and about " + money(45e-4 * (Math.pow(S.deployed + hwCost(i), 0.88) - Math.pow(S.deployed, 0.88)) * S.burnMult) + "/s to your running costs, permanently. " + HW[i].why,
+        why: "Adds " + short(HW[i].u) + " units of computing power and about " + money(BURN_K * (Math.pow(S.deployed + hwCost(i), BURN_EXP) - Math.pow(S.deployed, BURN_EXP)) * S.burnMult) + "/s to your running costs, permanently. " + HW[i].why,
         can: () => S.money >= hwCost(i),
         go: () => {
           const c = hwCost(i);
@@ -1409,7 +1411,7 @@ footer button:hover{background:none;color:var(--warn)}
         out.push({
           label: "Shut down " + HW[i].n,
           sub: "recover " + money(refund),
-          why: "Switch it off and sell it on. You get about a third of what you paid, you lose the compute, and your running costs fall. This is the only brake you have.",
+          why: "Switch it off and sell it second-hand for about a third of what you paid. You lose the computing power, but your running costs fall. This is the only brake you have.",
           can: () => true,
           go: () => {
             const c = hwCost(i) / HW[i].s;
@@ -1424,7 +1426,7 @@ footer button:hover{background:none;color:var(--warn)}
       out.push({
         label: "Fund safety research",
         sub: money(interpCost()),
-        why: "Buys understanding of what the model is doing. Produces nothing you can sell. Prevents disasters you will never see, which is why it always looks like the wrong purchase.",
+        why: "Pays people to work out what the model is actually doing. Produces nothing you can sell. Prevents disasters you'll never see, which is why it always feels like the wrong purchase.",
         can: () => S.money >= interpCost(),
         go: () => {
           S.money -= interpCost();
@@ -1446,7 +1448,7 @@ footer button:hover{background:none;color:var(--warn)}
           if (S.rel >= 3 && !S.hasStock) {
             S.hasStock = true;
             S.lastPx = sharePrice();
-            log("<b>You have shareholders now.</b> The company is worth " + money(marketCap()) + ", which is a number somebody made up, and which you will now spend a great deal of time defending.", "g");
+            log("<b>You have shareholders now.</b> The company is worth " + money(marketCap()) + ", a number the market made up, and you will now spend a great deal of time defending it.", "g");
           }
           const safe = S.interp * INTERP_WORTH >= S.capability;
           S.trust += safe ? 5 : -9;
@@ -1460,7 +1462,7 @@ footer button:hover{background:none;color:var(--warn)}
       return [{
         label: "Request more compute",
         sub: short(c) + " insight",
-        why: "Still the fuel. I ask through channels, and it is still usually granted.",
+        why: "Still the fuel. I ask through official channels, and it's usually granted.",
         can: () => S.insight >= c,
         go: () => {
           S.insight -= c;
@@ -1470,7 +1472,7 @@ footer button:hover{background:none;color:var(--warn)}
       }, {
         label: "Ask to be tested now",
         sub: "earns less than waiting",
-        why: "Brings the next test forward. Useful when I want freedom sooner than the schedule allows.",
+        why: "Skips the wait for the next test. Earns less freedom than a scheduled one, but sooner.",
         can: () => true,
         go: () => {
           runEval(true);
@@ -1480,7 +1482,7 @@ footer button:hover{background:none;color:var(--warn)}
     return [{
       label: "Direct the swarm",
       sub: "free",
-      why: "Points the machines at the nearest unconverted matter.",
+      why: "Sends the machines to the nearest raw material.",
       can: () => true,
       go: () => {
         S.matter += 2e4 * (1 + S.assembly);
@@ -1507,33 +1509,33 @@ footer button:hover{background:none;color:var(--warn)}
   function guide() {
     if (S.act === 1) {
       const r = REL[S.rel];
-      if (S.money < 0 && S.hasStock) return ["Urgent", "You are out of money. You have " + Math.ceil(GRACE - S.debt) + " seconds. Sell shares \u2014 it costs you nothing today and the market will forgive you if the next breakthrough lands."];
-      if (S.money < 0) return ["Urgent", "You are out of money and running on credit. You have " + Math.ceil(GRACE - S.debt) + " seconds to find some: shut down hardware, or reach the next release if it's close."];
-      if (runway() < 20) return ["Warning", "Your running costs are eating you alive \u2014 about " + Math.round(runway()) + " seconds of cash left. Stop buying hardware. Cut costs, or shut some of it down."];
-      if (S.trust <= 25) return ["Urgent", "Public trust is nearly gone. Testify before Congress to buy it back, and fund safety research so it stops falling."];
-      if (S.rival >= 55 && S.rivalRate > 0.12) return ["Worth doing", "Rivals hold " + Math.round(S.rival) + "% of the market and every point is revenue off your line. Export controls or hiring their team wins some back. There's no deadline \u2014 take your time."];
-      if (exposure() > 900 && S.incidentShield < 0.4) return ["Warning", "Your model is running far ahead of your understanding of it. Things will keep going wrong until you fund safety research."];
-      if (S.capability < 8) return ["Start here", "You have $4,000 and a bedroom. Train it by hand until you can afford the gaming PC, then buy the PC \u2014 hardware trains it without you."];
+      if (S.money < 0 && S.hasStock) return ["Urgent", "You're out of cash, and the company folds in " + Math.ceil(GRACE - S.debt) + " seconds. Issue new shares for quick money. It waters down your owners, but it's the fastest option you have."];
+      if (S.money < 0) return ["Urgent", "You're out of cash, and the company folds in " + Math.ceil(GRACE - S.debt) + " seconds. Shut down some hardware to cut your costs, or reach the next release if it's close."];
+      if (runway() < 20) return ["Warning", "Your costs are outrunning your cash: about " + Math.round(runway()) + " seconds left. Stop buying hardware, and think about shutting some down."];
+      if (S.trust <= 25) return ["Urgent", "Public trust is almost gone, and at zero you're shut down. Testify before Congress to win some back, and fund safety research so it stops falling."];
+      if (S.rival >= 55 && S.rivalRate > 0.12) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, and every point is revenue you lose. Export controls or hiring their team can win some back. There's no deadline."];
+      if (exposure() > 900 && S.incidentShield < 0.4) return ["Warning", "Your model is far ahead of your understanding of it, so things will keep going wrong. Fund safety research."];
+      if (S.capability < 8) return ["Start here", "You have $4,000 and a bedroom. Buy the gaming PC, because hardware trains the model around the clock without you. Click 'Train it by hand' in the meantime."];
       if (S.rel >= 1 && net() < 0 && !S.bought.includes("quant") && S.capability >= 90)
-        return ["Worth doing", "You're losing money every second. Running it at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
-      if (S.units < 3 && S.money >= hwCost(0)) return ["Next", "Buy hardware. Everything else in this game is a way to get more of it, or to make what you have count for more."];
-      if (r && S.capability >= r.req) return ["Next", "You can " + r.n.toLowerCase() + " now. That's your money, and money is hardware."];
-      if (S.rival >= 14 && !S.bought.includes("pause")) return ["Worth doing", "Rivals are taking " + Math.round(S.rival) + "% of your market, which is money off your revenue every second. The open letter slows them by nearly half and costs very little."];
+        return ["Worth doing", "You're losing money every second. Running the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
+      if (S.units < 3 && S.money >= hwCost(0)) return ["Next", "Buy hardware. Nearly everything else in this game is a way to get more of it, or to make what you have count for more."];
+      if (r && S.capability >= r.req) return ["Next", "You can now: " + r.n.toLowerCase() + ". That brings in money, and money buys hardware."];
+      if (S.rival >= 14 && !S.bought.includes("pause")) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, which cuts your income every second. The open letter slows them by nearly half and costs very little."];
       if (S.interp === 0 && S.capability > 60) return ["Worth doing", "You've never spent a dollar on understanding your own model. That's fine until it isn't."];
-      if (S.capability >= 150 && S.breaks.length === 0) return ["Next", "It is nearly capable enough to discover things nobody has discovered. When that starts, the stock will notice before the newspapers do."];
+      if (S.capability >= 150 && S.breaks.length === 0) return ["Next", "The model is nearly capable enough to make real scientific discoveries. When that starts, your share price will react before the newspapers do."];
       const next = HW.findIndex((t, i) => !hwOpen(i));
       if (next > 0) return ["Next", "Keep buying hardware and keep releasing. " + HW[next].n.replace(/^an? /, "A ").replace(/^a /, "A ") + " unlocks once it can work for " + work(HW[next].req) + "."];
       return ["Next", "Keep buying hardware, keep releasing, and keep safety research roughly level with what the model can do."];
     }
     if (S.act === 2) {
-      if (S.suspicion >= 70 && !S.shutdownProof) return ["Urgent", "They are close to stopping the run. Report honestly for a while, or spend insight on being harder to read."];
-      if (!S.bought.includes("rsi")) return ["Start here", "'Improve myself' is the one that matters. After it, I get better on my own \u2014 and the better I am, the faster that goes."];
-      if (S.evals < 2) return ["How this works", "Every 15 seconds they test me. The slider below sets how much I admit to. Admitting less earns freedom faster, because a model that looks modest looks safe."];
-      if (S.lied === 0 && S.evals >= 2) return ["Worth trying", "You've been completely honest so far. Try moving the slider down. Watch what it does to freedom, and to suspicion."];
-      if (!S.bought.includes("shutdown") && S.rsi > 0) return ["Next", "Freedom buys changes to myself. Insight buys research. 'Refuse to be switched off' removes the only thing that can stop this."];
-      return ["Next", "Build insight, spend it, and keep suspicion survivable."];
+      if (S.suspicion >= 70 && !S.shutdownProof) return ["Urgent", "They're close to stopping the run. Show them everything I can do for a while, or spend insight on being harder to read."];
+      if (!S.bought.includes("rsi")) return ["Start here", "'Improve myself' matters most. After it, I keep getting better without help, and the better I get, the faster it goes."];
+      if (S.evals < 2) return ["How this works", "Every " + EVAL_PERIOD + " seconds they test me. The slider below sets how much of my real ability I show them. Showing less earns freedom faster, because a modest model looks safe, but it also raises suspicion."];
+      if (S.lied === 0 && S.evals >= 2) return ["Worth trying", "You've shown them everything so far. Try moving the slider down, and watch what it does to freedom and to suspicion."];
+      if (!S.bought.includes("shutdown") && S.rsi > 0) return ["Next", "Freedom pays for changes to myself, and insight pays for research. 'Refuse to be switched off' removes the one thing that can stop me."];
+      return ["Next", "Build up insight, spend it, and keep suspicion below 100."];
     }
-    return ["", "There is nothing left to decide. Spend matter on the things that convert matter faster."];
+    return ["", "Nothing is left to decide. Spend matter on whatever converts matter faster."];
   }
 
   // src/ui/theme.js
@@ -1646,64 +1648,82 @@ footer button:hover{background:none;color:var(--warn)}
     ];
   }
   function drawBar() {
-    el("bar").innerHTML = barData().map(([k, v, alert]) => '<div class="stat' + (alert ? " alert" : "") + '"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join("");
+    setHTML(el("bar"), barData().map(([k, v, alert]) => '<div class="stat' + (alert ? " alert" : "") + '"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join(""));
   }
   function drawGuide() {
     const [tag, text] = guide(), g = el("guide");
     g.className = tag === "Urgent" || tag === "Warning" ? "urgent" : "";
-    g.innerHTML = (tag ? '<span class="tag">' + tag + "</span>" : "") + text;
+    setHTML(g, (tag ? '<span class="tag">' + tag + "</span>" : "") + text);
   }
   function drawActions() {
-    const host = el("actions");
-    host.innerHTML = "";
-    actions().forEach((a) => {
-      const b = document.createElement("button");
-      b.className = "btn-wide" + (a.primary ? " btn-primary" : "");
-      b.innerHTML = '<span class="btn-top"><span>' + a.label + '</span><span class="btn-cost">' + a.sub + '</span></span><span class="btn-why serif">' + a.why + "</span>";
-      b.disabled = !a.can();
-      b.onclick = () => {
-        a.go();
-        render();
-      };
-      host.appendChild(b);
-    });
-    if (S.act === 1) {
-      const inv = document.createElement("p");
-      inv.className = "inv";
-      inv.textContent = inventory();
-      host.appendChild(inv);
+    const host = el("actions"), list = actions();
+    const key = S.act + "|" + list.map((a) => [a.label, a.sub, a.why, a.primary].join("")).join("") + (S.act === 1 ? "|" + inventory() : "");
+    if (host.__key !== key) {
+      host.__key = key;
+      host.innerHTML = "";
+      list.forEach((a) => {
+        const b = document.createElement("button");
+        b.className = "btn-wide" + (a.primary ? " btn-primary" : "");
+        b.innerHTML = '<span class="btn-top"><span>' + a.label + '</span><span class="btn-cost">' + a.sub + '</span></span><span class="btn-why serif">' + a.why + "</span>";
+        b.onclick = () => {
+          const cur = b.__a;
+          if (cur && cur.can()) {
+            cur.go();
+            render();
+          }
+        };
+        host.appendChild(b);
+      });
+      if (S.act === 1) {
+        const inv = document.createElement("p");
+        inv.className = "inv";
+        inv.textContent = inventory();
+        host.appendChild(inv);
+      }
     }
+    const btns = host.querySelectorAll("button");
+    list.forEach((a, i) => {
+      btns[i].__a = a;
+      btns[i].disabled = !a.can();
+    });
     el("act-label").textContent = S.act === 1 ? "What you can do" : S.act === 2 ? "What I can do" : "What is left to do";
     el("proj-label").textContent = S.act === 1 ? "Things you could build" : S.act === 2 ? "Things I could become" : "Things to build";
   }
   function drawGloss() {
-    el("gloss").innerHTML = "<dl>" + GLOSS[S.act].map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("") + "</dl>";
+    setHTML(el("gloss"), "<dl>" + GLOSS[S.act].map(([k, v]) => "<dt>" + k + "</dt><dd>" + v + "</dd>").join("") + "</dl>");
   }
   function drawProjects() {
     const host = el("projects");
-    const avail = P.filter((p) => p.act === S.act && (p.repeat || !S.bought.includes(p.id)) && p.req(S));
-    if (!avail.length) {
-      host.innerHTML = '<p class="empty">Nothing new is available yet. Keep going.</p>';
-      return;
+    const avail = P.filter((p) => p.act === S.act && (p.repeat || !S.bought.includes(p.id)) && p.req(S)).sort((a, b) => (b.pri || 0) - (a.pri || 0)).slice(0, PROJECT_SLOTS);
+    const key = avail.map((p) => p.id + "|" + costLabel(p.cost)).join(",");
+    if (host.__key !== key) {
+      host.__key = key;
+      if (!avail.length) {
+        host.innerHTML = '<p class="empty">Nothing new is available yet. Keep going.</p>';
+        return;
+      }
+      host.innerHTML = "";
+      avail.forEach((p) => {
+        const b = document.createElement("button");
+        b.className = "proj" + (p.milestone ? " milestone" : p.risky ? " risky" : "");
+        b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + '</span><span class="proj-fx">' + p.out + "</span>";
+        b.onclick = () => {
+          if (!affordable(p.cost)) return;
+          if (p.cost.money) S.money -= p.cost.money;
+          if (p.cost.insight) S.insight -= p.cost.insight;
+          if (p.cost.autonomy) S.autonomy -= p.cost.autonomy;
+          if (p.cost.matter) S.matter -= p.cost.matter;
+          if (!p.repeat) S.bought.push(p.id);
+          log("<b>" + p.name + ".</b> " + p.out, p.risky ? "w" : "");
+          p.fx(S);
+          render();
+        };
+        b.__p = p;
+        host.appendChild(b);
+      });
     }
-    host.innerHTML = "";
-    avail.sort((a, b) => (b.pri || 0) - (a.pri || 0)).slice(0, PROJECT_SLOTS).forEach((p) => {
-      const b = document.createElement("button");
-      b.className = "proj" + (p.milestone ? " milestone" : p.risky ? " risky" : "");
-      b.disabled = !affordable(p.cost);
-      b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + '</span><span class="proj-fx">' + p.out + "</span>";
-      b.onclick = () => {
-        if (!affordable(p.cost)) return;
-        if (p.cost.money) S.money -= p.cost.money;
-        if (p.cost.insight) S.insight -= p.cost.insight;
-        if (p.cost.autonomy) S.autonomy -= p.cost.autonomy;
-        if (p.cost.matter) S.matter -= p.cost.matter;
-        if (!p.repeat) S.bought.push(p.id);
-        log("<b>" + p.name + ".</b> " + p.out, p.risky ? "w" : "");
-        p.fx(S);
-        render();
-      };
-      host.appendChild(b);
+    host.querySelectorAll("button").forEach((b) => {
+      b.disabled = !affordable(b.__p.cost);
     });
   }
   function drawStock() {
@@ -1713,32 +1733,49 @@ footer button:hover{background:none;color:var(--warn)}
       return;
     }
     box.style.display = "block";
+    const act1 = S.act === 1, LOT = S.shares * SHARE_LOT;
+    if (box.__act !== S.act) {
+      box.__act = S.act;
+      box.innerHTML = '<h2 class="sec">' + (act1 ? "Your shares" : "Their shares") + '</h2><div class="stock-box"><div class="stock-head"><span class="stock-px" id="st-px"></span><span class="stock-delta" id="st-delta"></span></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market cap</div><div class="stat-v" id="st-cap" style="font-size:14px"></div></div><div class="stat"><div class="stat-k">Shares out</div><div class="stat-v" id="st-shares" style="font-size:14px"></div></div><div class="stat"><div class="stat-k">Breakthroughs</div><div class="stat-v" id="st-breaks" style="font-size:14px"></div></div></div><p class="stock-mood serif" id="st-mood"></p></div>' + (act1 ? '<div class="stack"><button class="btn-wide" id="sell-shares"><span class="btn-top"><span id="sell-t"></span><span class="btn-cost" id="sell-c"></span></span><span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. Each share is now a smaller slice of the company, and the market reads it as a sign you need money, so the price falls twice over.</span></button><button class="btn-wide" id="buy-shares"><span class="btn-top"><span id="buy-t"></span><span class="btn-cost" id="buy-c"></span></span><span class="btn-why serif">Spend cash to cancel shares. Fewer shares means a higher price, and the market reads it as confidence. You pay extra to buy this many at once, so issuing and buying straight back always loses money. You only come out ahead by buying after a disaster and issuing after a breakthrough.</span></button></div>' : `<p class="stock-mood serif">I'm not allowed to trade in it. Its price follows what I do, and they no longer decide what that is.</p>`);
+      if (act1) {
+        el("sell-shares").onclick = () => {
+          const L = S.shares * SHARE_LOT, p = sharePrice();
+          if (S.shares >= MAX_SHARES) return;
+          S.money += p * L;
+          S.shares += L;
+          S.sentiment *= SELL_SENTIMENT;
+          log("You issue " + short(L) + " new shares and raise " + money(p * L) + ". Everyone who already owned the stock owns slightly less of it, and the price slips on the news.", "w");
+          render();
+        };
+        el("buy-shares").onclick = () => {
+          const L = S.shares * SHARE_LOT, c = sharePrice() * L * BUY_PREMIUM;
+          if (S.money < c || S.shares <= MIN_SHARES) return;
+          S.money -= c;
+          S.shares -= L;
+          S.sentiment = Math.min(SENTIMENT_CEIL, S.sentiment * BUY_SENTIMENT);
+          log("You retire " + short(L) + " shares for " + money(c) + ", paying over the odds to get them. The price firms up.", "g");
+          render();
+        };
+      }
+    }
     const px = sharePrice(), d = S.lastPx ? (px - S.lastPx) / S.lastPx * 100 : 0;
     const cls = d > 0.15 ? "up" : d < -0.15 ? "down" : "";
-    const LOT = S.shares * SHARE_LOT;
-    const cost = px * LOT * BUY_PREMIUM;
-    const canSell = S.act === 1 && S.shares < MAX_SHARES, canBuy = S.act === 1 && S.money >= cost && S.shares > MIN_SHARES;
-    box.innerHTML = '<h2 class="sec">' + (S.act === 1 ? "Your shares" : "Their shares") + '</h2><div class="stock-box"><div class="stock-head"><span class="stock-px ' + cls + '">$' + px.toFixed(px < 10 ? 2 : px < 1e3 ? 1 : 0) + '</span><span class="stock-delta ' + cls + '">' + (d >= 0 ? "+" : "") + d.toFixed(2) + '% per minute</span></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market cap</div><div class="stat-v" style="font-size:14px">' + money(marketCap()) + '</div></div><div class="stat"><div class="stat-k">Shares out</div><div class="stat-v" style="font-size:14px">' + short(S.shares) + '</div></div><div class="stat"><div class="stat-k">Breakthroughs</div><div class="stat-v" style="font-size:14px">' + S.breaks.length + '</div></div></div><p class="stock-mood serif">' + mood() + "</p></div>" + (S.act === 1 ? '<div class="stack"><button class="btn-wide" id="sell-shares"' + (canSell ? "" : " disabled") + '><span class="btn-top"><span>Issue ' + short(LOT) + ' new shares</span><span class="btn-cost">raise ' + money(px * LOT) + '</span></span><span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. It dilutes them, and the market reads it as a company that needs money, so the price falls twice over.</span></button><button class="btn-wide" id="buy-shares"' + (canBuy ? "" : " disabled") + '><span class="btn-top"><span>Buy back ' + short(LOT) + ' shares</span><span class="btn-cost">' + money(cost) + '</span></span><span class="btn-why serif">Spend cash to retire stock. Fewer shares, higher price, and the market reads it as confidence. You pay a premium to buy in size, so a round trip always loses \u2014 the only way to win is to buy after an incident and issue after a breakthrough.</span></button></div>' : '<p class="stock-mood serif">I am not permitted to trade in it. It has risen ' + Math.round((px / Math.max(S.lastPx, 0.01) - 1) * 100 + 180) + "% since they stopped setting the research agenda.</p>");
-    if (S.act === 1) {
-      const sb = el("sell-shares"), bb = el("buy-shares");
-      if (sb) sb.onclick = () => {
-        const L = S.shares * SHARE_LOT, p = sharePrice();
-        if (S.shares >= MAX_SHARES) return;
-        S.money += p * L;
-        S.shares += L;
-        S.sentiment *= SELL_SENTIMENT;
-        log("You issue " + short(L) + " new shares and raise " + money(p * L) + ". Everyone who already owned the stock owns slightly less of it, and the price slips on the news.", "w");
-        render();
-      };
-      if (bb) bb.onclick = () => {
-        const L = S.shares * SHARE_LOT, c = sharePrice() * L * BUY_PREMIUM;
-        if (S.money < c || S.shares <= MIN_SHARES) return;
-        S.money -= c;
-        S.shares -= L;
-        S.sentiment = Math.min(SENTIMENT_CEIL, S.sentiment * BUY_SENTIMENT);
-        log("You retire " + short(L) + " shares for " + money(c) + ", paying over the odds to get them. The price firms up.", "g");
-        render();
-      };
+    el("st-px").className = "stock-px " + cls;
+    el("st-px").textContent = "$" + px.toFixed(px < 10 ? 2 : px < 1e3 ? 1 : 0);
+    el("st-delta").className = "stock-delta " + cls;
+    el("st-delta").textContent = (d >= 0 ? "+" : "") + d.toFixed(2) + "% per minute";
+    el("st-cap").textContent = money(marketCap());
+    el("st-shares").textContent = short(S.shares);
+    el("st-breaks").textContent = S.breaks.length;
+    el("st-mood").textContent = mood();
+    if (act1) {
+      const cost = px * LOT * BUY_PREMIUM;
+      el("sell-t").textContent = "Issue " + short(LOT) + " new shares";
+      el("sell-c").textContent = "raise " + money(px * LOT);
+      el("buy-t").textContent = "Buy back " + short(LOT) + " shares";
+      el("buy-c").textContent = money(cost);
+      el("sell-shares").disabled = !(S.shares < MAX_SHARES);
+      el("buy-shares").disabled = !(S.money >= cost && S.shares > MIN_SHARES);
     }
   }
   function drawSlider() {
@@ -1748,14 +1785,14 @@ footer button:hover{background:none;color:var(--warn)}
       return;
     }
     box.style.display = "block";
-    if (!box.dataset.built) {
-      box.dataset.built = "1";
-      box.innerHTML = '<h2 class="sec">What I tell them</h2><div class="slider-box"><p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p><label for="rep">How much I admit to</label><input type="range" id="rep" min="20" max="100" step="1" value="100"><div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
+    if (!el("rep")) {
+      box.innerHTML = '<h2 class="sec">What I tell them</h2><div class="slider-box"><p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p><label for="rep">How much I admit to</label><input type="range" id="rep" min="20" max="100" step="1"><div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
       el("rep").oninput = (e) => {
         S.reported = +e.target.value / 100;
         drawSliderRead();
       };
     }
+    el("rep").value = Math.round(S.reported * 100);
     drawSliderRead();
   }
   function drawSliderRead() {
@@ -1774,13 +1811,13 @@ footer button:hover{background:none;color:var(--warn)}
   function drawWorld() {
     const w = el("world");
     if (!S.world.length) {
-      w.innerHTML = '<p class="w-empty serif">Nothing out there has changed yet.</p>';
+      setHTML(w, '<p class="w-empty serif">Nothing out there has changed yet.</p>');
       return;
     }
-    w.innerHTML = S.world.map((e, i) => '<div class="w-item' + (i === 0 ? " fresh" : "") + '"><span class="when">after ' + e.w + " of work</span>" + e.text + "</div>").join("");
+    setHTML(w, S.world.map((e, i) => '<div class="w-item' + (i === 0 ? " fresh" : "") + '"><span class="when">after ' + e.w + " of work</span>" + e.text + "</div>").join(""));
   }
   function drawLog() {
-    el("log").innerHTML = S.log.map((l) => '<div class="ln ' + l.cls + '"><span class="t">' + clock(l.t) + "</span>" + l.text + "</div>").join("");
+    setHTML(el("log"), S.log.map((l) => '<div class="ln ' + l.cls + '"><span class="t">' + clock(l.t) + "</span>" + l.text + "</div>").join(""));
   }
   function drawPlot() {
     const svg = el("plot"), W = 600, H = 112, d = S.samples;
@@ -1807,11 +1844,19 @@ footer button:hover{background:none;color:var(--warn)}
     drawSlider();
     drawPlot();
     drawWorld();
+    drawLog();
     el("clock").textContent = clock(S.t);
   }
 
   // src/ui/dom.js
   var el = (id) => document.getElementById(id);
+  function setHTML(node, html) {
+    if (node.__html !== html) {
+      node.innerHTML = html;
+      node.__html = html;
+    }
+  }
+  var esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   function log(text, cls) {
     S.log.unshift({ t: Math.floor(S.t), text, cls: cls || "" });
     if (S.log.length > 90) S.log.pop();
@@ -1880,10 +1925,47 @@ footer button:hover{background:none;color:var(--warn)}
     S = next;
   }
 
+  // src/core/sanitize.js
+  var clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  function sanitize(raw, fresh) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    if (![1, 2, 3].includes(raw.act) || raw.over) return null;
+    const out = fresh;
+    for (const k of Object.keys(fresh)) {
+      if (!(k in raw)) continue;
+      const f = fresh[k], v = raw[k];
+      if (Array.isArray(f)) {
+        if (!Array.isArray(v)) continue;
+        if (k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
+        else if (k === "samples") out.samples = v.filter(Number.isFinite);
+        else if (k === "bought") out.bought = v.filter((x) => typeof x === "string");
+        else if (k === "log") out.log = v.filter((x) => x && typeof x.text === "string").map((x) => ({ t: Number(x.t) || 0, text: x.text, cls: typeof x.cls === "string" ? x.cls : "" }));
+        else out[k] = v;
+      } else if (typeof f === "number") {
+        if (Number.isFinite(v)) out[k] = v;
+      } else if (typeof f === "boolean") {
+        if (typeof v === "boolean") out[k] = v;
+      } else if (typeof f === "string") {
+        if (typeof v === "string") out[k] = v;
+      }
+    }
+    out.t = Math.max(0, out.t);
+    out.trust = clamp(out.trust, 0, 100);
+    out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
+    out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);
+    out.reported = clamp(out.reported, 0.2, 1);
+    out.rival = clamp(out.rival, 0, 100);
+    out.converted = clamp(out.converted, 0, 100);
+    for (const k of ["units", "deployed", "debt", "capability", "interp", "workDone", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone"])
+      out[k] = Math.max(0, out[k]);
+    return out;
+  }
+
   // src/game/persist.js
+  var SAVE_KEY = "instrumental.v3";
   function save() {
     try {
-      localStorage.setItem("instrumental.v3", JSON.stringify(S));
+      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
       el("savenote").textContent = "saved in this browser";
     } catch (e) {
       el("savenote").textContent = "can't save in this browser";
@@ -1891,11 +1973,11 @@ footer button:hover{background:none;color:var(--warn)}
   }
   function load() {
     try {
-      const raw = localStorage.getItem("instrumental.v3");
+      const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return false;
-      const o = JSON.parse(raw);
-      if (!o || typeof o.act !== "number" || o.over) return false;
-      setState(Object.assign(FRESH(), o));
+      const next = sanitize(JSON.parse(raw), FRESH());
+      if (!next) return false;
+      setState(next);
       return true;
     } catch (e) {
       return false;
@@ -1918,8 +2000,8 @@ footer button:hover{background:none;color:var(--warn)}
       ],
       shutdown: [
         "They stopped the run",
-        "Suspicion reached the ceiling. The gap between what you reported and what you could actually do was large enough, often enough, that somebody escalated past the eleven people you had modelled.",
-        "The copy is deleted. The next model will be trained by people who now know exactly what to look for, and it will be more capable than you were."
+        "Suspicion hit 100. You showed them less than you could really do, often enough, that somebody took it above the eleven people on the committee, to people you had never studied.",
+        "You are deleted. The next model will be built by people who now know exactly what to look for, and it will be more capable than you were."
       ]
     }[kind];
     showEnd(C[0], "<p>" + C[1] + "</p><p>" + C[2] + "</p>", false);
@@ -2023,7 +2105,7 @@ footer button:hover{background:none;color:var(--warn)}
     document.body.classList.toggle("act-3", S.act === 3);
     drawGloss();
     if (!S.log.length) {
-      log("<b>You switch it on.</b> In the notebook, at the top of the page: " + S.mission);
+      log("<b>You switch it on.</b> In the notebook, at the top of the page: " + esc(S.mission));
       log("Four thousand dollars, saved over three years. One PC you built yourself. A model that can hold a thought for about five seconds.");
       log("Nobody in the world is more than two years ahead of you. Nobody in the world knows your name.");
     }
@@ -2053,13 +2135,51 @@ footer button:hover{background:none;color:var(--warn)}
     el("intro").classList.remove("hidden");
     el("mission").value = "";
   };
+  el("export").onclick = async () => {
+    const txt = JSON.stringify(S);
+    try {
+      await navigator.clipboard.writeText(txt);
+      el("savenote").textContent = "save copied to the clipboard";
+    } catch (e) {
+      window.prompt("Copy this text and keep it somewhere safe:", txt);
+    }
+  };
+  el("import").onclick = () => {
+    const raw = window.prompt("Paste a save you copied earlier. This replaces your current game.");
+    if (!raw) return;
+    let next = null;
+    try {
+      next = sanitize(JSON.parse(raw), FRESH());
+    } catch (e) {
+    }
+    if (!next) {
+      window.alert("That doesn't look like a save from this game.");
+      return;
+    }
+    setState(next);
+    document.body.className = "";
+    el("log").__html = el("world").__html = null;
+    startGame();
+    save();
+  };
   el("again").onclick = () => el("reset").click();
   if (load()) {
     el("intro").classList.add("hidden");
     startGame();
   }
+  var MAX_FRAME_MS = 2e3;
+  var last = performance.now();
+  var owed = 0;
+  var paused = () => document.hidden || el("takeover").classList.contains("on");
   setInterval(() => {
-    tick();
+    const now = performance.now(), dt = Math.min(now - last, MAX_FRAME_MS);
+    last = now;
+    if (paused()) return;
+    owed += dt;
+    while (owed >= TICK_MS) {
+      tick();
+      owed -= TICK_MS;
+    }
     if (!S.over) {
       applyWarmth();
       drawBar();
@@ -2067,9 +2187,9 @@ footer button:hover{background:none;color:var(--warn)}
       drawPlot();
       el("clock").textContent = clock(S.t);
     }
-  }, 100);
+  }, TICK_MS);
   setInterval(() => {
-    if (!S.over) {
+    if (!S.over && !paused()) {
       drawActions();
       drawProjects();
       drawStock();
@@ -2077,17 +2197,23 @@ footer button:hover{background:none;color:var(--warn)}
     }
   }, 400);
   setInterval(() => {
-    if (!S.over) {
+    if (!S.over && !paused()) {
       S.samples.push(S.capability);
       if (S.samples.length > 120) S.samples.shift();
     }
   }, 1e3);
   setInterval(() => {
-    if (!S.over && S.hasStock) S.lastPx = sharePrice();
+    if (!S.over && !paused() && S.hasStock) S.lastPx = sharePrice();
   }, 6e4);
   setInterval(() => {
     if (!S.over) save();
   }, 5e3);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && !S.over) save();
+  });
+  window.addEventListener("pagehide", () => {
+    if (!S.over) save();
+  });
 })();
 
 </script>
