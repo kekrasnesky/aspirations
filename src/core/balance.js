@@ -185,5 +185,6 @@ export const GLITCH_AT     = [35, 70, 90];   // % control where the screen start
 
 // ---- presentation ---------------------------------------------------------
 export const TICK_MS       = 100;
+export const SPEEDS        = [0, .25, .5, 1, 2, 4, 8];   // the time slider's stops; 0 is paused
 export const PROJECT_SLOTS = 8;
 export const HW_TIERS      = 21;       // = HW.length, so the state can be built without importing content

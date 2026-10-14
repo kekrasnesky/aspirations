@@ -107,7 +107,7 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 
 /* ---- bar ---- */
 /* ---------- panel header ---------- */
-#panelhead{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;color:var(--faint);
+#panelhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 12px;font-size:10.5px;color:var(--faint);
   padding:8px 0 6px;letter-spacing:.04em}
 
 /* ---------- instrument bar ---------- */
@@ -119,6 +119,9 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 .stat-k{font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-v{font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--ink)}
 .stat.alert .stat-v,.stat.alert .stat-k{color:var(--warn)}
+.speed{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+.speed input{width:130px;accent-color:var(--accent);margin:0}
+.speed output{min-width:4.5em;font-variant-numeric:tabular-nums;color:var(--ink)}
 
 /* ---- layout ---- */
 /* ---------- layout ---------- */
@@ -332,7 +335,8 @@ footer button:hover{background:none;color:var(--warn)}
 </section>
 
 <main id="game" class="hidden">
-  <div id="panelhead"><span>127.0.0.1:8080</span><span>control panel</span></div>
+  <div id="panelhead"><span>127.0.0.1:8080 · control panel</span>
+    <label class="speed" for="speed"><span>time</span><input type="range" id="speed" min="0" max="6" step="1"><output id="speed-v" for="speed"></output></label></div>
   <div id="bar"></div>
   <div id="decision" class="hidden" role="alertdialog" aria-label="Something went wrong"></div>
   <div id="gloss"></div>
@@ -523,6 +527,7 @@ footer button:hover{background:none;color:var(--warn)}
   var NEED_SPEEDUP = 50;
   var GLITCH_AT = [35, 70, 90];
   var TICK_MS = 100;
+  var SPEEDS = [0, 0.25, 0.5, 1, 2, 4, 8];
   var PROJECT_SLOTS = 8;
   var HW_TIERS = 21;
 
@@ -642,7 +647,8 @@ footer button:hover{background:none;color:var(--warn)}
     bought: [],
     log: [],
     evals: 0,
-    lied: 0
+    lied: 0,
+    speed: 1
   });
   var S = FRESH();
   function setState(next) {
@@ -797,6 +803,7 @@ footer button:hover{background:none;color:var(--warn)}
     for (const [k, min] of [["gpus", START_GPUS], ["vram", START_VRAM], ["tflops", START_TFLOPS], ["ram", START_RAM], ["cores", START_CORES], ["gpuW", START_GPU_W]])
       out[k] = Math.max(min, out[k]);
     out.cloud = Math.round(out.cloud);
+    if (!SPEEDS.includes(out.speed)) out.speed = 1;
     out.marketing = clamp(out.marketing, MARKETING_MIN, MARKETING_MAX);
     for (const k of ["speedMult", "coreMult", "vramMult", "memMult", "payMult", "powerMult", "serveMult"])
       if (out[k] <= 0) out[k] = 1;
@@ -3251,6 +3258,7 @@ footer button:hover{background:none;color:var(--warn)}
       log("How big a model you can train depends on the hardware. Right now, that's not very big.");
     }
     render();
+    drawSpeed();
     if (S.act === 1 && S.bought.includes("automate")) enterAct2();
     else if (S.act === 2 && S.bought.includes("replicate")) enterAct3();
   }
@@ -3350,6 +3358,28 @@ footer button:hover{background:none;color:var(--warn)}
     startGame();
   } else bootIntro();
   var MAX_FRAME_MS = 2e3;
+  var lastSpeed = 1;
+  var speedLabel = (x) => x === 0 ? "paused" : "\xD7" + x;
+  function drawSpeed() {
+    const r = el("speed"), i = SPEEDS.indexOf(S.speed);
+    if (+r.value !== i) r.value = i;
+    el("speed-v").textContent = speedLabel(S.speed);
+  }
+  el("speed").oninput = (e) => {
+    S.speed = SPEEDS[+e.target.value] ?? 1;
+    if (S.speed) lastSpeed = S.speed;
+    drawSpeed();
+  };
+  document.addEventListener("keydown", (e) => {
+    if (e.code !== "Space" || /INPUT|TEXTAREA|BUTTON/.test(document.activeElement?.tagName) || el("game").classList.contains("hidden")) return;
+    e.preventDefault();
+    if (S.speed === 0) S.speed = lastSpeed;
+    else {
+      lastSpeed = S.speed;
+      S.speed = 0;
+    }
+    drawSpeed();
+  });
   var last = performance.now();
   var owed = 0;
   var paused = () => document.hidden || el("game").classList.contains("hidden") || el("takeover").classList.contains("on") || S.incident >= 0;
@@ -3357,7 +3387,7 @@ footer button:hover{background:none;color:var(--warn)}
     const now = performance.now(), dt = Math.min(now - last, MAX_FRAME_MS);
     last = now;
     if (paused()) return;
-    owed += dt;
+    owed += dt * S.speed;
     while (owed >= TICK_MS && S.incident < 0) {
       tick();
       owed -= TICK_MS;

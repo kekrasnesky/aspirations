@@ -1,5 +1,5 @@
 import { sharePrice } from './core/economy.js';
-import { TICK_MS } from './core/balance.js';
+import { SPEEDS, TICK_MS } from './core/balance.js';
 import { clock } from './core/format.js';
 import { sanitize } from './core/sanitize.js';
 import { FRESH, S, setState } from './core/state.js';
@@ -24,7 +24,7 @@ export function startGame(){
     log("One PC: a graphics card with 8 GB of memory, 16 GB of RAM and a 4-core CPU. A folder of free books. No model yet, no money, no team.");
     log("How big a model you can train depends on the hardware. Right now, that's not very big.");
   }
-  render();
+  render(); drawSpeed();
   /* The project that ends an act is marked bought before its cutscene starts,
      but the act only changes when the cutscene's button is pressed. A save
      taken in between (autosave, closing the tab) would otherwise strand the
@@ -103,12 +103,26 @@ else bootIntro();
    throttle timers there, and you shouldn't go bankrupt while away) and while a
    story overlay covers the screen. */
 const MAX_FRAME_MS=2000;
+
+/* The time slider: how many game ticks pass per real tick. Paused still lets you buy and change things. */
+let lastSpeed=1;
+const speedLabel=x=>x===0?"paused":"×"+x;
+function drawSpeed(){
+  const r=el("speed"), i=SPEEDS.indexOf(S.speed);
+  if(+r.value!==i) r.value=i;
+  el("speed-v").textContent=speedLabel(S.speed);
+}
+el("speed").oninput=e=>{S.speed=SPEEDS[+e.target.value]??1;if(S.speed)lastSpeed=S.speed;drawSpeed()};
+document.addEventListener("keydown",e=>{   // space pauses and resumes, unless you're typing
+  if(e.code!=="Space"||/INPUT|TEXTAREA|BUTTON/.test(document.activeElement?.tagName)||el("game").classList.contains("hidden")) return;
+  e.preventDefault(); if(S.speed===0) S.speed=lastSpeed; else {lastSpeed=S.speed; S.speed=0} drawSpeed();
+});
 let last=performance.now(), owed=0;
 const paused=()=>document.hidden||el("game").classList.contains("hidden")||el("takeover").classList.contains("on")||S.incident>=0;
 setInterval(()=>{
   const now=performance.now(), dt=Math.min(now-last,MAX_FRAME_MS); last=now;
   if(paused()) return;
-  owed+=dt;
+  owed+=dt*S.speed;
   while(owed>=TICK_MS && S.incident<0){tick();owed-=TICK_MS}
   if(S.incident>=0) owed=0;
   if(!S.over){applyWarmth();applyGlitch();drawBar();drawDecision();drawRig();el("clock").textContent=clock(S.t)}

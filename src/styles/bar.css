@@ -1,5 +1,5 @@
 /* ---------- panel header ---------- */
-#panelhead{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;color:var(--faint);
+#panelhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 12px;font-size:10.5px;color:var(--faint);
   padding:8px 0 6px;letter-spacing:.04em}
 
 /* ---------- instrument bar ---------- */
@@ -11,3 +11,6 @@
 .stat-k{font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-v{font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--ink)}
 .stat.alert .stat-v,.stat.alert .stat-k{color:var(--warn)}
+.speed{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+.speed input{width:130px;accent-color:var(--accent);margin:0}
+.speed output{min-width:4.5em;font-variant-numeric:tabular-nums;color:var(--ink)}

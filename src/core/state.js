@@ -18,7 +18,7 @@ export const FRESH = () => ({
   // who uses it: users drift toward demand, capped by the cloud servers you rent;
   // the share who pay planPrice a month falls as the price rises above what it's worth
   users:0, cloud:0, planPrice:0, payMult:1, marketing:1, ads:0, letterIn:12, letters:[],
-  bought:[], log:[], evals:0, lied:0
+  bought:[], log:[], evals:0, lied:0, speed:1
 });
 
 export let S = FRESH();

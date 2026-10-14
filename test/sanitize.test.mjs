@@ -47,3 +47,9 @@ test('malformed log entries are dropped', () => {
   assert.equal(out.log.length, 1);
   assert.equal(out.log[0].text, 'ok');
 });
+
+test('the time speed must be one of the slider stops', () => {
+  assert.equal(sanitize({ act: 1, speed: 8 }, FRESH()).speed, 8);
+  assert.equal(sanitize({ act: 1, speed: 0 }, FRESH()).speed, 0);
+  assert.equal(sanitize({ act: 1, speed: 1e6 }, FRESH()).speed, 1);
+});
