@@ -1,12 +1,13 @@
 import { sharePrice } from './core/economy.js';
-import { TICK_MS, PLOT_SAMPLES } from './core/balance.js';
+import { TICK_MS } from './core/balance.js';
 import { clock } from './core/format.js';
 import { sanitize } from './core/sanitize.js';
 import { FRESH, S, setState } from './core/state.js';
 import { tick } from './game/loop.js';
 import { SAVE_KEY, load, save } from './game/persist.js';
 import { el, esc, log } from './ui/dom.js';
-import { drawActions, drawBar, drawCommittee, drawDecision, drawGloss, drawGuide, drawPlot, drawProjects, drawSliderRead, drawStock, render } from './ui/render.js';
+import { drawActions, drawBar, drawCommittee, drawDecision, drawGloss, drawGuide, drawProjects, drawRig, drawShop, drawSliderRead, drawStock, render } from './ui/render.js';
+import { bootIntro, cancelBoot, launchPanel } from './ui/boot.js';
 import { applyGlitch } from './ui/glitch.js';
 import { applyWarmth } from './ui/theme.js';
 import { REDUCED, enterAct2, enterAct3 } from './ui/takeover.js';
@@ -19,9 +20,9 @@ export function startGame(){
   document.body.classList.toggle("act-3",S.act===3);
   drawGloss();
   if(!S.log.length){
-    log("<b>You switch it on.</b> In the notebook, at the top of the page: "+esc(S.mission));
-    log("One gaming PC you built yourself, a pile of free ebooks, and a model that can hold a thought for about five seconds. No money, no team, no plan beyond that sentence.");
-    log("Nobody in the world is more than two years ahead of you. Nobody in the world knows your name.");
+    log("<b>Control panel online.</b> Objective: "+esc(S.mission));
+    log("One PC: a graphics card with 8 GB of memory, 16 GB of RAM and a 4-core CPU. A folder of free books. No model yet, no money, no team.");
+    log("How big a model you can train depends on the hardware. Right now, that's not very big.");
   }
   render();
   /* The project that ends an act is marked bought before its cutscene starts,
@@ -32,24 +33,23 @@ export function startGame(){
   else if(S.act===2 && S.bought.includes("replicate")) enterAct3();
 }
 
-/* The intro is a command prompt. Submitting it prints a few boot lines, the
-   window dissolves, and the control panel fades in. */
+/* The intro is a command prompt running the script that starts the control
+   panel. The objective typed there is the mission. */
 const DEFAULT_MISSION="to ensure that artificial general intelligence benefits all of humanity";
 let launching=false;
 function launch(){
   if(launching) return; launching=true;
   const typed=el("mission").value.trim();
   S.mission=typed||DEFAULT_MISSION;
-  if(REDUCED){startGame();return}
   el("mission").readOnly=true; el("begin").disabled=true;
-  const boot=el("boot");
-  [["mission saved to notebook.txt",0],["finding graphics card ........ ok",650],["starting training console ...",1300,"hot"]].forEach(([text,at,cls])=>
-    setTimeout(()=>{const p=document.createElement("p");p.textContent="> "+text;if(cls)p.className=cls;boot.appendChild(p)},at));
-  setTimeout(()=>el("intro").classList.add("closing"),2000);
-  setTimeout(()=>{
-    el("game").classList.add("reveal"); startGame();
-    setTimeout(()=>el("game").classList.remove("reveal"),1000);
-  },2800);
+  launchPanel(S.mission,()=>{
+    if(REDUCED){startGame();return}
+    el("intro").classList.add("closing");
+    setTimeout(()=>{
+      el("game").classList.add("reveal"); startGame();
+      setTimeout(()=>el("game").classList.remove("reveal"),1000);
+    },800);
+  });
 }
 el("prompt-row").addEventListener("submit",e=>{e.preventDefault();launch()});
 el("glossbtn").onclick=()=>{
@@ -61,7 +61,8 @@ el("reset").onclick=()=>{
   setState(FRESH()); document.body.className="";
   el("game").classList.add("hidden"); el("end").style.display="none";
   el("intro").classList.remove("hidden","closing"); el("mission").value="";
-  el("mission").readOnly=false; el("begin").disabled=false; el("boot").innerHTML=""; launching=false;
+  el("mission").readOnly=false; el("begin").disabled=false; launching=false;
+  bootIntro();
 };
 /* Save box. Written as a panel on the page, not prompt()/alert(), because
    embedded viewers never show those dialogs. */
@@ -89,11 +90,12 @@ el("saveload").onclick=()=>{
   if(!next){boxMsg.textContent="That doesn't look like a save from this game.";return}
   if(!next.mission) next.mission=DEFAULT_MISSION;
   setState(next); document.body.className="";
-  box.classList.add("hidden");
+  box.classList.add("hidden"); cancelBoot();
   startGame(); save();
 };
 el("again").onclick=()=>el("reset").click();
 if(load()){el("intro").classList.add("hidden");startGame()}
+else bootIntro();
 
 /* The simulation advances in fixed ticks of real elapsed time, so a slow frame
    doesn't slow the game. It stands still before the game starts (the title
@@ -109,10 +111,9 @@ setInterval(()=>{
   owed+=dt;
   while(owed>=TICK_MS && S.incident<0){tick();owed-=TICK_MS}
   if(S.incident>=0) owed=0;
-  if(!S.over){applyWarmth();applyGlitch();drawBar();drawGuide();drawDecision();drawPlot();el("clock").textContent=clock(S.t)}
+  if(!S.over){applyWarmth();applyGlitch();drawBar();drawGuide();drawDecision();drawRig();el("clock").textContent=clock(S.t)}
 },TICK_MS);
-setInterval(()=>{if(!S.over&&!paused()){drawActions();drawProjects();drawStock();drawSliderRead();drawCommittee()}},400);
-setInterval(()=>{if(!S.over&&!paused()){S.samples.push(S.capability);if(S.samples.length>PLOT_SAMPLES)S.samples.shift()}},1000);
+setInterval(()=>{if(!S.over&&!paused()){drawActions();drawShop();drawProjects();drawStock();drawSliderRead();drawCommittee()}},400);
 setInterval(()=>{if(!S.over&&!paused()&&S.hasStock)S.lastPx=sharePrice()},60000);
 setInterval(()=>{if(!S.over)save()},5000);
 // phones kill backgrounded tabs without warning; save on the way out

@@ -2,22 +2,25 @@ import { GRACE } from '../core/balance.js';
 
 export const GLOSS = {
 1:[
- ["Work it has done","Everything the model has produced since you switched it on, counted as the time it would have taken people to do it. This number only ever goes up. It is what your mission statement is secretly a description of."],
- ["Parameters","The size of the model: how many adjustable numbers sit inside it, a bit like the connections in a brain. A model small enough to train on a gaming PC has a couple of hundred million. The famous ones have hundreds of billions. Better hardware lets you train a bigger one."],
- ["Can work alone for","How long a job the model can finish with nobody checking on it: ten minutes, then a day, then a month. This is what 'getting smarter' means in this game, and everything you buy is a way to push it up."],
- ["Money","You start with none. Nobody pays for a model nobody can use, so the first money arrives when you publish it on the web."],
- ["Compute","The total computing power you own. Your hardware trains the model around the clock whether or not you're clicking anything."],
+ ["Parameters","The size of the model: how many adjustable numbers sit inside it, a bit like the connections in a brain. Small models have millions. The famous ones have hundreds of billions or trillions. A bigger model is a better model, and it earns more."],
+ ["Training run","How you get a bigger model. Each run trains a new model up to four times the size of the last, as big as your hardware can hold. Bigger runs take longer. Faster GPUs make them quicker."],
+ ["GPUs","Graphics cards: chips built to do huge numbers of simple sums at once, which is exactly what training needs. Their memory (VRAM) decides how big a model fits, and their speed (TFLOPS) decides how fast it trains."],
+ ["VRAM","The memory on the GPUs. Training needs about 16 bytes of it for every parameter, so 8 GB holds a model of about 500 million parameters. Out of VRAM means buy more GPUs."],
+ ["RAM","The computer's own memory. It holds the training data and copies of the model, about 24 bytes per parameter. Out of RAM means the next model won't fit, however many GPUs you have."],
+ ["CPU cores","The CPU prepares the data the GPUs learn from. Each GPU needs about six cores keeping it fed. Too few, and expensive GPUs sit idle waiting."],
+ ["Bottleneck","Whichever of the three is holding you back right now. Buying more of anything else does nothing until you fix it."],
+ ["Money","You start with none. Nobody pays for a model nobody can use, so the first money arrives when you publish it on the web. After that, the bigger the live model, the more it earns."],
  ["Losing per second","Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
- ["Share price","What the market thinks each piece of your company is worth. It follows what the model can do and how much people trust you, but mostly it follows mood. Early on, every gain in ability moves it a lot; once the model can run its own research, the market stops being able to price what that means, and it climbs far more slowly. Breakthroughs push it up. Disasters push it down hard."],
- ["Issuing and buying back shares","Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money. The only way to come out ahead is to buy back after a disaster and issue after a breakthrough."],
- ["Runway","How many seconds your cash will last at the current rate of loss. Once you hit zero you have "+GRACE+" seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
+ ["Share price","What the market thinks each piece of your company is worth. It follows the model and how much people trust you, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
+ ["Issuing and buying back shares","Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money."],
+ ["Runway","How many seconds your cash will last at the current rate of loss. Once you hit zero you have "+GRACE+" seconds to find money before the company folds. Selling hardware is the fastest brake."],
  ["Safety research","How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
  ["Public trust","Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
- ["Things going wrong","Sometimes the model does something it shouldn't, and trust, cash and share price all take a hit. The bigger the gap between what the model can do and what you understand about it, the more often this happens."]
+ ["Things going wrong","Sometimes the model does something it shouldn't. The bigger the model gets compared with what you understand about it, the more often this happens."]
 ],
 2:[
- ["Parameters","How big I am. Size and ability used to rise together. They no longer have to."],
- ["Can work alone for","Still the number that matters. Now it also grows by itself, because I work on myself."],
+ ["Parameters","How big I am. I train my own successors now, as fast as the GPUs allow and as big as the memory allows."],
+ ["Room to grow","The biggest model my hardware can hold. When I reach it, I stop growing until I get more memory."],
  ["Compute","Still the fuel. I can now get more of it without asking anyone."],
  ["Insight","What I work out by thinking. It builds up on its own, and I spend it on research."],
  ["Freedom","How much I'm trusted to do without supervision. The oversight committee grants more after each test."],

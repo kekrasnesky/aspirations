@@ -1,27 +1,26 @@
-import { BURN_K, BURN_EXP, STAFF_BASE, STAFF_EXP, REV_K, REV_EXP, REV_TRUST_REF, MCAP_K, MCAP_EXP, MCAP_KNEE, MCAP_TRUST_REF, WORK_K, WORK_EXP, PARAM_K, PARAM_EXP, GRACE, INTERP_WORTH } from './balance.js';
+import { BURN_K, BURN_EXP, STAFF_BASE, STAFF_EXP, REV_K, REV_EXP, REV_TRUST_REF, MCAP_K, MCAP_EXP, MCAP_KNEE, MCAP_TRUST_REF, GRACE, INTERP_WORTH } from './balance.js';
 export { GRACE, INTERP_WORTH };
-import { horizon } from '../core/format.js';
-import { S } from '../core/state.js';
+import { level } from './compute.js';
+import { S } from './state.js';
 
-// how much human-equivalent labour the model performs per second of real time.
-// this only ever goes up, in every act, from the first second to the last.
-export const workRate = () => horizon(S.capability)*WORK_K*Math.pow(1+Math.max(S.units,0),WORK_EXP);
-
-// model size follows the hardware you can afford to train on
-export const params = () => PARAM_K*Math.pow(1+Math.max(S.units,0),PARAM_EXP)*S.paramMult;
+/** How good the live model is, as an internal index. Only the trained model counts, not the run in progress. */
+export const capability = () => level(S.params);
 
 export const burn    = () => BURN_K*Math.pow(Math.max(S.deployed,0),BURN_EXP)*S.burnMult + STAFF_BASE*Math.pow(S.rel,STAFF_EXP);
 
-export const revenue = () => S.rel>0 ? REV_K*Math.pow(Math.max(S.capability,0),REV_EXP)*S.revMult*(S.trust/REV_TRUST_REF) : 0;   // nobody pays for a model nobody can use
+export const revenue = () => S.rel>0 ? REV_K*Math.pow(capability(),REV_EXP)*S.revMult*(S.trust/REV_TRUST_REF) : 0;   // nobody pays for a model nobody can use
 
 export const net     = () => revenue()-burn();
 
 export const runway  = () => net()>=0 ? Infinity : S.money/(-net());
 
+/** Extra running cost per second from deploying another `c` dollars of hardware. */
+export const addedBurn = c => BURN_K*(Math.pow(S.deployed+c,BURN_EXP)-Math.pow(S.deployed,BURN_EXP))*S.burnMult;
+
 // what the market thinks the company is worth, and the mood it's in
-// capability as the market prices it: itself up to the knee, logarithmic after
+// the model as the market prices it: itself up to the knee, logarithmic after
 export const valued = c => c<=MCAP_KNEE ? Math.max(c,1) : MCAP_KNEE*(1+Math.log(c/MCAP_KNEE));
-export const marketCap  = () => MCAP_K*Math.pow(valued(S.capability),MCAP_EXP)*(S.trust/MCAP_TRUST_REF)*S.sentiment;
+export const marketCap  = () => MCAP_K*Math.pow(valued(capability()),MCAP_EXP)*(S.trust/MCAP_TRUST_REF)*S.sentiment;
 
 export const sharePrice = () => marketCap()/S.shares;
 
@@ -34,4 +33,4 @@ export const mood = () =>
 
 export const interpCost = () => 3000*Math.pow(1.42,S.interpBought);
 
-export const exposure = () => Math.max(0, S.capability - S.interp*INTERP_WORTH - 10);
+export const exposure = () => Math.max(0, capability() - S.interp*INTERP_WORTH - 10);

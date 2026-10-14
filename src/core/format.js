@@ -1,5 +1,3 @@
-import { HORIZON_BASE, HORIZON_K, HORIZON_EXP } from './balance.js';
-
 export const short = n => {
   if(!isFinite(n)) return "more than you can write down";
   const a=Math.abs(n);
@@ -23,27 +21,32 @@ export const money = n => {
   return sign+Math.round(a);
 };
 
-// capability is an internal index. What the player sees is how long a job it can finish alone.
-export const horizon = c => HORIZON_BASE + HORIZON_K*Math.pow(Math.max(c,0),HORIZON_EXP);
-
-export const dur = x => {
-  if(x<10)      return x.toFixed(1)+" seconds";
-  if(x<60)      return Math.round(x)+" seconds";
-  if(x<5400)    return (x/60).toFixed(x<600?1:0)+" minutes";
-  if(x<1.728e5) return (x/3600).toFixed(1)+" hours";
-  if(x<1.21e6)  return (x/86400).toFixed(1)+" days";
-  if(x<6.3e6)   return (x/604800).toFixed(1)+" weeks";
-  if(x<6.3e7)   return (x/2.592e6).toFixed(1)+" months";
-  return short(x/3.15e7)+" years";
-};
-
-export const work  = c => dur(horizon(c));
-
+/** Parameter counts the way the field writes them: 124M, 7B, 1.8T. */
 export const pcount = n => {
-  if(n>=1e15) return (n/1e15).toFixed(1)+" quadrillion";
-  if(n>=1e12) return (n/1e12).toFixed(n<1e13?2:1)+"T";
-  if(n>=1e9)  return (n/1e9).toFixed(n<1e10?1:0)+"B";
-  return Math.round(n/1e6)+"M";
+  if(n<=0) return "0";
+  const f=(x,u)=>(x<10&&Math.round(x*10)%10?x.toFixed(1):Math.round(x).toLocaleString())+u;
+  if(n>=1e12) return f(n/1e12,"T");
+  if(n>=1e9)  return f(n/1e9,"B");
+  if(n>=1e6)  return f(n/1e6,"M");
+  return f(n/1e3,"K");
 };
+
+/** Memory, given in GB. */
+export const bytes = gb => {
+  if(gb>=1e6) return (gb/1e6).toFixed(gb<1e7?1:0)+" PB";
+  if(gb>=1e3) return (gb/1e3).toFixed(gb<1e4?1:0)+" TB";
+  return Math.round(gb)+" GB";
+};
+
+/** Compute, given in TFLOPS. */
+export const flops = tf => {
+  if(tf>=1e6) return (tf/1e6).toFixed(tf<1e7?1:0)+" EFLOPS";
+  if(tf>=1e3) return (tf/1e3).toFixed(tf<1e4?1:0)+" PFLOPS";
+  return Math.round(tf)+" TFLOPS";
+};
+
+export const count = n => n>=1e6 ? (n/1e6).toFixed(1)+"M" : Math.round(n).toLocaleString();
+
+export const secs = s => s<60 ? Math.ceil(s)+"s" : Math.floor(s/60)+"m "+String(Math.ceil(s%60)).padStart(2,"0")+"s";
 
 export const clock = s => Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");

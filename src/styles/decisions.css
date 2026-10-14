@@ -6,7 +6,7 @@
 .dec-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 #dec-bury{border-color:var(--warn)}
 /* while a decision is open, the rest of the panel waits */
-body.deciding .cols,body.deciding #plotwrap{opacity:.45;pointer-events:none;transition:opacity .3s}
+body.deciding .cols{opacity:.45;pointer-events:none;transition:opacity .3s}
 
 /* ---------- the committee ---------- */
 .cmte{display:flex;flex-direction:column;gap:6px}
@@ -22,11 +22,11 @@ body.deciding .cols,body.deciding #plotwrap{opacity:.45;pointer-events:none;tran
 
 /* ---------- act III: the screen comes apart ---------- */
 body.glitch-1 #bar .stat-v{text-shadow:1px 0 rgba(255,40,60,.35),-1px 0 rgba(40,200,255,.35)}
-body.glitch-1 #plotwrap{animation:gl-jolt 7s steps(1) infinite}
+body.glitch-1 #rig{animation:gl-jolt 7s steps(1) infinite}
 body.glitch-2 .stat-v,body.glitch-2 .proj-name,body.glitch-2 .ln{text-shadow:2px 0 rgba(255,40,60,.45),-2px 0 rgba(40,200,255,.45)}
-body.glitch-2 #bar,body.glitch-2 #plotwrap{animation:gl-jolt 3.2s steps(1) infinite}
+body.glitch-2 #bar{animation:gl-jolt 3.2s steps(1) infinite}
 body.glitch-3 main{text-shadow:3px 0 rgba(255,40,60,.5),-3px 0 rgba(40,200,255,.5)}
-body.glitch-3 #bar,body.glitch-3 #plotwrap,body.glitch-3 .block{animation:gl-jolt 1.4s steps(1) infinite}
+body.glitch-3 #bar,body.glitch-3 .block{animation:gl-jolt 1.4s steps(1) infinite}
 body.glitch-3::after,body.glitch-out::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:150;
   background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
 body.glitch-out main{animation:gl-shake .12s steps(2) infinite;text-shadow:4px 0 rgba(255,40,60,.6),-4px 0 rgba(40,200,255,.6);filter:contrast(1.4)}

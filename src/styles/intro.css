@@ -1,30 +1,26 @@
-/* ---------- opening: the first computer ---------- */
-#intro{min-height:100svh;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:48px 0}
-.kicker{font-size:11px;letter-spacing:.14em;color:var(--faint)}
-#intro h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,7vw,62px);line-height:1.04;letter-spacing:-.02em;margin:0;max-width:16ch;transition:opacity .6s ease}
-#intro .kicker{transition:opacity .6s ease}
+/* ---------- opening: a command prompt ---------- */
+#intro{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px 0}
 
-.term{width:100%;max-width:640px;border:1px solid var(--term-bar);border-radius:6px;overflow:hidden;background:var(--term-bg);
+.term{width:100%;max-width:760px;border:1px solid var(--term-bar);border-radius:6px;overflow:hidden;background:var(--term-bg);
   box-shadow:0 12px 40px rgba(0,0,0,.28);transition:transform .8s ease,opacity .8s ease,filter .8s ease}
 .term-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--term-bar);color:var(--term-dim);font-size:11.5px;padding:7px 10px}
+#term-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term-btns{flex:none}
 .term-btns i{display:inline-block;width:10px;height:10px;border:1px solid var(--term-dim);margin-left:6px}
-.term-body{padding:16px 16px 20px;color:var(--term-fg);font-size:14px;line-height:1.65}
-.tl{margin:0 0 6px;opacity:0;animation:tl-in .35s ease forwards;animation-delay:calc(var(--i) * .7s + .2s)}
-@keyframes tl-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-.tprompt{display:flex;align-items:center;gap:10px;margin-top:10px}
+.term-body{padding:14px 14px 18px;color:var(--term-fg);font-size:13px;line-height:1.55;height:min(68svh,520px);overflow-y:auto}
+#boot p{margin:0;white-space:pre-wrap;word-break:break-word;color:var(--term-dim)}
+#boot p.cmd{color:var(--term-fg)}
+#boot p.hot{color:var(--term-hot)}
+.tprompt{display:flex;align-items:center;gap:10px;margin-top:8px}
 .tprompt label{color:var(--term-hot);white-space:nowrap}
 .tprompt input{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid var(--term-dim);outline:none;
-  color:var(--term-fg);font-family:var(--mono);font-size:14px;padding:4px 2px;caret-color:var(--term-hot)}
+  color:var(--term-fg);font-family:var(--mono);font-size:13px;padding:4px 2px;caret-color:var(--term-hot)}
 .tprompt input::placeholder{color:var(--term-dim)}
 .tprompt input:focus{border-bottom-color:var(--term-hot)}
 .tprompt button{background:transparent;color:var(--term-hot);border:1px solid var(--term-dim);padding:3px 10px;font-size:14px}
 .tprompt button:hover:not(:disabled){background:var(--term-bar);border-color:var(--term-hot)}
-#boot p{margin:0 0 4px;color:var(--term-dim);animation:tl-in .3s ease both}
-#boot p.hot{color:var(--term-hot)}
 
 /* the terminal dissolves, then the control panel fades in */
 #intro.closing .term{transform:scale(1.07);opacity:0;filter:blur(3px) brightness(1.5)}
-#intro.closing h1,#intro.closing .kicker{opacity:0}
 #game.reveal{animation:panel-in .9s ease both}
 @keyframes panel-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.tl{opacity:1}}

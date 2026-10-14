@@ -1,4 +1,4 @@
-import { MIN_SHARES, MAX_SHARES, SENTIMENT_FLOOR, SENTIMENT_CEIL, EVAL_PERIOD, PLOT_SAMPLES } from './balance.js';
+import { MIN_SHARES, MAX_SHARES, SENTIMENT_FLOOR, SENTIMENT_CEIL, EVAL_PERIOD, START_GPUS, START_VRAM, START_TFLOPS, START_RAM, START_CORES } from './balance.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -25,7 +25,6 @@ export function sanitize(raw, fresh){
     if(Array.isArray(f)){
       if(!Array.isArray(v)) continue;
       if(k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
-      else if(k === "samples") out.samples = v.filter(Number.isFinite).slice(-PLOT_SAMPLES);
       else if(k === "bought" || k === "breaks") out[k] = v.filter(x => typeof x === "string");
       else if(k === "committee") out.committee = f.map((_, i) => [0,1,2].includes(v[i]) ? v[i] : 0);
       else if(k === "scrutiny" || k === "buried") out[k] = v.filter(x => Number.isInteger(x) && x >= 0);
@@ -48,7 +47,13 @@ export function sanitize(raw, fresh){
   out.converted = clamp(out.converted, 0, 100);
   out.need = clamp(out.need, 0, 100);
   if(!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
-  for(const k of ["units","deployed","debt","capability","interp","workDone","rel","insight","autonomy","suspicion","matter","probes","milestone","buriedTotal"])
+  out.progress = clamp(out.progress, 0, 1);
+  for(const k of ["deployed","debt","params","target","peak","runs","interp","rel","insight","autonomy","suspicion","matter","probes","milestone","buriedTotal"])
     out[k] = Math.max(0, out[k]);
+  // you never own less than the PC you started with
+  for(const [k,min] of [["gpus",START_GPUS],["vram",START_VRAM],["tflops",START_TFLOPS],["ram",START_RAM],["cores",START_CORES]])
+    out[k] = Math.max(min, out[k]);
+  for(const k of ["speedMult","coreMult","vramMult","memMult"])
+    if(out[k] <= 0) out[k] = 1;
   return out;
 }

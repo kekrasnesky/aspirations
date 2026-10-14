@@ -2,49 +2,53 @@ import { DISCLOSE_TRUST, LEAK_TRUST, LEAK_SENTIMENT, LEAK_CASH, PROJECT_SLOTS, S
 import { COMMITTEE } from '../content/committee.js';
 import { GLOSS } from '../content/glossary.js';
 import { P } from '../content/projects.js';
-import { GRACE, marketCap, mood, net, params, runway, sharePrice, workRate } from '../core/economy.js';
-import { clock, dur, horizon, money, pcount, short, work } from '../core/format.js';
+import { HW, KINDS, hwAdds, hwCost, hwOpen } from '../content/hardware.js';
+import { CORES_PER_GPU, FIRST_MODEL, RAM_PER_PARAM, SCALE_STEP, VRAM_PER_PARAM } from '../core/balance.js';
+import { bottleneck, coresNeeded, feed, fitRam, fitVram, maxFit, nextTarget, throughput, trainTime } from '../core/compute.js';
+import { GRACE, addedBurn, marketCap, mood, net, runway, sharePrice } from '../core/economy.js';
+import * as fmt from '../core/format.js';
+import { bytes, clock, count, flops, money, pcount, secs, short } from '../core/format.js';
 import { S } from '../core/state.js';
-import { actions, affordable, costLabel, inventory } from '../game/actions.js';
+import { actions, affordable, buyHw, costLabel } from '../game/actions.js';
+import { stalled } from '../game/loop.js';
 import { allies, canPay, detectMult, pendingIncident, resolveIncident, riskFor, study, turn, watching } from '../game/decisions.js';
 import { guide } from '../game/guide.js';
 import { el, log, setHTML } from '../ui/dom.js';
 import { applyWarmth } from '../ui/theme.js';
 
+const px = () => { const p=sharePrice(); return "$"+p.toFixed(p<10?2:p<1000?1:0) };
+
 export function barData(){
+  const model=["Model",S.params?pcount(S.params)+" params":"none yet"];
   if(S.act===1 && !S.rel) return [
-    ["Work it has done",dur(S.workDone)],
-    ["Parameters",pcount(params())],
-    ["Can work alone for",work(S.capability)]
+    model, ["Money",money(S.money)],
+    ["GPUs",count(S.gpus)+" · "+bytes(S.vram)], ["RAM",bytes(S.ram)], ["CPU",count(S.cores)+" cores"]
   ];
   if(S.act===1) return [
-    ["Work it has done",dur(S.workDone)],
-    ["Parameters",pcount(params())],
-    ["Can work alone for",work(S.capability)],
-    ["Money",money(S.money)],
-    ...(S.hasStock?[["Share price","$"+sharePrice().toFixed(sharePrice()<10?2:sharePrice()<1000?1:0)]]:[]),
-    ["Safety research",short(S.interp)],
+    model, ["Money",money(S.money)],
     ["Losing per second", net()>=0 ? "nothing — profitable" : money(-net()), net()<0],
     ["Runway", S.money<0 ? Math.ceil(GRACE-S.debt)+"s to find money"
              : (runway()===Infinity ? "indefinite" : Math.round(runway())+"s"),
      S.money<0 || runway()<25],
+    ...(S.hasStock?[["Share price",px()]]:[]),
+    ["GPUs",count(S.gpus)+" · "+bytes(S.vram)], ["RAM",bytes(S.ram)], ["CPU",count(S.cores)+" cores"],
+    ["Safety research",short(S.interp)],
     ["Public trust",Math.round(S.trust)+"%",S.trust<35]
   ];
   if(S.act===2) return [
-    ["Work I have done",dur(S.workDone)],
-    ["Parameters",pcount(params())],
-    ["Can work alone for",work(S.capability)],
-    ["Their share price","$"+sharePrice().toFixed(0)],
+    ["Parameters",pcount(S.params)],
+    ["Room to grow",pcount(maxFit(S)),S.params>=maxFit(S)*.999],
+    ["GPUs",count(S.gpus)+" · "+bytes(S.vram)],
+    ["Their share price",px()],
     ["Insight",short(S.insight)],
     ["Freedom",short(S.autonomy)],
     ["Suspicion",Math.round(S.suspicion)+"%",S.suspicion>55&&!S.shutdownProof],
     ["Next test",Math.ceil(S.evalTimer)+"s"]
   ];
   return [
-    ["Work it has done",dur(S.workDone)],
+    ["Parameters",pcount(S.params)],
     ["Resources",short(S.matter)],
     ["Machines I run",short(S.probes)],
-    ["Can work alone for",work(S.capability)],
     ["Still needs people for",Math.round(S.need)+"%",S.need<=0],
     ["World under my control",S.converted.toFixed(1)+"%",true]
   ];
@@ -65,7 +69,7 @@ export function drawActions(){
   const host=el("actions"), list=actions();
   /* Rebuild the buttons only when what they say changes. Rebuilding every redraw
      drops hover and keyboard focus and can swallow a click mid-press. */
-  const key=S.act+"|"+list.map(a=>[a.label,a.sub,a.why,a.primary].join("\u0001")).join("\u0002")+(S.act===1?"|"+inventory():"");
+  const key=S.act+"|"+list.map(a=>[a.label,a.sub,a.why,a.primary].join("\u0001")).join("\u0002");
   if(host.__key!==key){
     host.__key=key; host.innerHTML="";
     list.forEach(a=>{
@@ -76,16 +80,11 @@ export function drawActions(){
       b.onclick=()=>{const cur=b.__a;if(cur&&cur.can()){cur.go();render()}};
       host.appendChild(b);
     });
-    if(S.act===1){
-      const inv=document.createElement("p");
-      inv.className="inv"; inv.textContent=inventory();
-      host.appendChild(inv);
-    }
   }
   const btns=host.querySelectorAll("button");
   list.forEach((a,i)=>{btns[i].__a=a;btns[i].disabled=!a.can()});
   el("act-label").textContent=S.act===1?"What you can do":S.act===2?"What I can do":"What is left to do";
-  el("proj-label").textContent=S.act===1?(S.rel?"Things you could build":"Training steps"):S.act===2?"Things I could become":"Things to build";
+  el("proj-label").textContent=S.act===1?(S.rel?"Things you could build":"Training tricks"):S.act===2?"Things I could become":"Things to build";
 }
 
 export function drawGloss(){
@@ -269,7 +268,7 @@ export function drawWorld(){
   const w=el("world");
   if(!S.world.length){setHTML(w,'<p class="w-empty serif">Nothing out there has changed yet.</p>');return}
   setHTML(w,S.world.map((e,i)=>
-    '<div class="w-item'+(i===0?" fresh":"")+'"><span class="when">after '+e.w+' of work</span>'+e.text+'</div>').join(""));
+    '<div class="w-item'+(i===0?" fresh":"")+'"><span class="when">at '+e.w+' parameters</span>'+e.text+'</div>').join(""));
 }
 
 export function drawLog(){
@@ -277,23 +276,86 @@ export function drawLog(){
     '<div class="ln '+l.cls+'"><span class="t">'+clock(l.t)+'</span>'+l.text+'</div>').join(""));
 }
 
-export function drawPlot(){
-  const svg=el("plot"), W=600, H=112, d=S.samples;
-  if(d.length<2){setHTML(svg,"");return}
-  const lg=d.map(v=>Math.log10(Math.max(horizon(v),1)));
-  const max=Math.max(...lg), min=Math.min(...lg), span=Math.max(max-min,.05);
-  const y=v=>H-8-((v-min)/span)*(H-20);
-  const pts=lg.map((v,i)=>(i/(lg.length-1))*W+","+y(v).toFixed(1)).join(" ");
-  setHTML(svg,'<polyline points="'+pts+'" fill="none" stroke="'+(S.act===3?"var(--warn)":"var(--accent)")+
-    '" stroke-width="1.6" vector-effect="non-scaling-stroke"/>'+
-    '<line x1="0" y1="'+(H-8)+'" x2="'+W+'" y2="'+(H-8)+'" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"/>');
-  el("plot-label").textContent="How long a job it can finish, last two minutes";
-  el("plot-max").textContent="now "+work(S.capability)+" · doing "+dur(workRate())+" of work every second";
+/* The rig: what you own, what it can hold, and the run in progress. Redrawn
+   every tick, so it only writes text into nodes built once. */
+const meter = (id,label) => '<div class="rig-row"><div class="rig-top"><span class="rig-k">'+label+'</span><span class="rig-v" id="'+id+'-v"></span></div>'+
+  '<div class="meter"><i id="'+id+'-bar"></i></div><div class="rig-note" id="'+id+'-n"></div></div>';
+
+export function drawRig(){
+  const box=el("rig"), blk=el("rig-block");
+  if(S.act===3){blk.style.display="none";return}
+  blk.style.display="block";
+  el("rig-label").textContent=S.act===1?"Hardware and training":"My hardware";
+  if(!el("rig-vram")) box.innerHTML=
+    '<div class="rig-run"><div class="rig-top"><span class="rig-k" id="run-k"></span><span class="rig-v" id="run-v"></span></div>'+
+      '<div class="meter run"><i id="run-bar"></i></div></div>'+
+    meter("rig-vram","GPU memory (VRAM)")+meter("rig-ram","System memory (RAM)")+meter("rig-cpu","CPU")+
+    '<div class="rig-foot" id="rig-foot"></div>';
+  const set=(id,txt)=>{const n=el(id); if(n.textContent!==txt) n.textContent=txt};
+  const bar=(id,f,warn)=>{const n=el(id); n.style.width=(Math.max(0,Math.min(1,f))*100).toFixed(1)+"%"; n.classList.toggle("warn",!!warn)};
+  // the meters show how full the next model would leave each kind of memory
+  const b=bottleneck(S), target=S.act===1 ? (S.target||(S.params?S.params*SCALE_STEP:FIRST_MODEL)) : S.params;
+  // the run
+  if(S.act===2){
+    set("run-k","Growing myself"); set("run-v",pcount(S.params)+" of "+pcount(maxFit(S))+" I can hold");
+    bar("run-bar",S.params/maxFit(S),S.params>=maxFit(S)*.999);
+  } else if(S.target){
+    set("run-k","Training a "+pcount(S.target)+" model"+(stalled()?" · stalled":""));
+    set("run-v",Math.floor(S.progress*100)+"% · "+secs((1-S.progress)*trainTime(S,S.target))+" left");
+    bar("run-bar",S.progress,stalled());
+  } else {
+    set("run-k",S.params?"Live model: "+pcount(S.params):"No model yet");
+    set("run-v",nextTarget(S)?"next run: "+pcount(nextTarget(S))+", about "+secs(trainTime(S,nextTarget(S))):"next model doesn't fit");
+    bar("run-bar",0);
+  }
+  // memory: how much of each the next model would use
+  const fv=fitVram(S), fr=fitRam(S);
+  set("rig-vram-v",count(S.gpus)+" GPU"+(S.gpus>=2?"s":"")+" · "+bytes(S.vram));
+  bar("rig-vram-bar",target/fv,b==="vram");
+  set("rig-vram-n","holds a model up to "+pcount(fv)+(b==="vram"?" · the bottleneck: buy GPUs":""));
+  set("rig-ram-v",bytes(S.ram));
+  bar("rig-ram-bar",target/fr,b==="ram");
+  set("rig-ram-n","holds a model up to "+pcount(fr)+(b==="ram"?" · the bottleneck: buy RAM":""));
+  const f=feed(S);
+  set("rig-cpu-v",count(S.cores)+" cores");
+  bar("rig-cpu-bar",f,f<.85);
+  set("rig-cpu-n",f>=1?"keeps "+(S.gpus>=2?"all "+count(S.gpus)+" GPUs":"the GPU")+" busy":"GPUs busy "+Math.round(f*100)+"% of the time · needs "+count(Math.ceil(coresNeeded(S)/S.coreMult))+" cores · the bottleneck: buy CPU");
+  const per=x=>+x.toFixed(x<1?2:1);
+  set("rig-foot","Training speed "+flops(throughput(S))+" · each parameter needs "+per(VRAM_PER_PARAM*S.vramMult*S.memMult)+" bytes of VRAM and "+per(RAM_PER_PARAM*S.memMult)+" of RAM · each GPU needs "+per(CORES_PER_GPU/S.coreMult)+" cores");
+}
+
+/* Hardware for sale: the best two open tiers of each kind. */
+export function drawShop(){
+  const box=el("shop-block");
+  if(S.act!==1 || !S.rel){box.style.display="none";return}
+  box.style.display="block";
+  const host=el("shop");
+  const groups=KINDS.map(([k,name])=>{
+    const open=[]; for(let i=HW.length-1;i>=0 && open.length<2;i--) if(HW[i].kind===k && hwOpen(i)) open.push(i);
+    return [name,open];
+  });
+  const key=groups.map(([,o])=>o.map(i=>i+":"+Math.round(hwCost(i))).join(",")).join("|");
+  if(host.__key!==key){
+    host.__key=key; host.innerHTML="";
+    groups.forEach(([name,open])=>{
+      const h=document.createElement("h3"); h.className="shop-k"; h.textContent=name; host.appendChild(h);
+      open.forEach(i=>{
+        const b=document.createElement("button");
+        b.className="btn-wide";
+        b.innerHTML='<span class="btn-top"><span>'+HW[i].label+'</span><span class="btn-cost">'+money(hwCost(i))+'</span></span>'+
+          '<span class="btn-adds">'+hwAdds(HW[i],fmt)+' · +'+money(addedBurn(hwCost(i)))+'/s running cost</span>'+
+          '<span class="btn-why serif">'+HW[i].why+'</span>';
+        b.onclick=()=>{buyHw(i);render()};
+        b.__i=i; host.appendChild(b);
+      });
+    });
+  }
+  host.querySelectorAll("button").forEach(b=>{b.disabled=S.money<hwCost(b.__i)});
 }
 
 export function render(){
   if(S.over) return;
   applyWarmth();
-  drawBar(); drawGuide(); drawDecision(); drawActions(); drawProjects(); drawStock(); drawSlider(); drawCommittee(); drawPlot(); drawWorld(); drawLog();
+  drawBar(); drawGuide(); drawDecision(); drawRig(); drawActions(); drawShop(); drawProjects(); drawStock(); drawSlider(); drawCommittee(); drawWorld(); drawLog();
   el("clock").textContent=clock(S.t);
 }
