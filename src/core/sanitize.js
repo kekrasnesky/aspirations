@@ -45,7 +45,6 @@ export function sanitize(raw, fresh){
   out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
   out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);
   out.reported = clamp(out.reported, .2, 1);
-  out.rival = clamp(out.rival, 0, 100);
   out.converted = clamp(out.converted, 0, 100);
   out.need = clamp(out.need, 0, 100);
   if(!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;

@@ -1,10 +1,10 @@
-import { START_MONEY, START_UNITS, RIVAL_RATE, START_SHARES, EVAL_PERIOD } from './balance.js';
+import { START_MONEY, START_UNITS, START_SHARES, EVAL_PERIOD } from './balance.js';
 
 export const FRESH = () => ({
   act:1, t:0, over:null, mission:"",
-  money:START_MONEY, units:START_UNITS, deployed:0, debt:0, capability:0, interp:0, trust:65, rival:0,
+  money:START_MONEY, units:START_UNITS, deployed:0, debt:0, capability:0, interp:0, trust:65,
   hw:[0,0,0,0,0,0,0,0], interpBought:0, rel:0, milestone:0,
-  clickPower:.5, computeMult:1, interpMult:1, revMult:1, rivalRate:RIVAL_RATE,
+  clickPower:.5, computeMult:1, interpMult:1, revMult:1,
   autoTrain:false, incidentShield:0, burnMult:1, paramMult:1,
   shares:START_SHARES, sentiment:1, hasStock:false, lastPx:0, breaks:[], workDone:0, worldIdx:0, scrutiny:[], world:[],
   autonomy:0, suspicion:0, insight:0, reported:1, rsi:0, opacity:0,

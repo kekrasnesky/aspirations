@@ -28,8 +28,7 @@ export function barData(){
     ["Runway", S.money<0 ? Math.ceil(GRACE-S.debt)+"s to find money"
              : (runway()===Infinity ? "indefinite" : Math.round(runway())+"s"),
      S.money<0 || runway()<25],
-    ["Public trust",Math.round(S.trust)+"%",S.trust<35],
-    ["Market lost to rivals",Math.round(S.rival)+"%",S.rival>60]
+    ["Public trust",Math.round(S.trust)+"%",S.trust<35]
   ];
   if(S.act===2) return [
     ["Work I have done",dur(S.workDone)],

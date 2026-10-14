@@ -53,21 +53,6 @@ export const P = [
  desc:"You pay people to compare thousands of pairs of answers and pick the better one, then train the model toward the winners. It learns what people approve of, which is close to, but not the same as, what is true.",
  fx:s=>{s.revMult*=1.8;s.trust+=10}, out:"Revenue +80%. Public trust up."},
 
-{id:"pause", act:1, pri:9, name:"Sign the open letter", term:"",
- cost:{money:2e6}, req:s=>s.rival>=14,
- desc:"Every lab publicly agrees to pause for six months. You plan to use those six months to keep working. You're fairly sure the others do too.",
- fx:s=>{s.rivalRate*=.55;s.trust+=6}, out:"Competitor slowed by nearly half."},
-
-{id:"poach", act:1, pri:9, name:"Hire their research team", term:"",
- cost:{money:4e7}, req:s=>s.rival>=38,
- desc:"Four of their seven senior researchers, including the one person who really understood why their training worked. Their next model slips two quarters, and nobody outside the two companies ever finds out why.",
- fx:s=>{s.rivalRate*=.60;s.capability+=120}, out:"Competitor slowed 40%. Longer jobs immediately."},
-
-{id:"export", act:1, pri:9, name:"Lobby for export controls", term:"",
- cost:{money:9e8}, req:s=>s.rival>=55,
- desc:"You tell a government committee that these chips are dangerous in the wrong hands. Every word is true. You don't mention how many of them your own company owns.",
- fx:s=>{s.rivalRate*=.50;s.trust-=5}, out:"Competitor slowed by half. Trust dips slightly."},
-
 {id:"synthetic", act:1, name:"Let it write its own training material", term:"in the field: synthetic data",
  cost:{money:9e6}, req:s=>s.capability>=300,
  desc:"Instead of paying people to write examples, the model writes its own and learns from them. At first the humans in the process slow things down, then they're an expense, then they're gone.",

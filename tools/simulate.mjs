@@ -27,16 +27,16 @@ const act1Projects = P.filter(p => p.act === 1 && p.id !== 'automate');
 export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random, burnScale = 1 } = {}) {
   const s = {
     money: B.START_MONEY, units: B.START_UNITS, deployed: 0, capability: 0, interp: 0, interpBought: 0,
-    trust: 65, rival: 0, rel: 0, hw: HW.map(() => 0), debt: 0, workDone: 0,
+    trust: 65, rel: 0, hw: HW.map(() => 0), debt: 0, workDone: 0,
     computeMult: 1, interpMult: 1, revMult: 1, burnMult: 1, incidentShield: 0,
-    rivalRate: B.RIVAL_RATE, bought: new Set(), t: 0, incidents: 0, cooldown: 0,
+    bought: new Set(), t: 0, incidents: 0, cooldown: 0,
   };
   const hwCost  = i => HW[i].c * Math.pow(HW[i].s, s.hw[i]);
   const intCost = () => 3000 * Math.pow(1.42, s.interpBought);
   const burn = () => burnScale * B.BURN_K * Math.pow(Math.max(s.deployed, 0), B.BURN_EXP) * s.burnMult
                    + B.STAFF_BASE * Math.pow(s.rel, B.STAFF_EXP);
   const rev  = () => s.rel > 0
-    ? B.REV_K * Math.pow(s.capability, B.REV_EXP) * s.revMult * (s.trust / B.REV_TRUST_REF) * (1 - s.rival / B.RIVAL_DRAG)
+    ? B.REV_K * Math.pow(s.capability, B.REV_EXP) * s.revMult * (s.trust / B.REV_TRUST_REF)
     : 0;
   const workRate = () => horizon(s.capability) * B.WORK_K * Math.pow(1 + s.units, B.WORK_EXP);
 
@@ -53,7 +53,6 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
     minNet = Math.min(minNet, n);
     if (n < 0) negSeconds += DT;
     s.money += n * DT;
-    if (s.rel > 0) s.rival = Math.min(B.RIVAL_CAP, s.rival + s.rivalRate * DT);
     if (s.trust < B.TRUST_CEIL) s.trust = Math.min(B.TRUST_CEIL, s.trust + B.TRUST_REGEN * DT);
 
     const exposure = Math.max(0, s.capability - s.interp * B.INTERP_WORTH - 10);
@@ -109,7 +108,7 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
 
   function summary() {
     return {
-      rival: Math.round(s.rival), incidents: s.incidents, releases: s.rel,
+      incidents: s.incidents, releases: s.rel,
       topRung: s.hw.reduce((a, c, i) => (c ? i + 1 : a), 0),
       purchases: s.hw.reduce((a, b) => a + b, 0),
       workYears: Math.round(s.workDone / 3.15e7),
@@ -137,7 +136,6 @@ if (import.meta.filename === process.argv[1]) {
     const a = won[0];
     console.log(`\n  act I length     p10 ${fmtT(pct(0.1))}   median ${fmtT(pct(0.5))}   p90 ${fmtT(pct(0.9))}`);
     console.log(`  hardware         reached rung ${a.topRung}/8 in ${a.purchases} purchases`);
-    console.log(`  rivals hold      ${a.rival}% of the market at handover`);
     console.log(`  releases taken   ${a.releases}/${REL.length}`);
     console.log(`  work performed   ${a.workYears} years of human labour`);
     console.log(`  burn vs revenue  ${a.burnOverRevenue}x at handover`);

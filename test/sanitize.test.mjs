@@ -30,12 +30,11 @@ test('NaN, Infinity and wrong types never reach the state', () => {
 });
 
 test('out-of-range values are clamped', () => {
-  const out = sanitize({ act: 2, trust: 900, sentiment: -4, shares: 1, reported: 0, rival: 500, capability: -10, hw: [-3, 1.9] }, FRESH());
+  const out = sanitize({ act: 2, trust: 900, sentiment: -4, shares: 1, reported: 0, capability: -10, hw: [-3, 1.9] }, FRESH());
   assert.equal(out.trust, 100);
   assert.ok(out.sentiment > 0);
   assert.ok(out.shares >= 1e8);
   assert.equal(out.reported, 0.2);
-  assert.equal(out.rival, 100);
   assert.equal(out.capability, 0);
   assert.deepEqual(out.hw.slice(0, 2), [0, 1]);
 });

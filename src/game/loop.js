@@ -1,4 +1,4 @@
-import { TICK_MS, CAPABILITY_RATE, COMPUTE_EXP, TRUST_CEIL, TRUST_REGEN, INCIDENT_MAX, INCIDENT_HALF, RIVAL_CAP, SENTIMENT_REVERT, SENTIMENT_NOISE, SENTIMENT_FLOOR, SENTIMENT_CEIL, RSI_RATE, INSIGHT_K, INSIGHT_EXP, SUSPICION_DECAY, SUSPICION_LIMIT, MATTER_BASE, MATTER_PROBE, CONVERT_BASE, CONVERT_PROBE, NEED_SPEEDUP, EVAL_PERIOD } from '../core/balance.js';
+import { TICK_MS, CAPABILITY_RATE, COMPUTE_EXP, TRUST_CEIL, TRUST_REGEN, INCIDENT_MAX, INCIDENT_HALF, SENTIMENT_REVERT, SENTIMENT_NOISE, SENTIMENT_FLOOR, SENTIMENT_CEIL, RSI_RATE, INSIGHT_K, INSIGHT_EXP, SUSPICION_DECAY, SUSPICION_LIMIT, MATTER_BASE, MATTER_PROBE, CONVERT_BASE, CONVERT_PROBE, NEED_SPEEDUP, EVAL_PERIOD } from '../core/balance.js';
 import { rollBreakthrough } from '../content/breakthroughs.js';
 import { MILES } from '../content/milestones.js';
 import { rollScrutiny } from '../content/scrutiny.js';
@@ -23,7 +23,6 @@ export function tick(){
       S.debt+=DT;
       if(S.debt>GRACE) return lose("bankrupt");
     } else if(S.debt>0){ S.debt=0; log("You're back in the black. Barely.","g") }
-    if(S.rel>0) S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate*DT);   // rivals only matter once you have a market
     if(S.trust<TRUST_CEIL) S.trust=Math.min(TRUST_CEIL,S.trust+TRUST_REGEN*DT);
     const e=exposure();
     if(S.rel>0 && Math.random() < INCIDENT_MAX*(e/(e+INCIDENT_HALF))*(1-S.incidentShield)*DT) raiseIncident();

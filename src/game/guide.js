@@ -15,7 +15,6 @@ export function guide(){
     if(runway()<20) return ["Warning","Your costs are outrunning your cash: about "+Math.round(runway())+" seconds left. Stop buying hardware, and think about shutting some down."];
     if(S.buried.length>=2) return ["Warning","You've buried "+S.buried.length+" incidents. Each one is a story waiting for a reporter, and the more there are, the sooner one finds it."];
     if(S.trust<=25) return ["Urgent","Public trust is almost gone, and at zero you're shut down. Testify before Congress to win some back, and fund safety research so it stops falling."];
-    if(S.rival>=55 && S.rivalRate>.12) return ["Worth doing","Rivals have taken "+Math.round(S.rival)+"% of your market, and every point is revenue you lose. Export controls or hiring their team can win some back. There's no deadline."];
     if(exposure()>900 && S.incidentShield<.4) return ["Warning","Your model is far ahead of your understanding of it, so things will keep going wrong. Fund safety research."];
     if(S.rel===0){
       const FREE=[["data",2],["train",6],["size",11],["curve",16]];
@@ -28,7 +27,6 @@ export function guide(){
       return ["Worth doing","You're losing money every second. Running the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
     if(S.hw[0]===0 && S.money>=hwCost(0)) return ["Next","Spend money on a better graphics card. Nearly everything else in this game is a way to get more hardware, or to make what you have count for more."];
     if(r && S.capability>=r.req) return ["Next","You can now: "+r.n.toLowerCase()+". That brings in money, and money buys hardware."];
-    if(S.rival>=14 && !S.bought.includes("pause")) return ["Worth doing","Rivals have taken "+Math.round(S.rival)+"% of your market, which cuts your income every second. The open letter slows them by nearly half and costs very little."];
     if(S.interp===0 && S.capability>60) return ["Worth doing","You've never spent a dollar on understanding your own model. That's fine until it isn't."];
     if(S.capability>=150 && S.breaks.length===0) return ["Next","The model is nearly capable enough to make real scientific discoveries. When that starts, your share price will react before the newspapers do."];
     const next=HW.findIndex((t,i)=>!hwOpen(i));

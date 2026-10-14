@@ -400,17 +400,16 @@ footer button:hover{background:none;color:var(--warn)}
   var BURN_EXP = 0.88;
   var STAFF_BASE = 40;
   var STAFF_EXP = 2.4;
-  var REV_K = 4;
+  var REV_K = 3.6;
   var REV_EXP = 0.95;
   var REV_TRUST_REF = 62;
-  var RIVAL_DRAG = 160;
   var START_MONEY = 0;
   var START_UNITS = 1;
   var GRACE = 25;
-  var MCAP_K = 3e5;
-  var MCAP_EXP = 1.35;
+  var MCAP_K = 18e5;
+  var MCAP_EXP = 1.1;
+  var MCAP_KNEE = 7e3;
   var MCAP_TRUST_REF = 65;
-  var MCAP_RIVAL_DRAG = 150;
   var START_SHARES = 2e8;
   var SHARE_LOT = 0.05;
   var SELL_SENTIMENT = 0.9;
@@ -439,8 +438,6 @@ footer button:hover{background:none;color:var(--warn)}
   var LEAK_CASH = 0.88;
   var BURIED_INSIGHT = 15;
   var TRUST_CEIL = 72;
-  var RIVAL_RATE = 0.075;
-  var RIVAL_CAP = 95;
   var EVAL_PERIOD = 20;
   var EVAL_EARLY_MIN = 8;
   var RSI_RATE = 35e-4;
@@ -518,7 +515,6 @@ footer button:hover{background:none;color:var(--warn)}
     capability: 0,
     interp: 0,
     trust: 65,
-    rival: 0,
     hw: [0, 0, 0, 0, 0, 0, 0, 0],
     interpBought: 0,
     rel: 0,
@@ -527,7 +523,6 @@ footer button:hover{background:none;color:var(--warn)}
     computeMult: 1,
     interpMult: 1,
     revMult: 1,
-    rivalRate: RIVAL_RATE,
     autoTrain: false,
     incidentShield: 0,
     burnMult: 1,
@@ -577,10 +572,11 @@ footer button:hover{background:none;color:var(--warn)}
   var workRate = () => horizon(S.capability) * WORK_K * Math.pow(1 + Math.max(S.units, 0), WORK_EXP);
   var params = () => PARAM_K * Math.pow(1 + Math.max(S.units, 0), PARAM_EXP) * S.paramMult;
   var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + STAFF_BASE * Math.pow(S.rel, STAFF_EXP);
-  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) * (1 - S.rival / RIVAL_DRAG) : 0;
+  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) : 0;
   var net = () => revenue() - burn();
   var runway = () => net() >= 0 ? Infinity : S.money / -net();
-  var marketCap = () => MCAP_K * Math.pow(Math.max(S.capability, 1), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment / (1 + S.rival / MCAP_RIVAL_DRAG);
+  var valued = (c) => c <= MCAP_KNEE ? Math.max(c, 1) : MCAP_KNEE * (1 + Math.log(c / MCAP_KNEE));
+  var marketCap = () => MCAP_K * Math.pow(valued(S.capability), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment;
   var sharePrice = () => marketCap() / S.shares;
   var mood = () => S.sentiment >= 1.35 ? "Investors are euphoric. Nobody is asking what happens if it works." : S.sentiment >= 1.12 ? "The market likes what it's seeing." : S.sentiment >= 0.92 ? "The market is calm." : S.sentiment >= 0.72 ? "Analysts are writing cautious notes." : "Investors are spooked. Somebody is drafting a letter to the board.";
   var interpCost = () => 3e3 * Math.pow(1.42, S.interpBought);
@@ -622,7 +618,6 @@ footer button:hover{background:none;color:var(--warn)}
     out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
     out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);
     out.reported = clamp(out.reported, 0.2, 1);
-    out.rival = clamp(out.rival, 0, 100);
     out.converted = clamp(out.converted, 0, 100);
     out.need = clamp(out.need, 0, 100);
     if (!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
@@ -734,12 +729,11 @@ footer button:hover{background:none;color:var(--warn)}
       ["Money", "You start with none. Nobody pays for a model nobody can use, so the first money arrives when you publish it on the web."],
       ["Compute", "The total computing power you own. Your hardware trains the model around the clock whether or not you're clicking anything."],
       ["Losing per second", "Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
-      ["Share price", "What the market thinks each piece of your company is worth. It follows what the model can do, how much people trust you and how far behind your rivals are, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
+      ["Share price", "What the market thinks each piece of your company is worth. It follows what the model can do and how much people trust you, but mostly it follows mood. Early on, every gain in ability moves it a lot; once the model can run its own research, the market stops being able to price what that means, and it climbs far more slowly. Breakthroughs push it up. Disasters push it down hard."],
       ["Issuing and buying back shares", "Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money. The only way to come out ahead is to buy back after a disaster and issue after a breakthrough."],
       ["Runway", "How many seconds your cash will last at the current rate of loss. Once you hit zero you have " + GRACE + " seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
       ["Safety research", "How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
       ["Public trust", "Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
-      ["Market lost to rivals", "Other companies are building the same thing. They can't knock you out of the game, but they take customers, and every percent they hold is revenue you never see. You can win some back."],
       ["Things going wrong", "Sometimes the model does something it shouldn't, and trust, cash and share price all take a hit. The bigger the gap between what the model can do and what you understand about it, the more often this happens."]
     ],
     2: [
@@ -1088,51 +1082,6 @@ footer button:hover{background:none;color:var(--warn)}
         s.trust += 10;
       },
       out: "Revenue +80%. Public trust up."
-    },
-    {
-      id: "pause",
-      act: 1,
-      pri: 9,
-      name: "Sign the open letter",
-      term: "",
-      cost: { money: 2e6 },
-      req: (s) => s.rival >= 14,
-      desc: "Every lab publicly agrees to pause for six months. You plan to use those six months to keep working. You're fairly sure the others do too.",
-      fx: (s) => {
-        s.rivalRate *= 0.55;
-        s.trust += 6;
-      },
-      out: "Competitor slowed by nearly half."
-    },
-    {
-      id: "poach",
-      act: 1,
-      pri: 9,
-      name: "Hire their research team",
-      term: "",
-      cost: { money: 4e7 },
-      req: (s) => s.rival >= 38,
-      desc: "Four of their seven senior researchers, including the one person who really understood why their training worked. Their next model slips two quarters, and nobody outside the two companies ever finds out why.",
-      fx: (s) => {
-        s.rivalRate *= 0.6;
-        s.capability += 120;
-      },
-      out: "Competitor slowed 40%. Longer jobs immediately."
-    },
-    {
-      id: "export",
-      act: 1,
-      pri: 9,
-      name: "Lobby for export controls",
-      term: "",
-      cost: { money: 9e8 },
-      req: (s) => s.rival >= 55,
-      desc: "You tell a government committee that these chips are dangerous in the wrong hands. Every word is true. You don't mention how many of them your own company owns.",
-      fx: (s) => {
-        s.rivalRate *= 0.5;
-        s.trust -= 5;
-      },
-      out: "Competitor slowed by half. Trust dips slightly."
     },
     {
       id: "synthetic",
@@ -1867,7 +1816,6 @@ footer button:hover{background:none;color:var(--warn)}
       if (runway() < 20) return ["Warning", "Your costs are outrunning your cash: about " + Math.round(runway()) + " seconds left. Stop buying hardware, and think about shutting some down."];
       if (S.buried.length >= 2) return ["Warning", "You've buried " + S.buried.length + " incidents. Each one is a story waiting for a reporter, and the more there are, the sooner one finds it."];
       if (S.trust <= 25) return ["Urgent", "Public trust is almost gone, and at zero you're shut down. Testify before Congress to win some back, and fund safety research so it stops falling."];
-      if (S.rival >= 55 && S.rivalRate > 0.12) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, and every point is revenue you lose. Export controls or hiring their team can win some back. There's no deadline."];
       if (exposure() > 900 && S.incidentShield < 0.4) return ["Warning", "Your model is far ahead of your understanding of it, so things will keep going wrong. Fund safety research."];
       if (S.rel === 0) {
         const FREE = [["data", 2], ["train", 6], ["size", 11], ["curve", 16]];
@@ -1880,7 +1828,6 @@ footer button:hover{background:none;color:var(--warn)}
         return ["Worth doing", "You're losing money every second. Running the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
       if (S.hw[0] === 0 && S.money >= hwCost(0)) return ["Next", "Spend money on a better graphics card. Nearly everything else in this game is a way to get more hardware, or to make what you have count for more."];
       if (r && S.capability >= r.req) return ["Next", "You can now: " + r.n.toLowerCase() + ". That brings in money, and money buys hardware."];
-      if (S.rival >= 14 && !S.bought.includes("pause")) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, which cuts your income every second. The open letter slows them by nearly half and costs very little."];
       if (S.interp === 0 && S.capability > 60) return ["Worth doing", "You've never spent a dollar on understanding your own model. That's fine until it isn't."];
       if (S.capability >= 150 && S.breaks.length === 0) return ["Next", "The model is nearly capable enough to make real scientific discoveries. When that starts, your share price will react before the newspapers do."];
       const next = HW.findIndex((t, i) => !hwOpen(i));
@@ -1998,8 +1945,7 @@ footer button:hover{background:none;color:var(--warn)}
         S.money < 0 ? Math.ceil(GRACE - S.debt) + "s to find money" : runway() === Infinity ? "indefinite" : Math.round(runway()) + "s",
         S.money < 0 || runway() < 25
       ],
-      ["Public trust", Math.round(S.trust) + "%", S.trust < 35],
-      ["Market lost to rivals", Math.round(S.rival) + "%", S.rival > 60]
+      ["Public trust", Math.round(S.trust) + "%", S.trust < 35]
     ];
     if (S.act === 2) return [
       ["Work I have done", dur(S.workDone)],
@@ -2350,7 +2296,7 @@ footer button:hover{background:none;color:var(--warn)}
     ["A short-seller publishes ninety pages alleging your benchmark numbers are cherry-picked. Forty of the pages are correct.", 0.76, -3],
     ["Regulators in two countries announce competition investigations on the same morning, which means they coordinated.", 0.72, -4],
     ["Your head of safety resigns and declines to sign the exit agreement. The memo is online within the hour.", 0.74, -9],
-    ["A rival's model causes a well-publicised disaster. The whole sector sells off. You did nothing and it costs you a fortune.", 0.7, 0],
+    ["A bank's trading system built on your model loses four billion dollars in eleven minutes. The bank was using it wrong, which is not what the headlines say.", 0.7, -2],
     ["A newspaper obtains your internal capability forecasts. They are two years ahead of anything you have said in public.", 0.75, -7],
     ["The county sues over water. The datacenter draws more than the town does, and the town has worked this out.", 0.82, -4],
     ["A class action from authors and artists whose work was used to train the model. Discovery will take four years and you will lose some of it.", 0.8, -3],
@@ -2564,7 +2510,6 @@ footer button:hover{background:none;color:var(--warn)}
         S.debt = 0;
         log("You're back in the black. Barely.", "g");
       }
-      if (S.rel > 0) S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate * DT);
       if (S.trust < TRUST_CEIL) S.trust = Math.min(TRUST_CEIL, S.trust + TRUST_REGEN * DT);
       const e = exposure();
       if (S.rel > 0 && Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) raiseIncident();

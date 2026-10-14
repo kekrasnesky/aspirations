@@ -36,3 +36,12 @@ test('nothing earns money until the first release', async () => {
   assert.equal(FRESH().money, 0);
   assert.equal(FRESH().units, 1);
 });
+
+test('the share price climbs through act I but never explodes afterwards', async () => {
+  const { FRESH, setState } = await import('../src/core/state.js');
+  const { sharePrice } = await import('../src/core/economy.js');
+  const at = capability => { setState({ ...FRESH(), capability }); return sharePrice(); };
+  assert.ok(at(7000) / at(260) > 20, 'act I success should show in the price');
+  assert.ok(at(1e6) / at(7000) < 10, `act II price ${at(1e6).toFixed(0)} vs ${at(7000).toFixed(0)} at the end of act I`);
+  assert.ok(at(1e12) < 5000, `a runaway model still prices at $${at(1e12).toFixed(0)}`);
+});

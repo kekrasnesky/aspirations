@@ -30,7 +30,7 @@ Nothing earns or costs money until the first release. You start with the gaming
 PC you already own (`START_UNITS`) and $0, and train the model by hand. Four
 free steps teach the three levers of scaling (data, training time, model size)
 and then the pattern behind them. Once the model is good enough you publish it
-on the web, which is when revenue, rivals, incidents and the hardware ladder
+on the web, which is when revenue, incidents and the hardware ladder
 begin. Hardware is a list of upgrades: graphics card, workstation, rackmount
 server, and so on up to a power station.
 
