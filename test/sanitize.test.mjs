@@ -18,24 +18,27 @@ test('a good save round-trips', () => {
 });
 
 test('NaN, Infinity and wrong types never reach the state', () => {
-  const out = sanitize({ act: 1, money: 'lots', capability: null, units: Infinity, trust: 'high', hasStock: 'yes', hw: 'no', samples: [1, NaN, 'a', 2] }, FRESH());
+  const out = sanitize({ act: 1, money: 'lots', params: null, gpus: Infinity, trust: 'high', hasStock: 'yes', hw: 'no', speedMult: NaN }, FRESH());
   const fresh = FRESH();
   assert.equal(out.money, fresh.money);
-  assert.equal(out.capability, 0);
-  assert.equal(out.units, fresh.units);
+  assert.equal(out.params, 0);
+  assert.equal(out.gpus, fresh.gpus);
   assert.equal(out.trust, fresh.trust);
   assert.equal(out.hasStock, false);
-  assert.equal(out.hw.length, 8);
-  assert.deepEqual(out.samples, [1, 2]);
+  assert.equal(out.hw.length, fresh.hw.length);
+  assert.equal(out.speedMult, 1);
 });
 
 test('out-of-range values are clamped', () => {
-  const out = sanitize({ act: 2, trust: 900, sentiment: -4, shares: 1, reported: 0, capability: -10, hw: [-3, 1.9] }, FRESH());
+  const out = sanitize({ act: 2, trust: 900, sentiment: -4, shares: 1, reported: 0, params: -10, progress: 7, vram: 0, memMult: -1, hw: [-3, 1.9] }, FRESH());
   assert.equal(out.trust, 100);
   assert.ok(out.sentiment > 0);
   assert.ok(out.shares >= 1e8);
   assert.equal(out.reported, 0.2);
-  assert.equal(out.capability, 0);
+  assert.equal(out.params, 0);
+  assert.equal(out.progress, 1);
+  assert.equal(out.vram, FRESH().vram, 'never less than the PC you started with');
+  assert.equal(out.memMult, 1);
   assert.deepEqual(out.hw.slice(0, 2), [0, 1]);
 });
 

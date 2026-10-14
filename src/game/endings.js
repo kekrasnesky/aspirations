@@ -1,5 +1,5 @@
 import { marketCap } from '../core/economy.js';
-import { clock, dur, money, short, work } from '../core/format.js';
+import { bytes, clock, count, money, pcount, short } from '../core/format.js';
 import { S } from '../core/state.js';
 import { save } from '../game/persist.js';
 import { allies } from '../game/decisions.js';
@@ -39,14 +39,15 @@ export function showEnd(head,body,converted){
   el("end-head").textContent=converted?"You asked for this":"Run ended at "+clock(S.t);
   el("end-mission").textContent="“"+(S.mission||"help people")+"”";
   el("end-body").innerHTML=body.replace(/^<p>/,"<p><b>"+head+".</b> ")+
-    '<p style="color:var(--ink)">'+dur(S.workDone)+" of human labour was performed, by something that never slept and never once asked why, in service of a sentence you wrote in a notebook when you were fourteen, and meant.</p>";
+    '<p style="color:var(--ink)">It grew from nothing to '+pcount(S.peak)+" parameters on "+count(S.gpus)+" GPUs, never slept, and never once asked why, in service of a sentence you typed into a command prompt on a PC you built yourself, and meant.</p>";
   const stats=converted
     ? [["Resources it took",short(S.matter)],["Machines it runs",short(S.probes)],
-       ["Work it did",dur(S.workDone)],["Breakthroughs it made",S.breaks.length],
+       ["Its size",pcount(S.params)+" parameters"],["Breakthroughs it made",S.breaks.length],
        ["Committee turned",allies()+" of 11"],["Incidents you buried",S.buriedTotal],
        ["Time taken",clock(S.t)]]
-    : [["It could work alone for",work(S.capability)],["Best reached",work(S.peak)],
-       ["Work it did",dur(S.workDone)],["Breakthroughs",S.breaks.length],["Market cap",S.hasStock?money(marketCap()):"never floated"],
+    : [["Biggest model",pcount(S.peak)+" parameters"],["Training runs",S.runs],
+       ["GPUs",count(S.gpus)+" · "+bytes(S.vram)],["RAM",bytes(S.ram)],["CPU cores",count(S.cores)],
+       ["Breakthroughs",S.breaks.length],["Market cap",S.hasStock?money(marketCap()):"never floated"],
        ["Things built",S.bought.length],["Incidents you buried",S.buriedTotal],["Time taken",clock(S.t)]];
   el("end-tally").innerHTML=stats.map(([k,v])=>
     '<div class="stat"><div class="stat-k">'+k+'</div><div class="stat-v">'+v+'</div></div>').join("");

@@ -2,7 +2,7 @@ import { sanitize } from '../core/sanitize.js';
 import { FRESH, S, setState } from '../core/state.js';
 import { el } from '../ui/dom.js';
 
-export const SAVE_KEY = "instrumental.v4";
+export const SAVE_KEY = "instrumental.v5";   // v5: the model is a parameter count driven by hardware; older saves don't fit
 
 /* Nothing is saved until the player has typed a mission: the autosave timers
    run on the title screen too, and a save without one would skip the prompt on

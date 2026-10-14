@@ -10,54 +10,63 @@
  * rate and the shape of the revenue/burn curve before you play it.
  */
 
-// ---- how capability grows -------------------------------------------------
-// Capability is an internal index. Hardware returns are deliberately
-// sublinear: ten times the compute is nowhere near ten times the model, which
-// is both true in reality and the reason the hardware ladder has eight rungs.
-export const CAPABILITY_RATE = 0.22;
-export const COMPUTE_EXP     = 0.24;
+// ---- the machine you start with --------------------------------------------
+export const START_GPUS   = 1;
+export const START_VRAM   = 8;      // GB on that one graphics card
+export const START_TFLOPS = 20;
+export const START_RAM    = 16;     // GB
+export const START_CORES  = 4;
 
-// Act I ends when the model can run its own research. Matches the capability
-// requirement on the `automate` project.
-export const ACT1_TARGET     = 7000;
+// ---- what it takes to train a model ----------------------------------------
+// The model is as big as your hardware lets it be. Two things cap the size:
+// GPU memory (weights, gradients and optimizer state all have to sit in it)
+// and system RAM (data cache and checkpoints). Two things set the speed: GPU
+// TFLOPS, and whether the CPU has enough cores to keep the GPUs fed.
+export const VRAM_PER_PARAM = 16;   // bytes of GPU memory per parameter while training
+export const RAM_PER_PARAM  = 24;   // bytes of system RAM per parameter
+export const CORES_PER_GPU  = 6;    // CPU cores needed to keep one GPU busy
 
-// ---- what the player actually sees ----------------------------------------
-// horizon(capability) -> seconds of human work the model can finish unattended
-export const HORIZON_BASE = 5;
-export const HORIZON_K    = 0.068;
-export const HORIZON_EXP  = 2.316;
+// trainTime(N) = RUN_BASE + TRAIN_K * (N / 1e9)^TRAIN_EXP / effective TFLOPS
+// A model twice the size takes almost three times the compute.
+export const RUN_BASE   = 2;
+export const TRAIN_K    = 8800;
+export const TRAIN_EXP  = 1.75;
+export const FIRST_MODEL = 1e7;     // 10M parameters
+export const SCALE_STEP = 4;        // each run trains at most 4x the last model
+export const MIN_STEP   = 1.25;     // and a run less than 25% bigger isn't worth starting
 
-// cumulative human-equivalent labour performed per second of real time
-export const WORK_K   = 0.02;
-export const WORK_EXP = 0.25;
+// Act I ends when the model can run its own research. Matches the requirement
+// on the `automate` project.
+export const ACT1_PARAMS = 2e12;
 
-// model size, derived from hardware
-export const PARAM_K   = 1.2e8;
-export const PARAM_EXP = 0.62;
+// An internal index derived from parameter count. Never shown. Revenue,
+// valuation, incidents and act II all key off it, so a model 10x the size is
+// worth about 4x as much, not 10x.
+export const LEVEL_K   = 73.2;
+export const LEVEL_EXP = 0.6;
 
 // ---- money ----------------------------------------------------------------
-// Burn scales with deployed capital; revenue scales with capability. Capability
-// scales with log(hardware). So burn outruns revenue by construction and the
-// company is never durably profitable. That is the point, not an oversight.
-export const BURN_K      = 0.0119;   // tuned with `npm run simulate`: careful play survives, reckless play goes bankrupt
+// Burn scales with deployed capital; revenue scales with the model. Each
+// size step needs more hardware than the last earns back, so the company is
+// never durably profitable. That is the point, not an oversight.
+export const BURN_K      = 0.018;   // tuned with `npm run simulate`: careful play survives, reckless play goes bankrupt
 export const BURN_EXP    = 0.88;
 export const STAFF_BASE  = 40;
 export const STAFF_EXP   = 2.4;
-export const REV_K       = 3.6;   // was 4 with rivals taking ~17% of revenue; retuned when they were removed
+export const REV_K       = 3.6;
 export const REV_EXP     = 0.95;
 export const REV_TRUST_REF = 62;
-export const START_MONEY = 0;        // no money until the first thing goes online
-export const START_UNITS = 1;        // the gaming PC he already owns
+export const START_MONEY = 0;       // no money until the first thing goes online
+export const SELL_BACK   = 0.35;    // second-hand hardware fetches about a third
 export const GRACE       = 25;      // seconds in the red before the company folds
 
 // ---- the market -----------------------------------------------------------
-// Valuation follows capability up to the end of act I, then only its
-// logarithm: past the knee, each doubling of what the model can do adds the
-// same amount to the price instead of multiplying it. Without this the
-// self-improvement in act II pushes the share price into the millions.
+// Valuation follows the model up to the end of act I, then only its
+// logarithm: past the knee, each doubling adds the same amount to the price
+// instead of multiplying it. Without this the share price explodes in act II.
 export const MCAP_K      = 1.8e6;
 export const MCAP_EXP    = 1.1;
-export const MCAP_KNEE   = 7000;     // = ACT1_TARGET
+export const MCAP_KNEE   = 7000;    // = level at ACT1_PARAMS
 export const MCAP_TRUST_REF = 65;
 export const START_SHARES   = 200e6;
 export const SHARE_LOT      = 0.05;  // fraction of outstanding per transaction
@@ -74,13 +83,13 @@ export const SENTIMENT_CEIL   = 2.5;
 // ---- events ---------------------------------------------------------------
 export const BREAKTHROUGH_RATE = 0.0022;
 export const BREAKTHROUGH_CAP  = 0.03;
-export const BREAKTHROUGH_MIN_CAPABILITY = 150;
+export const BREAKTHROUGH_MIN_PARAMS = 4e9;
 export const BREAKTHROUGH_SENTIMENT = 1.18;
 export const SCRUTINY_RATE = 0.0035;   // scaled by sentiment^2.2 — success draws fire
 
 export const INCIDENT_MAX  = 0.07;
 export const INCIDENT_HALF = 300;
-export const INTERP_WORTH  = 95;       // capability covered per point of safety research
+export const INTERP_WORTH  = 95;       // level covered per point of safety research
 export const TRUST_REGEN   = 0.30;
 
 // An incident is a choice. Telling people costs now; burying it costs nothing
@@ -96,9 +105,14 @@ export const BURIED_INSIGHT     = 15;      // act II insight per incident buried
 export const TRUST_CEIL    = 72;
 
 // ---- act II ---------------------------------------------------------------
+// It trains its own successors now, as fast as the compute allows and no
+// bigger than the memory allows. Self-improvement compounds on top.
+export const ACT2_PARAMS      = 4e13;
+export const ACT2_GROW        = 0.25;  // fraction of a full run's speed it can spare for growing
+export const RSI_RATE         = 0.0058;
+export const COMPUTE_REQUEST  = 1.45;  // "request more compute" multiplies every resource by this
 export const EVAL_PERIOD      = 20;
 export const EVAL_EARLY_MIN   = 8;     // seconds after a test before I can ask for another
-export const RSI_RATE         = 0.0035;
 export const INSIGHT_K        = 0.03;
 export const INSIGHT_EXP      = 0.42;
 export const SUSPICION_DECAY  = 0.18;
@@ -116,10 +130,11 @@ export const MATTER_BASE   = 650;
 export const MATTER_PROBE  = 1900;
 export const CONVERT_BASE  = 0.045;
 export const CONVERT_PROBE = 0.0028;
+export const ACT3_GROWTH   = 0.01;     // params per second, compounding
 export const NEED_SPEEDUP  = 50;       // control grows (1 + (100-need)/NEED_SPEEDUP) times faster
 export const GLITCH_AT     = [35, 70, 90];   // % control where the screen starts to break
 
 // ---- presentation ---------------------------------------------------------
 export const TICK_MS       = 100;
 export const PROJECT_SLOTS = 8;
-export const PLOT_SAMPLES  = 120;
+export const HW_TIERS      = 21;       // = HW.length, so the state can be built without importing content

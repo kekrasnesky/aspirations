@@ -13,43 +13,40 @@
 <div class="wrap">
 
 <section id="intro">
-  <div class="kicker">a game about getting exactly what you asked for</div>
-  <h1>Instrumental</h1>
-
   <div class="term" id="term" role="group" aria-label="Command prompt">
-    <div class="term-bar"><span>C:\basement\command prompt</span><span class="term-btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
-    <div class="term-body">
-      <p class="tl" style="--i:0">C:\basement&gt; hello</p>
-      <p class="tl" style="--i:1">You are fourteen. This is the PC you built yourself.</p>
-      <p class="tl" style="--i:2">You have no money, no team, and a small AI that barely works.</p>
-      <p class="tl" style="--i:3">What do you want it to do? One sentence.</p>
-      <form class="tl tprompt" id="prompt-row" style="--i:4" autocomplete="off">
-        <label for="mission">C:\basement&gt;</label>
+    <div class="term-bar"><span id="term-title">Command Prompt</span><span class="term-btns" aria-hidden="true"><i></i><i></i><i></i></span></div>
+    <div class="term-body" id="term-body">
+      <div id="boot" aria-live="polite"></div>
+      <form class="tprompt hidden" id="prompt-row" autocomplete="off">
+        <label for="mission">objective&gt;</label>
         <input id="mission" maxlength="110" spellcheck="false"
-          placeholder="type a sentence, then press Enter">
+          placeholder="what is the model for? one sentence">
         <button id="begin" type="submit" aria-label="Run">&#9166;</button>
       </form>
-      <div id="boot" aria-live="polite"></div>
     </div>
   </div>
 </section>
 
 <main id="game" class="hidden">
+  <div id="panelhead"><span>127.0.0.1:8080</span><span>control panel</span></div>
   <div id="bar"></div>
   <div id="guide" role="status" aria-live="polite"></div>
   <div id="decision" class="hidden" role="alertdialog" aria-label="Something went wrong"></div>
   <div id="gloss"></div>
 
-  <div id="plotwrap">
-    <div class="plot-head"><span id="plot-label"></span><span id="plot-max"></span></div>
-    <svg id="plot" viewBox="0 0 600 112" preserveAspectRatio="none" aria-hidden="true"></svg>
-  </div>
-
   <div class="cols">
     <div>
+      <div class="block" id="rig-block">
+        <h2 class="sec" id="rig-label">Hardware and training</h2>
+        <div id="rig"></div>
+      </div>
       <div class="block">
         <h2 class="sec" id="act-label">What you can do</h2>
         <div class="stack" id="actions"></div>
+      </div>
+      <div class="block" id="shop-block" style="display:none">
+        <h2 class="sec">Buy hardware</h2>
+        <div class="stack" id="shop"></div>
       </div>
       <div class="block" id="stock-block" style="display:none"></div>
       <div class="block" id="slider-block" style="display:none"></div>

@@ -64,13 +64,15 @@ test('an early test is not available straight after the last one', () => {
 
 test('renting hidden hardware does not reset the price of asking for compute', async () => {
   const { P } = await import('../src/content/projects.js');
-  const s = { ...FRESH(), contracts: 5, units: 10 };
+  const s = { ...FRESH(), contracts: 5, gpus: 10, ram: 100 };
   P.find(p => p.id === 'contracts').fx(s);
   assert.equal(s.contracts, 5);
+  assert.equal(s.gpus, 32);
+  assert.equal(s.ram, 320);
 });
 
 test('an incident stops the clock until you choose', () => {
-  setState({ ...FRESH(), mission: 'x', rel: 1, capability: 100, money: 1000 });
+  setState({ ...FRESH(), mission: 'x', rel: 1, params: 1e10, money: 1000 });
   const real = Math.random;
   Math.random = () => 0;   // guarantees the incident roll
   try { tick(); } finally { Math.random = real; }
@@ -125,7 +127,7 @@ test('turning committee members hides lies and costs suspicion while others watc
 test('act III ends only once the world is taken, and needing people slows it', async () => {
   const { P } = await import('../src/content/projects.js');
   const act3 = P.filter(p => p.act === 3);
-  const s = { ...FRESH(), act: 3, need: 100, probeRate: 0, capability: 1, bought: [] };
+  const s = { ...FRESH(), act: 3, need: 100, probeRate: 0, params: 1, bought: [] };
   for (const p of act3) { s.bought.push(p.id); p.fx(s); }
   assert.equal(s.need, 0, 'every act III project together should leave it needing nobody');
   setState({ ...FRESH(), act: 3, mission: 'x', need: 100, converted: 0 });

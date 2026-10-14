@@ -1,3 +1,4 @@
+import { ACT1_PARAMS } from '../core/balance.js';
 import { S } from '../core/state.js';
 
 // the page cools as the thing grows. warm basement -> clinical -> void.
@@ -34,8 +35,8 @@ export function applyWarmth(){
     (document.documentElement.dataset.theme!=="light" &&
      window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
   const set = dark?PAL.dark:PAL.light;
-  // cools with how much of the world it has quietly absorbed
-  const t = Math.min(1, Math.pow(Math.log10(1+S.workDone)/Math.log10(1+2e9), 1.1));
+  // cools as the model grows: warm at the first 10M model, cold by the end of act I
+  const t = Math.min(1, Math.max(0, Math.log10(Math.max(S.params,1e7)/1e7)/Math.log10(ACT1_PARAMS/1e7)));
   const key = (dark?"d":"l")+t.toFixed(3);
   if(applied===key) return; applied=key;
   Object.keys(set.warm).forEach(k=>r.style.setProperty("--"+k, mix(set.warm[k],set.cold[k],t)));

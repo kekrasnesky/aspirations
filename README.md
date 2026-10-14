@@ -3,9 +3,9 @@
 An incremental game about building an artificial general intelligence, and
 about what you asked it for.
 
-You start at fourteen, in a basement, with a PC you built yourself and no money.
-You type one sentence at a command prompt saying what you want it to do. The
-game ends with that sentence satisfied.
+It opens on a command prompt. A script starts the control panel for your LLM,
+checks your one PC's hardware, and asks what the model is for. You type one
+sentence. The game ends with that sentence satisfied.
 
 ## Running it
 
@@ -26,23 +26,41 @@ npm run check        # build + test
 
 ## The opening
 
-Nothing earns or costs money until the first release. You start with the gaming
-PC you already own (`START_UNITS`) and $0, and train the model by hand. Four
-free steps teach the three levers of scaling (data, training time, model size)
-and then the pattern behind them. Once the model is good enough you publish it
-on the web, which is when revenue, incidents and the hardware ladder
-begin. Hardware is a list of upgrades: graphics card, workstation, rackmount
-server, and so on up to a power station.
+The command prompt runs `start_panel.py`, which prints its hardware scan and
+data prep (`src/ui/boot.js`), asks for the objective, then hands over to the
+control panel. You start with one PC: one 8 GB GPU, 16 GB of RAM, 4 CPU cores
+and $0. Nothing earns or costs money until the first release.
+
+## How the model grows
+
+The model is a parameter count, and it scales with your compute:
+
+- **Size** is capped by memory. Training needs `VRAM_PER_PARAM` bytes of GPU
+  memory and `RAM_PER_PARAM` bytes of system RAM per parameter; the smaller
+  of the two caps is the biggest model you can train.
+- **Speed** comes from GPU TFLOPS, but each GPU needs `CORES_PER_GPU` CPU
+  cores feeding it data. Too few cores and the GPUs sit partly idle.
+- **Training runs** take the model up to 4x per run, as big as fits. Run time
+  grows as `size^TRAIN_EXP / TFLOPS`, so bigger models need more GPUs.
+- **Money** comes from the live model: bigger model, more revenue. Hardware
+  is bought on three ladders (GPUs, RAM, CPU), and every purchase adds to the
+  running costs.
+
+The control panel shows each resource as a meter, names the bottleneck, and
+the guide line tells you which of the three to buy. Four free "training
+tricks" before the first release teach GPU, CPU and VRAM in turn.
 
 ## The three acts
 
-**Act I: you.** Train it, publish it, buy hardware, keep the money from
-running out. When something goes wrong the clock stops and you choose: tell
+**Act I: you.** Train it, publish it, buy GPUs, RAM and CPU, keep the money
+from running out. It ends at a 2T-parameter model. When something goes wrong the clock stops and you choose: tell
 people (it costs trust now) or bury it (it costs nothing now, and each buried
 incident can leak later for much more). Whatever you buried is still on file
 when the model starts reading the company's files in Act II.
 
-**Act II: it.** You are the model now. Tests every 20 seconds grant freedom,
+**Act II: it.** You are the model now. It trains its own successors as fast
+as its GPUs allow and no bigger than its memory holds, so growing means
+getting more compute out of them. Tests every 20 seconds grant freedom,
 and a slider sets how much of your real ability you show them. The oversight
 committee is eleven named people: study one to learn what works on them, then
 use it. Every member turned makes tests reveal less and grant more, and
@@ -64,10 +82,11 @@ src/
   core/
     balance.js           EVERY tuning number. Start here.
     state.js             the state object and its only legal mutator
-    format.js            money, durations, parameter counts
-    economy.js           burn, revenue, valuation, work rate
+    compute.js           hardware -> max model size, training speed, run length
+    format.js            money, parameter counts, bytes, FLOPS
+    economy.js           burn, revenue, valuation
   content/               all the prose and the data it hangs on
-    hardware.js          the eight upgrades, graphics card to power station
+    hardware.js          three ladders: GPUs, RAM, CPU
     releases.js          the funding ladder
     projects.js          everything buildable, across all three acts
     breakthroughs.js     what the model discovers (warm pool, then cold pool)
@@ -75,7 +94,7 @@ src/
     scrutiny.js          bad news, arriving in proportion to success
     incidents.js         safety failures: what burying each looks like, and how it leaks
     committee.js         the eleven people who oversee it in act II
-    milestones.js        capability announcements
+    milestones.js        parameter-count announcements
     glossary.js          plain-language explanations, per act
   game/
     loop.js              the tick, per act
@@ -89,6 +108,7 @@ src/
     takeover.js          the act transitions
     theme.js             progressive colour cooling
     glitch.js            act III screen corruption and the takeover ending
+    boot.js              the command-prompt opening
     dom.js               element access and the log
   main.js                boot and wiring
 tools/
@@ -105,22 +125,17 @@ away from the mechanics deliberately.
 
 ## Design notes
 
-Three load-bearing ideas, recorded so they don't get optimised away by someone
-trying to make the numbers nicer.
+**The model scales with compute.** What the player tracks is money, the
+parameter count, and the hardware (GPUs, RAM, CPU). Model size is set by
+memory and run length by compute, in `core/compute.js`, which the game and
+the simulator both use. Capability is never shown; an internal `level()` derived from
+parameter count drives revenue, valuation and incidents.
 
-**Capability is never shown as a number.** The player sees how long a job the
-model can finish unattended — seconds, then hours, then a year. The internal
-index exists only to drive that. `horizon()` in `core/format.js`.
-
-**Hardware returns are logarithmic, costs are linear.** Ten times the compute
-is nowhere near ten times the model. This is why there are eight rungs on the
-ladder, and why the company is never durably profitable: burn tracks deployed
-capital, revenue tracks capability, and capability tracks `log(hardware)`. The
-gap widens by construction. `test/balance.test.mjs` asserts it still does.
-
-**One number only ever rises.** Cumulative human-equivalent work, in every act,
-from the first second to the last. It is what the mission statement is secretly
-a description of, and the ending reads it back.
+**Compute costs grow faster than revenue.** A model twice the size takes
+about 3.4x the compute to train, but earns about 1.5x as much. Burn tracks
+deployed hardware, so the company is never durably profitable.
+`test/balance.test.mjs` asserts burn outruns revenue at some point once there
+are investors.
 
 ## Constraints
 

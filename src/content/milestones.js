@@ -1,11 +1,11 @@
-/* milestones in plain language, announced as the horizon crosses them */
+/* milestones in plain language, announced as each trained model crosses them (in parameters) */
 export const MILES = [
- [15,   "It can hold a thought for about half a minute now."],
- [55,   "It can finish a job that would take you ten minutes. People are starting to use it for real work."],
- [150,  "Two hours of work, unsupervised. It is better than you at several things you were hired for."],
- [380,  "Most of a day's work, start to finish, without anyone checking in."],
- [800,  "Four days. It now holds a goal longer than your team holds a meeting."],
- [1600, "Three weeks of work alone. Every safety argument your staff wrote assumed hours."],
- [2800, "Two months. There is no task in your company it cannot in principle be given."],
- [5000, "A year of work without supervision. Nobody on earth can check its reasoning end to end."]
+ [1e8,    "It writes whole paragraphs that make sense, and some that are funny on purpose."],
+ [1e9,    "It holds a conversation. People are starting to use it for real work."],
+ [1e10,   "It is better than you at several things you used to be paid for."],
+ [7e10,   "It finishes a day's work, start to finish, without anyone checking in."],
+ [2e11,   "It now holds a goal for longer than your team holds a meeting."],
+ [5e11,   "Every safety argument your staff wrote assumed a model a tenth this size."],
+ [1e12,   "There is no task in your company it cannot in principle be given."],
+ [1.6e12, "Nobody on earth can check its reasoning end to end."]
 ];
