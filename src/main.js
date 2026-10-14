@@ -106,7 +106,7 @@ const MAX_FRAME_MS=2000;
 
 /* The time slider: how many game ticks pass per real tick. Paused still lets you buy and change things. */
 let lastSpeed=1;
-const speedLabel=x=>x===0?"paused":"×"+x;
+function speedLabel(x){ return x===0?"paused":"×"+x }
 function drawSpeed(){
   const r=el("speed"), i=SPEEDS.indexOf(S.speed);
   if(+r.value!==i) r.value=i;

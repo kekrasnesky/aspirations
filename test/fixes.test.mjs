@@ -239,3 +239,14 @@ test('project cards say what they change; the outcome is told only afterwards', 
   const { P } = await import('../src/content/projects.js');
   for (const p of P) assert.ok(!p.desc.includes(p.out) && !p.eff.includes(p.out), p.id);
 });
+
+test('a GPU power limit cuts electricity faster than it slows training', async () => {
+  const { powerCost } = await import('../src/core/economy.js');
+  const { throughput } = await import('../src/core/compute.js');
+  const s = { ...FRESH(), target: 1, gpuW: 8000, gpus: 10, tflops: 400, cores: 100 };
+  const half = { ...s, gpuLimit: 0.5 };
+  const powerSaved = 1 - powerCost(half) / powerCost(s), speedLost = 1 - throughput(half) / throughput(s);
+  assert.ok(powerSaved > 0.3 && speedLost > 0 && speedLost < powerSaved, `saved ${powerSaved}, lost ${speedLost}`);
+  assert.equal(throughput({ ...half, act: 2 }), throughput({ ...s, act: 2 }), 'in act II the model runs flat out');
+  assert.equal(sanitize({ act: 1, gpuLimit: 0 }, FRESH()).gpuLimit, 0.4);
+});

@@ -28,14 +28,30 @@
 </section>
 
 <main id="game" class="hidden">
-  <div id="panelhead"><span>127.0.0.1:8080 · control panel</span>
-    <label class="speed" for="speed"><span>time</span><input type="range" id="speed" min="0" max="6" step="1"><output id="speed-v" for="speed"></output></label></div>
+  <div id="panelhead">
+    <span class="ph-host">127.0.0.1:8080 · control panel</span>
+    <label class="speed" for="speed"><span>time</span><input type="range" id="speed" min="0" max="6" step="1"><output id="speed-v" for="speed"></output></label>
+    <span class="ph-links">
+      <span id="clock">0:00</span>
+      <button id="glossbtn">what the words mean</button>
+      <button id="export">copy my save</button>
+      <button id="import">load a save</button>
+      <button id="reset">start over</button>
+      <span id="savenote"></span>
+    </span>
+  </div>
   <div id="bar"></div>
   <div id="decision" class="hidden" role="alertdialog" aria-label="Something went wrong"></div>
   <div id="gloss"></div>
+  <div id="savebox" class="hidden">
+    <p id="savehelp"></p>
+    <textarea id="savetext" rows="5" spellcheck="false" aria-label="Save data"></textarea>
+    <div class="savebtns"><button id="saveload" class="btn-primary">Load this save</button><button id="saveclose">Close</button></div>
+    <p id="savemsg" role="status"></p>
+  </div>
 
   <div class="cols">
-    <div>
+    <div class="col">
       <div class="block" id="rig-block">
         <h2 class="sec" id="rig-label">Hardware and training</h2>
         <div id="rig"></div>
@@ -44,6 +60,12 @@
         <h2 class="sec" id="act-label">What you can do</h2>
         <div class="stack" id="actions"></div>
       </div>
+      <div class="block fill">
+        <h2 class="sec">What's happening</h2>
+        <div id="log" role="log" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="col">
       <div class="block" id="cloud-block" style="display:none"></div>
       <div class="block" id="shop-block" style="display:none">
         <h2 class="sec">Buy hardware</h2>
@@ -52,36 +74,17 @@
       <div class="block" id="stock-block" style="display:none"></div>
       <div class="block" id="slider-block" style="display:none"></div>
       <div class="block" id="committee-block" style="display:none"></div>
-      <div class="block">
-        <h2 class="sec">What's happening</h2>
-        <div id="log" role="log" aria-live="polite"></div>
-      </div>
     </div>
-    <div>
+    <div class="col">
       <div class="block">
+        <h2 class="sec" id="proj-label">Things you could build</h2>
+        <div class="stack" id="projects"></div>
+      </div>
+      <div class="block fill">
         <h2 class="sec">The world outside</h2>
         <div id="world"><p class="w-empty serif">Nothing out there has changed yet.</p></div>
       </div>
-      <div class="block">
-      <h2 class="sec" id="proj-label">Things you could build</h2>
-      <div class="stack" id="projects"></div>
-      </div>
     </div>
-  </div>
-
-  <footer>
-    <span id="clock">0:00</span>
-    <button id="glossbtn">what the words mean</button>
-    <button id="export">copy my save</button>
-    <button id="import">load a save</button>
-    <button id="reset">start over</button>
-    <span id="savenote"></span>
-  </footer>
-  <div id="savebox" class="hidden">
-    <p id="savehelp"></p>
-    <textarea id="savetext" rows="5" spellcheck="false" aria-label="Save data"></textarea>
-    <div class="savebtns"><button id="saveload" class="btn-primary">Load this save</button><button id="saveclose">Close</button></div>
-    <p id="savemsg" role="status"></p>
   </div>
 </main>
 

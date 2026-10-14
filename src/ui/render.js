@@ -3,8 +3,8 @@ import { COMMITTEE } from '../content/committee.js';
 import { GLOSS } from '../content/glossary.js';
 import { P } from '../content/projects.js';
 import { HW, KINDS, hwAdds, hwCost, hwOpen } from '../content/hardware.js';
-import { CORES_PER_GPU, FIRST_MODEL, RAM_PER_PARAM, SCALE_STEP, VRAM_PER_PARAM, W_PER_CORE, W_PER_GB, CLOUD_COST, PRICE_MIN, PRICE_MAX } from '../core/balance.js';
-import { bottleneck, coresNeeded, feed, fitRam, fitVram, maxFit, nextTarget, throughput, trainTime } from '../core/compute.js';
+import { LIMIT_MIN, CORES_PER_GPU, FIRST_MODEL, RAM_PER_PARAM, SCALE_STEP, VRAM_PER_PARAM, W_PER_CORE, W_PER_GB, CLOUD_COST, PRICE_MIN, PRICE_MAX } from '../core/balance.js';
+import { limitPerf, bottleneck, coresNeeded, feed, fitRam, fitVram, maxFit, nextTarget, throughput, trainTime } from '../core/compute.js';
 import { GRACE, addedBurn, addedPower, capacity, cloudCost, demand, marketCap, marketingRate, mood, net, payShare, paying, perServer, powerCost, revenue, runway, sharePrice, usersTarget } from '../core/economy.js';
 import * as fmt from '../core/format.js';
 import { bytes, clock, count, flops, money, pcount, secs, short } from '../core/format.js';
@@ -18,6 +18,8 @@ import { applyWarmth } from '../ui/theme.js';
 /** Which way the user count is heading. */
 const trend = () => { const t=usersTarget(S); return t>S.users*1.01?" ▲":t<S.users*.99?" ▼":"" };
 
+/** Text without markup, for tooltips. */
+const plain = h => String(h).replace(/<[^>]*>/g,"");
 const price = p => "$"+(p%1?p.toFixed(2):p);
 /** A small daily cost: under a dollar shows as cents, not $0. */
 const perDay = x => (x<1?"$"+x.toFixed(2):money(x))+"/day";
@@ -83,6 +85,7 @@ export function drawActions(){
       b.innerHTML='<span class="btn-top"><span>'+a.label+'</span><span class="btn-cost">'+a.sub+'</span></span>'+
                   (a.adds?'<span class="btn-adds">'+a.adds+'</span>':'')+
                   '<span class="btn-why serif">'+a.why+'</span>';
+      b.title=plain(a.why);   // on a desktop the explanation is a tooltip, so everything fits on one screen
       b.onclick=()=>{const cur=b.__a;if(cur&&cur.can()){cur.go();render()}};
       host.appendChild(b);
     });
@@ -113,6 +116,7 @@ export function drawProjects(){
     avail.forEach(p=>{
       const b=document.createElement("button");
       b.className="proj"+(p.milestone?" milestone":p.risky?" risky":"");
+      b.title=plain(p.desc);
       b.innerHTML=
         '<span class="proj-top"><span class="proj-name">'+p.name+'</span>'+
         '<span class="proj-cost">'+costLabel(p.cost)+'</span></span>'+
@@ -296,6 +300,8 @@ export function drawRig(){
     '<div class="rig-run"><div class="rig-top"><span class="rig-k" id="run-k"></span><span class="rig-v" id="run-v"></span></div>'+
       '<div class="meter run"><i id="run-bar"></i></div></div>'+
     meter("rig-vram","GPU memory (VRAM)")+meter("rig-ram","System memory (RAM)")+meter("rig-cpu","CPU")+
+    '<div class="rig-row rig-limit"><div class="rig-top"><label class="rig-k" for="gpu-limit">GPU power limit</label><span class="rig-v" id="lim-v"></span></div>'+
+      '<input type="range" id="gpu-limit" min="'+Math.round(LIMIT_MIN*100)+'" max="100" step="5"><div class="rig-note" id="lim-n"></div></div>'+
     '<div class="rig-foot" id="rig-foot"></div>';
   const set=(id,txt)=>{const n=el(id); if(n.textContent!==txt) n.textContent=txt};
   const bar=(id,f,warn)=>{const n=el(id); n.style.width=(Math.max(0,Math.min(1,f))*100).toFixed(1)+"%"; n.classList.toggle("warn",!!warn)};
@@ -326,6 +332,15 @@ export function drawRig(){
   set("rig-cpu-v",count(S.cores)+" cores");
   bar("rig-cpu-bar",f,f<.85);
   set("rig-cpu-n",f>=1?"keeps "+(S.gpus>=2?"all "+count(S.gpus)+" GPUs":"the GPU")+" busy":"GPUs busy "+Math.round(f*100)+"% of the time · needs "+count(Math.ceil(coresNeeded(S)/S.coreMult))+" cores · the bottleneck: buy CPU");
+  // the power limit: only yours to set while you run the company
+  const lim=el("gpu-limit");
+  if(!lim.oninput) lim.oninput=e=>{S.gpuLimit=Math.max(LIMIT_MIN,Math.min(1,+e.target.value/100));drawRig();drawBar()};
+  el("gpu-limit").closest(".rig-limit").style.display=S.act===1?"":"none";
+  if(document.activeElement!==lim) lim.value=Math.round(S.gpuLimit*100);
+  set("lim-v",Math.round(S.gpuLimit*100)+"%");
+  const full={...S,gpuLimit:1};
+  set("lim-n",S.gpuLimit>=1?"GPUs run flat out. Lower the limit to cut the electricity bill; training slows less than power falls."
+    :"GPUs train at "+Math.round(limitPerf(S)*100)+"% speed on "+Math.round(S.gpuLimit*100)+"% power · saves "+money(powerCost(full)-powerCost(S))+"/day");
   const per=x=>+x.toFixed(x<1?2:1);
   set("rig-foot","Training speed "+flops(throughput(S))+" · each parameter needs "+per(VRAM_PER_PARAM*S.vramMult*S.memMult)+" bytes of VRAM and "+per(RAM_PER_PARAM*S.memMult)+" of RAM · each GPU needs "+per(CORES_PER_GPU/S.coreMult)+" cores");
 }
@@ -366,7 +381,7 @@ export function drawCloud(){
         '<div class="stat"><div class="stat-k">Paying</div><div class="stat-v sm" id="cl-pay"></div></div>'+
         '<div class="stat"><div class="stat-k">Subscriptions</div><div class="stat-v sm" id="cl-rev"></div></div>'+
       '</div>'+
-      '<p class="cl-note">Market demand is the share of users who pay at this price. The better the model, the more they\'ll pay; charge too much and almost nobody does.</p>'+
+      '<p class="cl-note help">Market demand is the share of users who pay at this price. The better the model, the more they\'ll pay; charge too much and almost nobody does.</p>'+
     '</div>';
     box.querySelectorAll(".cl-grid button").forEach(b=>b.onclick=()=>{rentCloud(+b.dataset.n);render()});
     el("cl-down").onclick=()=>{setPrice(priceStep(S.planPrice,-1));render()};
@@ -406,8 +421,9 @@ export function drawShop(){
         const b=document.createElement("button");
         b.className="btn-wide";
         b.innerHTML='<span class="btn-top"><span>'+HW[i].label+'</span><span class="btn-cost">'+money(hwCost(i))+'</span></span>'+
-          '<span class="btn-adds">'+hwAdds(HW[i],fmt)+' · +'+perDay(addedBurn(hwCost(i)))+' upkeep · +'+perDay(addedPower(hwWatts(HW[i])))+' electricity</span>'+
+          '<span class="btn-adds">'+hwAdds(HW[i],fmt)+' · +'+perDay(addedBurn(hwCost(i)))+' upkeep · +'+perDay(addedPower(hwWatts(HW[i])*(HW[i].kind==="gpu"?S.gpuLimit:1)))+' electricity</span>'+
           '<span class="btn-why serif">'+HW[i].why+'</span>';
+        b.title=HW[i].why;
         b.onclick=()=>{buyHw(i);render()};
         b.__i=i; host.appendChild(b);
       });

@@ -13,7 +13,7 @@ export const staff = rel => STAFF_BASE*Math.pow(Math.max(0,rel-STAFF_FROM),STAFF
 /** Repairs, cooling and rack space: grows with what you've bought. */
 export const upkeep = s => BURN_K*Math.pow(Math.max(s.deployed,0),BURN_EXP)*s.burnMult;
 /** Kilowatts drawn right now. GPUs only draw their full rating while a run is training. */
-export const powerKw = s => (BASE_W + s.gpuW*(s.target>0?1:GPU_IDLE) + s.ram*W_PER_GB + s.cores*W_PER_CORE)/1000;
+export const powerKw = s => (BASE_W + s.gpuW*s.gpuLimit*(s.target>0?1:GPU_IDLE) + s.ram*W_PER_GB + s.cores*W_PER_CORE)/1000;
 /** Electricity, in dollars per day. */
 export const powerCost = s => powerKw(s)*24*POWER_PRICE*s.powerMult;
 /** Cloud servers, in dollars per day. */

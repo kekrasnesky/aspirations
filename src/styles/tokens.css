@@ -1,26 +1,17 @@
+/* A green phosphor terminal. It is dark in light and dark mode alike, on purpose:
+   the whole game happens on a monitor in somebody's spare room. */
 :root{
-  color-scheme: light dark;
-  --paper:#E7E9E6; --panel:#DDE0DC; --sunk:#D2D6D1;
-  --ink:#1A2124; --dim:#55605F; --faint:#7E8A8A;
-  --rule:#C2C7C1; --accent:#1F6FA8; --warn:#B4500A; --good:#2F7D4F;
-  --term-bg:#0B0C0D; --term-bar:#2A2E32; --term-fg:#D9DDDF; --term-dim:#8E979B; --term-hot:#F0B34A;
+  color-scheme: dark;
+  --paper:#000000; --panel:#031006; --sunk:#010802;
+  --ink:#39ff6a; --dim:#25c24d; --faint:#178a35;
+  --rule:#0f4a1e; --accent:#8dffad; --warn:#ffb000; --good:#39ff6a;
+  --glow:0 0 6px rgba(57,255,106,.35);
+  --term-bg:#000000; --term-bar:#0a2a12; --term-fg:#39ff6a; --term-dim:#1f9e40; --term-hot:#ffb000;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
-  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --serif:var(--mono);
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#121618; --panel:#191E21; --sunk:#0E1214;
-    --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
-    --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#121618; --panel:#191E21; --sunk:#0E1214;
-  --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
-  --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
-  color-scheme: dark;
-}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ color-scheme: dark } }
+:root[data-theme="dark"]{ color-scheme: dark }

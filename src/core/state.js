@@ -4,7 +4,7 @@ export const FRESH = () => ({
   act:1, t:0, over:null, mission:"",
   money:START_MONEY, deployed:0, debt:0, interp:0, trust:65,
   // the hardware, as totals
-  gpus:START_GPUS, gpuW:START_GPU_W, vram:START_VRAM, tflops:START_TFLOPS, ram:START_RAM, cores:START_CORES,
+  gpus:START_GPUS, gpuW:START_GPU_W, gpuLimit:1, vram:START_VRAM, tflops:START_TFLOPS, ram:START_RAM, cores:START_CORES,
   hw:Array(HW_TIERS).fill(0), interpBought:0, rel:0, milestone:0,
   // the model: what's trained and live, and the run in progress (target 0 = idle)
   params:0, target:0, progress:0, runs:0, peak:0,

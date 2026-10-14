@@ -56,12 +56,18 @@ The model is a parameter count, and it scales with your compute:
   day. Grants and investment rounds are the only lump sums.
 - **Costs** are hardware upkeep, electricity (every GPU, RAM stick and core
   draws power; GPUs at full rating while training), cloud servers and staff.
+  A GPU power limit (40–100%) cuts the electricity bill; training speed falls
+  with the square root of the limit, so it slows less than power falls.
+- **Time** runs from paused to ×8 on the slider in the panel header; space
+  pauses and resumes.
 - **Marketing rate** is moved by decisions: ad campaigns, launches and some
   projects raise it; disclosed incidents, leaks and scandals lower it.
 - **Projects** say what they change in game terms (training speed, demand,
   marketing rate and so on). What it means is told in the log after you choose.
 
-The control panel shows each resource as a meter and names the bottleneck.
+The control panel is a green-on-black terminal. On a desktop it fits on one
+screen in three columns (longer explanations become tooltips); on a phone it
+scrolls. It shows each resource as a meter and names the bottleneck.
 Four free "training tricks" before the first release teach GPU, CPU and VRAM
 in turn.
 

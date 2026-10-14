@@ -1,4 +1,4 @@
-import { MIN_SHARES, MAX_SHARES, SENTIMENT_FLOOR, SENTIMENT_CEIL, EVAL_PERIOD, START_GPUS, START_VRAM, START_TFLOPS, START_RAM, START_CORES, START_GPU_W, SPEEDS, MARKETING_MIN, MARKETING_MAX } from './balance.js';
+import { MIN_SHARES, MAX_SHARES, SENTIMENT_FLOOR, SENTIMENT_CEIL, EVAL_PERIOD, START_GPUS, START_VRAM, START_TFLOPS, START_RAM, START_CORES, START_GPU_W, SPEEDS, LIMIT_MIN, MARKETING_MIN, MARKETING_MAX } from './balance.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -55,6 +55,7 @@ export function sanitize(raw, fresh){
     out[k] = Math.max(min, out[k]);
   out.cloud = Math.round(out.cloud);
   if(!SPEEDS.includes(out.speed)) out.speed = 1;
+  out.gpuLimit = clamp(out.gpuLimit, LIMIT_MIN, 1);
   out.marketing = clamp(out.marketing, MARKETING_MIN, MARKETING_MAX);
   for(const k of ["speedMult","coreMult","vramMult","memMult","payMult","powerMult","serveMult"])
     if(out[k] <= 0) out[k] = 1;

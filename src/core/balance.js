@@ -68,6 +68,10 @@ export const START_GPU_W = 300;     // the graphics card you start with
 export const W_PER_GB    = 0.4;     // system RAM
 export const W_PER_CORE  = 12;      // CPU cores
 export const GPU_IDLE    = 0.3;
+// The GPU power limit: cap every GPU's draw. Speed falls more slowly than
+// power (speed = limit^LIMIT_PERF_EXP), as it does on real cards.
+export const LIMIT_MIN      = 0.4;
+export const LIMIT_PERF_EXP = 0.5;
 
 // ---- users, cloud servers and subscriptions --------------------------------
 // People use it through cloud servers you rent by the day. Each server answers

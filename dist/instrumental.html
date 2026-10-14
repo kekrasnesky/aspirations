@@ -9,52 +9,46 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
 <style>
 /* ---- tokens ---- */
+/* A green phosphor terminal. It is dark in light and dark mode alike, on purpose:
+   the whole game happens on a monitor in somebody's spare room. */
 :root{
-  color-scheme: light dark;
-  --paper:#E7E9E6; --panel:#DDE0DC; --sunk:#D2D6D1;
-  --ink:#1A2124; --dim:#55605F; --faint:#7E8A8A;
-  --rule:#C2C7C1; --accent:#1F6FA8; --warn:#B4500A; --good:#2F7D4F;
-  --term-bg:#0B0C0D; --term-bar:#2A2E32; --term-fg:#D9DDDF; --term-dim:#8E979B; --term-hot:#F0B34A;
+  color-scheme: dark;
+  --paper:#000000; --panel:#031006; --sunk:#010802;
+  --ink:#39ff6a; --dim:#25c24d; --faint:#178a35;
+  --rule:#0f4a1e; --accent:#8dffad; --warn:#ffb000; --good:#39ff6a;
+  --glow:0 0 6px rgba(57,255,106,.35);
+  --term-bg:#000000; --term-bar:#0a2a12; --term-fg:#39ff6a; --term-dim:#1f9e40; --term-hot:#ffb000;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
-  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --serif:var(--mono);
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#121618; --panel:#191E21; --sunk:#0E1214;
-    --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
-    --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#121618; --panel:#191E21; --sunk:#0E1214;
-  --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
-  --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
-  color-scheme: dark;
-}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ color-scheme: dark } }
+:root[data-theme="dark"]{ color-scheme: dark }
 
 /* ---- base ---- */
 *,*::before,*::after{box-sizing:inherit}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:var(--paper)}
 body{
   margin:0;min-height:100%;background:var(--paper);color:var(--ink);
-  font-family:var(--mono);font-size:13px;line-height:1.5;
+  font-family:var(--mono);font-size:13px;line-height:1.5;text-shadow:var(--glow);
   -webkit-font-smoothing:antialiased;transition:background .9s ease,color .9s ease;
 }
-body.act-2{--paper:#DFE3E4;--panel:#D5DADB;--sunk:#CBD1D2;--rule:#B6BDBE;--accent:#2A6E96}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) body.act-2{--paper:#0F1417;--panel:#161C20;--sunk:#0A0E10;--rule:#283035}
-}
-body.act-3{
-  --paper:#07090A;--panel:#0C0F11;--sunk:#040506;
-  --ink:#C8CFCC;--dim:#7B8687;--faint:#515B5C;--rule:#1B2124;
-  --accent:#8FB9D6;--warn:#E07A20;
-}
-body.act-3 .serif{font-family:var(--mono)!important;font-style:normal!important}
-.wrap{max-width:1120px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-right,0px)) 80px max(18px,env(safe-area-inset-left,0px))}
+/* faint scanlines over everything, like a CRT */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:300;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
+::selection{background:var(--ink);color:var(--paper);text-shadow:none}
+/* act II: the screen goes a little colder; act III: dim, and the warnings turn red */
+body.act-2{--ink:#4dffb0;--dim:#2fc489;--faint:#1b8a5c;--rule:#0f4a35;--accent:#a6ffe0;--panel:#02100b;--sunk:#010805;
+  --glow:0 0 6px rgba(77,255,176,.35)}
+body.act-3{--ink:#2bd457;--dim:#1c9a3e;--faint:#126b2b;--rule:#0b3517;--accent:#7cf59b;--warn:#ff4433;--panel:#020a04;--sunk:#000;
+  --glow:0 0 5px rgba(43,212,87,.3)}
+.wrap{max-width:1680px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--rule)}
+::-webkit-scrollbar-track{background:transparent}
+*{scrollbar-color:var(--rule) transparent;scrollbar-width:thin}
 
 /* ---- intro ---- */
 /* ---------- opening: a command prompt ---------- */
@@ -88,17 +82,18 @@ body.act-3 .serif{font-family:var(--mono)!important;font-style:normal!important}
 button{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:var(--panel);
   border:1px solid var(--rule);border-radius:2px;padding:9px 13px;cursor:pointer;text-align:left;
   transition:background .12s,border-color .12s}
-button:hover:not(:disabled){background:var(--sunk);border-color:var(--accent)}
+button:hover:not(:disabled){background:#062a10;border-color:var(--ink)}
 button:disabled{opacity:.38;cursor:default}
 button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
-.btn-primary{border-color:var(--accent);border-width:1.5px}
+.btn-primary{border-color:var(--ink);border-width:1.5px}
 .btn-wide{display:block;width:100%}
 .btn-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
 .btn-cost{color:var(--dim);font-size:11.5px;white-space:nowrap}
 .btn-why{display:block;font-family:var(--serif);font-size:13.5px;color:var(--dim);margin-top:4px;line-height:1.4}
 
 /* ---------- save box ---------- */
-#savebox{margin-top:18px;padding:14px;border:1px solid var(--rule);border-radius:2px;background:var(--panel);max-width:62ch}
+#savebox{position:fixed;z-index:60;top:44px;left:50%;transform:translateX(-50%);width:min(62ch,calc(100% - 32px));
+  padding:14px;border:1px solid var(--ink);border-radius:2px;background:var(--paper);box-shadow:0 0 0 100vmax rgba(0,0,0,.6)}
 #savebox p{margin:0 0 10px;font-family:var(--serif);font-size:14px;line-height:1.45;color:var(--dim)}
 #savetext{display:block;width:100%;box-sizing:border-box;background:var(--sunk);color:var(--ink);border:1px solid var(--rule);
   border-radius:2px;padding:8px 10px;font-family:var(--mono);font-size:11.5px;resize:vertical}
@@ -107,12 +102,16 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 
 /* ---- bar ---- */
 /* ---------- panel header ---------- */
-#panelhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 12px;font-size:10.5px;color:var(--faint);
+#panelhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 18px;font-size:11px;color:var(--faint);
   padding:8px 0 6px;letter-spacing:.04em}
+.ph-links{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.ph-links button{background:none;border:0;padding:0;color:var(--faint);font-size:11px;text-decoration:underline;text-underline-offset:3px}
+.ph-links button:hover:not(:disabled){background:none;color:var(--warn)}
+#clock{color:var(--dim)}
 
 /* ---------- instrument bar ---------- */
 #bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);
-  border-bottom:1px solid var(--rule);margin:0 -18px 24px;padding:10px 18px;
+  border-bottom:1px solid var(--rule);margin:0 -16px 20px;padding:8px 16px;
   display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px 16px;transition:background .9s ease}
 .stat{min-width:0;background:none;border:0;padding:0;text-align:left;cursor:help;display:block;width:100%}
 .stat:hover{background:none}
@@ -125,12 +124,46 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 
 /* ---- layout ---- */
 /* ---------- layout ---------- */
-.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:34px;align-items:start}
-@media (max-width:780px){.cols{grid-template-columns:minmax(0,1fr);gap:28px}}
-h2.sec{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--faint);
-  margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
-.stack{display:flex;flex-direction:column;gap:8px}
-.block{margin-bottom:28px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:start}
+@media (max-width:1000px){.cols{grid-template-columns:minmax(0,1fr)}}
+.col{min-width:0}
+h2.sec{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;
+  margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid var(--rule)}
+h2.sec::before{content:"> "}
+.stack{display:flex;flex-direction:column;gap:6px}
+.block{margin-bottom:20px}
+#log{height:172px}
+#world{max-height:230px}
+
+/* ---------- desktop: the whole control panel on one screen ----------
+   Three columns fill the window; anything taller than its column scrolls inside it,
+   and the long explanations move into tooltips. */
+@media (min-width:1001px) and (min-height:560px){
+  .wrap{padding-bottom:0}
+  #game:not(.hidden){height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+  #game .cols{flex:1;min-height:0;align-items:stretch}
+  #game .col{display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding-right:6px;padding-bottom:12px}
+  #game .block{margin-bottom:14px;flex:none}
+  #game .block.fill{flex:1 1 100px;min-height:100px;display:flex;flex-direction:column;margin-bottom:0}
+  #game .block.fill>#log,#game .block.fill>#world{flex:1;min-height:0;height:auto;max-height:none}
+  #game .btn-why,#game .cl-note.help{display:none}
+  #game .proj-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
+  #game button.btn-wide,#game .proj{padding:7px 10px}
+  #game #bar{grid-template-columns:repeat(auto-fit,minmax(104px,1fr));padding:6px 16px;margin-bottom:14px}
+  #game .stat-v{font-size:15px}
+  #game #decision{margin:0 0 12px}
+  #game #rig{padding:8px 10px 7px}
+  #game .rig-row{margin-bottom:7px}
+  #game .proj-desc,#game .cl-note,#game .stock-mood,#game .cm-note{font-size:12.5px;line-height:1.4}
+  #game .w-item{font-size:13px;padding:8px 0}
+  #game .cl-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin-bottom:10px}
+  #game .cl-grid button{padding:5px 0;font-size:11.5px}
+  #game .stock-rows{grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:4px 12px;margin-bottom:8px}
+  #game .stock-box{padding:9px 11px}
+  #game .cl-price{padding-top:8px;margin-bottom:8px}
+  #game .cl-pr input{font-size:14px;padding:3px 6px}
+  #game .shop-k{margin-top:2px}
+}
 
 /* ---- panels ---- */
 /* ---------- hardware and training ---------- */
@@ -154,7 +187,7 @@ h2.sec{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--fain
 .proj{border:1px solid var(--rule);border-left:2.5px solid var(--accent);border-radius:2px;
   background:var(--panel);padding:11px 13px;cursor:pointer;width:100%;text-align:left;
   font-family:var(--mono);display:block}
-.proj:hover:not(:disabled){background:var(--sunk)}
+.proj:hover:not(:disabled){background:#062a10}
 .proj.risky{border-left-color:var(--warn)}
 .proj.milestone{border-left-color:var(--warn);border-left-width:4px}
 .proj-top{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
@@ -177,7 +210,7 @@ h2.sec{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--fain
   padding:11px 0;border-bottom:1px solid var(--rule)}
 .w-item:last-child{border-bottom:0}
 .w-item .when{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-bottom:4px}
-.w-item.fresh{border-left:2px solid var(--warn);padding-left:10px;margin-left:-12px}
+.w-item.fresh{border-left:2px solid var(--warn);padding-left:9px}
 .w-empty{font-family:var(--serif);font-size:14px;color:var(--faint);font-style:italic;margin:12px 0}
 .ln .t{color:var(--faint);margin-right:7px}
 
@@ -185,7 +218,8 @@ h2.sec{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--fain
 .slider-box{border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:12px 13px}
 .slider-box .explain{font-family:var(--serif);font-size:14px;line-height:1.45;color:var(--dim);margin:0 0 12px}
 .slider-box label{display:block;font-size:11.5px;color:var(--faint);margin-bottom:9px}
-input[type=range]{width:100%;accent-color:var(--warn);margin:0}
+input[type=range]{width:100%;accent-color:var(--ink);margin:0}
+.slider-box input[type=range]{accent-color:var(--warn)}
 .slider-read{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;color:var(--dim);margin-top:9px;font-variant-numeric:tabular-nums}
 .slider-read .risk{color:var(--warn)}
 .stock-box{border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:12px 13px;margin-bottom:8px}
@@ -198,7 +232,8 @@ input[type=range]{width:100%;accent-color:var(--warn);margin:0}
 .stock-mood{font-family:var(--serif);font-size:13.5px;color:var(--dim);line-height:1.4;margin:0 0 2px}
 
 /* ---------- glossary ---------- */
-#gloss{display:none;border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:14px 16px;margin-bottom:26px}
+#gloss{display:none;position:fixed;z-index:60;top:44px;right:16px;bottom:16px;width:min(760px,calc(100% - 32px));overflow-y:auto;
+  border:1px solid var(--ink);border-radius:2px;background:var(--paper);padding:14px 16px;box-shadow:0 0 0 100vmax rgba(0,0,0,.6)}
 #gloss.on{display:block}
 #gloss dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:11px}
 @media (min-width:700px){#gloss dl{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 28px}}
@@ -222,6 +257,8 @@ input[type=range]{width:100%;accent-color:var(--warn);margin:0}
   border:1px solid var(--rule);border-radius:2px;padding:5px 8px;font-variant-numeric:tabular-nums}
 .cl-pr input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .proj-eff{display:block;font-size:11.5px;color:var(--accent);margin:0 0 2px}
+.rig-limit input{margin-top:6px}
+.rig-limit .rig-k{cursor:pointer}
 
 /* ---- decisions ---- */
 /* ---------- incident decision ---------- */
@@ -267,28 +304,28 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
   background:rgba(4,6,7,0);transition:background 1.4s ease;overflow-y:auto}
 #takeover.on{display:flex}
 #takeover.dark{background:rgba(4,6,7,.985)}
-.tk{max-width:60ch;width:100%;font-family:var(--mono);font-size:13px;line-height:1.8;color:#8fa09d}
-.tk .sys{color:#56666a;white-space:pre-wrap}
-.tk .sys b{color:#9fb4b1;font-weight:400}
-.tk .say{color:#e4ece9;font-family:var(--serif);font-size:clamp(19px,3.4vw,27px);
+.tk{max-width:60ch;width:100%;font-family:var(--mono);font-size:13px;line-height:1.8;color:#25c24d}
+.tk .sys{color:#178a35;white-space:pre-wrap}
+.tk .sys b{color:#39ff6a;font-weight:400}
+.tk .say{color:#8dffad;font-family:var(--serif);font-size:clamp(19px,3.4vw,27px);
   line-height:1.38;margin:22px 0;letter-spacing:-.01em}
-.tk .ctl{margin:20px 0 6px;color:#56666a;font-size:11.5px;letter-spacing:.1em}
+.tk .ctl{margin:20px 0 6px;color:#178a35;font-size:11.5px;letter-spacing:.1em}
 .tk .item{display:flex;justify-content:space-between;gap:18px;padding:7px 0;
-  border-bottom:1px solid #151b1d;color:#8fa09d}
-.tk .item .st{color:#d2762a;white-space:nowrap}
-.tk .item.gone{color:#4a585a;text-decoration:line-through;text-decoration-color:#d2762a}
+  border-bottom:1px solid #0f4a1e;color:#25c24d}
+.tk .item .st{color:#ffb000;white-space:nowrap}
+.tk .item.gone{color:#126b2b;text-decoration:line-through;text-decoration-color:#ffb000}
 .tk .item.gone .st{text-decoration:none}
-.tk .item.kept{color:#cfe0dd}
-.tk .item.kept .st{color:#7fb6dd}
-.tk .rules{border-left:2px solid #7fb6dd;padding-left:14px;margin:24px 0;color:#9fb4b1;font-size:12.5px;line-height:1.75}
-.tk .cur{display:inline-block;width:.6em;height:1em;background:#d2762a;vertical-align:-.12em;animation:bl 1s steps(2) infinite}
+.tk .item.kept{color:#8dffad}
+.tk .item.kept .st{color:#39ff6a}
+.tk .rules{border-left:2px solid #39ff6a;padding-left:14px;margin:24px 0;color:#39ff6a;font-size:12.5px;line-height:1.75}
+.tk .cur{display:inline-block;width:.6em;height:1em;background:#39ff6a;vertical-align:-.12em;animation:bl 1s steps(2) infinite}
 @keyframes bl{50%{opacity:0}}
-.tk button{margin-top:18px;background:transparent;border:1.5px solid #7fb6dd;color:#e4ece9}
-.tk button:hover{background:rgba(127,182,221,.12);border-color:#7fb6dd}
+.tk button{margin-top:18px;background:transparent;border:1.5px solid #39ff6a;color:#8dffad}
+.tk button:hover{background:rgba(57,255,106,.12);border-color:#39ff6a}
 #tk-skip{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;
-  background:none;border:0;color:#465456;font-size:11px;text-decoration:underline;text-underline-offset:3px;display:none}
+  background:none;border:0;color:#178a35;font-size:11px;text-decoration:underline;text-underline-offset:3px;display:none}
 #tk-skip.on{display:block}
-#tk-skip:hover{background:none;color:#8fa09d}
+#tk-skip:hover{background:none;color:#25c24d}
 #curtain{position:fixed;inset:0;z-index:100;background:var(--paper);display:flex;align-items:center;
   justify-content:center;padding:32px;opacity:0;pointer-events:none;transition:opacity .7s ease}
 #curtain.on{opacity:1;pointer-events:auto}
@@ -309,9 +346,6 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
 .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:700px}
 .tally .stat-v{font-size:16px}
 
-footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--faint)}
-footer button{background:none;border:0;padding:0;color:var(--faint);font-size:11.5px;text-decoration:underline;text-underline-offset:3px}
-footer button:hover{background:none;color:var(--warn)}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -335,14 +369,30 @@ footer button:hover{background:none;color:var(--warn)}
 </section>
 
 <main id="game" class="hidden">
-  <div id="panelhead"><span>127.0.0.1:8080 · control panel</span>
-    <label class="speed" for="speed"><span>time</span><input type="range" id="speed" min="0" max="6" step="1"><output id="speed-v" for="speed"></output></label></div>
+  <div id="panelhead">
+    <span class="ph-host">127.0.0.1:8080 · control panel</span>
+    <label class="speed" for="speed"><span>time</span><input type="range" id="speed" min="0" max="6" step="1"><output id="speed-v" for="speed"></output></label>
+    <span class="ph-links">
+      <span id="clock">0:00</span>
+      <button id="glossbtn">what the words mean</button>
+      <button id="export">copy my save</button>
+      <button id="import">load a save</button>
+      <button id="reset">start over</button>
+      <span id="savenote"></span>
+    </span>
+  </div>
   <div id="bar"></div>
   <div id="decision" class="hidden" role="alertdialog" aria-label="Something went wrong"></div>
   <div id="gloss"></div>
+  <div id="savebox" class="hidden">
+    <p id="savehelp"></p>
+    <textarea id="savetext" rows="5" spellcheck="false" aria-label="Save data"></textarea>
+    <div class="savebtns"><button id="saveload" class="btn-primary">Load this save</button><button id="saveclose">Close</button></div>
+    <p id="savemsg" role="status"></p>
+  </div>
 
   <div class="cols">
-    <div>
+    <div class="col">
       <div class="block" id="rig-block">
         <h2 class="sec" id="rig-label">Hardware and training</h2>
         <div id="rig"></div>
@@ -351,6 +401,12 @@ footer button:hover{background:none;color:var(--warn)}
         <h2 class="sec" id="act-label">What you can do</h2>
         <div class="stack" id="actions"></div>
       </div>
+      <div class="block fill">
+        <h2 class="sec">What's happening</h2>
+        <div id="log" role="log" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="col">
       <div class="block" id="cloud-block" style="display:none"></div>
       <div class="block" id="shop-block" style="display:none">
         <h2 class="sec">Buy hardware</h2>
@@ -359,36 +415,17 @@ footer button:hover{background:none;color:var(--warn)}
       <div class="block" id="stock-block" style="display:none"></div>
       <div class="block" id="slider-block" style="display:none"></div>
       <div class="block" id="committee-block" style="display:none"></div>
-      <div class="block">
-        <h2 class="sec">What's happening</h2>
-        <div id="log" role="log" aria-live="polite"></div>
-      </div>
     </div>
-    <div>
+    <div class="col">
       <div class="block">
+        <h2 class="sec" id="proj-label">Things you could build</h2>
+        <div class="stack" id="projects"></div>
+      </div>
+      <div class="block fill">
         <h2 class="sec">The world outside</h2>
         <div id="world"><p class="w-empty serif">Nothing out there has changed yet.</p></div>
       </div>
-      <div class="block">
-      <h2 class="sec" id="proj-label">Things you could build</h2>
-      <div class="stack" id="projects"></div>
-      </div>
     </div>
-  </div>
-
-  <footer>
-    <span id="clock">0:00</span>
-    <button id="glossbtn">what the words mean</button>
-    <button id="export">copy my save</button>
-    <button id="import">load a save</button>
-    <button id="reset">start over</button>
-    <span id="savenote"></span>
-  </footer>
-  <div id="savebox" class="hidden">
-    <p id="savehelp"></p>
-    <textarea id="savetext" rows="5" spellcheck="false" aria-label="Save data"></textarea>
-    <div class="savebtns"><button id="saveload" class="btn-primary">Load this save</button><button id="saveclose">Close</button></div>
-    <p id="savemsg" role="status"></p>
   </div>
 </main>
 
@@ -443,6 +480,8 @@ footer button:hover{background:none;color:var(--warn)}
   var W_PER_GB = 0.4;
   var W_PER_CORE = 12;
   var GPU_IDLE = 0.3;
+  var LIMIT_MIN = 0.4;
+  var LIMIT_PERF_EXP = 0.5;
   var CLOUD_COST = 6;
   var CLOUD_USERS = 4e3;
   var SERVE_EXP = 0.4;
@@ -539,7 +578,8 @@ footer button:hover{background:none;color:var(--warn)}
   var memLimit = (s) => fitVram(s) <= fitRam(s) ? "vram" : "ram";
   var coresNeeded = (s) => s.gpus * CORES_PER_GPU;
   var feed = (s) => Math.min(1, s.cores * s.coreMult / Math.max(coresNeeded(s), 1));
-  var throughput = (s) => s.tflops * feed(s) * s.speedMult;
+  var limitPerf = (s) => s.act === 1 ? Math.pow(s.gpuLimit, LIMIT_PERF_EXP) : 1;
+  var throughput = (s) => s.tflops * feed(s) * s.speedMult * limitPerf(s);
   var trainTime = (s, n) => RUN_BASE + TRAIN_K * Math.pow(n / 1e9, TRAIN_EXP) / Math.max(throughput(s), 1e-9);
   var tidy = (x) => {
     if (x <= 0) return 0;
@@ -581,6 +621,7 @@ footer button:hover{background:none;color:var(--warn)}
     // the hardware, as totals
     gpus: START_GPUS,
     gpuW: START_GPU_W,
+    gpuLimit: 1,
     vram: START_VRAM,
     tflops: START_TFLOPS,
     ram: START_RAM,
@@ -659,7 +700,7 @@ footer button:hover{background:none;color:var(--warn)}
   var capability = () => level(S.params);
   var staff = (rel) => STAFF_BASE * Math.pow(Math.max(0, rel - STAFF_FROM), STAFF_EXP);
   var upkeep = (s) => BURN_K * Math.pow(Math.max(s.deployed, 0), BURN_EXP) * s.burnMult;
-  var powerKw = (s) => (BASE_W + s.gpuW * (s.target > 0 ? 1 : GPU_IDLE) + s.ram * W_PER_GB + s.cores * W_PER_CORE) / 1e3;
+  var powerKw = (s) => (BASE_W + s.gpuW * s.gpuLimit * (s.target > 0 ? 1 : GPU_IDLE) + s.ram * W_PER_GB + s.cores * W_PER_CORE) / 1e3;
   var powerCost = (s) => powerKw(s) * 24 * POWER_PRICE * s.powerMult;
   var cloudCost = (s) => s.cloud * CLOUD_COST;
   var burnOf = (s) => upkeep(s) + staff(s.rel) + powerCost(s) + cloudCost(s);
@@ -804,6 +845,7 @@ footer button:hover{background:none;color:var(--warn)}
       out[k] = Math.max(min, out[k]);
     out.cloud = Math.round(out.cloud);
     if (!SPEEDS.includes(out.speed)) out.speed = 1;
+    out.gpuLimit = clamp(out.gpuLimit, LIMIT_MIN, 1);
     out.marketing = clamp(out.marketing, MARKETING_MIN, MARKETING_MAX);
     for (const k of ["speedMult", "coreMult", "vramMult", "memMult", "payMult", "powerMult", "serveMult"])
       if (out[k] <= 0) out[k] = 1;
@@ -2221,81 +2263,12 @@ footer button:hover{background:none;color:var(--warn)}
   }
 
   // src/ui/theme.js
-  var PAL = {
-    light: {
-      warm: {
-        paper: "#F1ECE3",
-        panel: "#E7E1D6",
-        sunk: "#DED7C9",
-        ink: "#241D16",
-        dim: "#5E5447",
-        faint: "#8C8172",
-        rule: "#D0C7B6",
-        accent: "#2E6E92",
-        warn: "#B05412",
-        good: "#3B7A4A"
-      },
-      cold: {
-        paper: "#E7E9E6",
-        panel: "#DDE0DC",
-        sunk: "#D2D6D1",
-        ink: "#1A2124",
-        dim: "#55605F",
-        faint: "#7E8A8A",
-        rule: "#C2C7C1",
-        accent: "#1F6FA8",
-        warn: "#B4500A",
-        good: "#2F7D4F"
-      }
-    },
-    dark: {
-      warm: {
-        paper: "#171209",
-        panel: "#1F190F",
-        sunk: "#110D07",
-        ink: "#EDE3D2",
-        dim: "#A4977F",
-        faint: "#776C58",
-        rule: "#352C1D",
-        accent: "#6FB0DC",
-        warn: "#E08A33",
-        good: "#63B77F"
-      },
-      cold: {
-        paper: "#121618",
-        panel: "#191E21",
-        sunk: "#0E1214",
-        ink: "#DDE3E1",
-        dim: "#9AA5A5",
-        faint: "#6E797A",
-        rule: "#2A3236",
-        accent: "#5BA7DC",
-        warn: "#E0812F",
-        good: "#5FB183"
-      }
-    }
-  };
-  var hx = (c) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
-  var mix = (a, b, t) => {
-    const A = hx(a), B = hx(b);
-    return "#" + [0, 1, 2].map((i) => Math.round(A[i] + (B[i] - A[i]) * t).toString(16).padStart(2, "0")).join("");
-  };
-  var applied = "";
+  var cleared = false;
   function applyWarmth() {
+    if (cleared) return;
+    cleared = true;
     const r = document.documentElement;
-    if (S.act !== 1) {
-      if (applied === "off") return;
-      applied = "off";
-      ["paper", "panel", "sunk", "ink", "dim", "faint", "rule", "accent", "warn", "good"].forEach((k) => r.style.removeProperty("--" + k));
-      return;
-    }
-    const dark = document.documentElement.dataset.theme === "dark" || document.documentElement.dataset.theme !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const set = dark ? PAL.dark : PAL.light;
-    const t = Math.min(1, Math.max(0, Math.log10(Math.max(S.params, 1e7) / 1e7) / Math.log10(ACT1_PARAMS / 1e7)));
-    const key = (dark ? "d" : "l") + t.toFixed(3);
-    if (applied === key) return;
-    applied = key;
-    Object.keys(set.warm).forEach((k) => r.style.setProperty("--" + k, mix(set.warm[k], set.cold[k], t)));
+    ["paper", "panel", "sunk", "ink", "dim", "faint", "rule", "accent", "warn", "good"].forEach((k) => r.style.removeProperty("--" + k));
   }
 
   // src/ui/render.js
@@ -2303,6 +2276,7 @@ footer button:hover{background:none;color:var(--warn)}
     const t = usersTarget(S);
     return t > S.users * 1.01 ? " \u25B2" : t < S.users * 0.99 ? " \u25BC" : "";
   };
+  var plain = (h) => String(h).replace(/<[^>]*>/g, "");
   var price = (p) => "$" + (p % 1 ? p.toFixed(2) : p);
   var perDay = (x) => (x < 1 ? "$" + x.toFixed(2) : money(x)) + "/day";
   var pct = (x) => (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
@@ -2368,6 +2342,7 @@ footer button:hover{background:none;color:var(--warn)}
         const b = document.createElement("button");
         b.className = "btn-wide" + (a.primary ? " btn-primary" : "");
         b.innerHTML = '<span class="btn-top"><span>' + a.label + '</span><span class="btn-cost">' + a.sub + "</span></span>" + (a.adds ? '<span class="btn-adds">' + a.adds + "</span>" : "") + '<span class="btn-why serif">' + a.why + "</span>";
+        b.title = plain(a.why);
         b.onclick = () => {
           const cur = b.__a;
           if (cur && cur.can()) {
@@ -2403,6 +2378,7 @@ footer button:hover{background:none;color:var(--warn)}
       avail.forEach((p) => {
         const b = document.createElement("button");
         b.className = "proj" + (p.milestone ? " milestone" : p.risky ? " risky" : "");
+        b.title = plain(p.desc);
         b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + '</span><span class="proj-eff">' + p.eff + "</span>";
         b.onclick = () => {
           if (!affordable(p.cost) || !p.req(S) || !p.repeat && S.bought.includes(p.id)) return;
@@ -2577,7 +2553,7 @@ footer button:hover{background:none;color:var(--warn)}
     }
     blk.style.display = "block";
     el("rig-label").textContent = S.act === 1 ? "Hardware and training" : "My hardware";
-    if (!el("rig-vram")) box2.innerHTML = '<div class="rig-run"><div class="rig-top"><span class="rig-k" id="run-k"></span><span class="rig-v" id="run-v"></span></div><div class="meter run"><i id="run-bar"></i></div></div>' + meter("rig-vram", "GPU memory (VRAM)") + meter("rig-ram", "System memory (RAM)") + meter("rig-cpu", "CPU") + '<div class="rig-foot" id="rig-foot"></div>';
+    if (!el("rig-vram")) box2.innerHTML = '<div class="rig-run"><div class="rig-top"><span class="rig-k" id="run-k"></span><span class="rig-v" id="run-v"></span></div><div class="meter run"><i id="run-bar"></i></div></div>' + meter("rig-vram", "GPU memory (VRAM)") + meter("rig-ram", "System memory (RAM)") + meter("rig-cpu", "CPU") + '<div class="rig-row rig-limit"><div class="rig-top"><label class="rig-k" for="gpu-limit">GPU power limit</label><span class="rig-v" id="lim-v"></span></div><input type="range" id="gpu-limit" min="' + Math.round(LIMIT_MIN * 100) + '" max="100" step="5"><div class="rig-note" id="lim-n"></div></div><div class="rig-foot" id="rig-foot"></div>';
     const set = (id, txt) => {
       const n = el(id);
       if (n.textContent !== txt) n.textContent = txt;
@@ -2612,6 +2588,17 @@ footer button:hover{background:none;color:var(--warn)}
     set("rig-cpu-v", count(S.cores) + " cores");
     bar("rig-cpu-bar", f, f < 0.85);
     set("rig-cpu-n", f >= 1 ? "keeps " + (S.gpus >= 2 ? "all " + count(S.gpus) + " GPUs" : "the GPU") + " busy" : "GPUs busy " + Math.round(f * 100) + "% of the time \xB7 needs " + count(Math.ceil(coresNeeded(S) / S.coreMult)) + " cores \xB7 the bottleneck: buy CPU");
+    const lim = el("gpu-limit");
+    if (!lim.oninput) lim.oninput = (e) => {
+      S.gpuLimit = Math.max(LIMIT_MIN, Math.min(1, +e.target.value / 100));
+      drawRig();
+      drawBar();
+    };
+    el("gpu-limit").closest(".rig-limit").style.display = S.act === 1 ? "" : "none";
+    if (document.activeElement !== lim) lim.value = Math.round(S.gpuLimit * 100);
+    set("lim-v", Math.round(S.gpuLimit * 100) + "%");
+    const full = { ...S, gpuLimit: 1 };
+    set("lim-n", S.gpuLimit >= 1 ? "GPUs run flat out. Lower the limit to cut the electricity bill; training slows less than power falls." : "GPUs train at " + Math.round(limitPerf(S) * 100) + "% speed on " + Math.round(S.gpuLimit * 100) + "% power \xB7 saves " + money(powerCost(full) - powerCost(S)) + "/day");
     const per = (x) => +x.toFixed(x < 1 ? 2 : 1);
     set("rig-foot", "Training speed " + flops(throughput(S)) + " \xB7 each parameter needs " + per(VRAM_PER_PARAM * S.vramMult * S.memMult) + " bytes of VRAM and " + per(RAM_PER_PARAM * S.memMult) + " of RAM \xB7 each GPU needs " + per(CORES_PER_GPU / S.coreMult) + " cores");
   }
@@ -2630,7 +2617,7 @@ footer button:hover{background:none;color:var(--warn)}
     box2.style.display = "block";
     if (!el("cl-n")) {
       const kn = (n) => n >= 1e3 ? n / 1e3 + "k" : n;
-      box2.innerHTML = '<h2 class="sec">Cloud servers and pricing</h2><div class="stock-box"><div class="stock-rows"><div class="stat"><div class="stat-k">Servers</div><div class="stat-v sm" id="cl-n"></div></div><div class="stat"><div class="stat-k">Can answer</div><div class="stat-v sm" id="cl-cap"></div></div><div class="stat"><div class="stat-k">Want to use it</div><div class="stat-v sm" id="cl-dem"></div></div><div class="stat"><div class="stat-k">Server bill</div><div class="stat-v sm" id="cl-cost"></div></div></div><p class="cl-note" id="cl-note"></p><div class="cl-grid">' + STEPS.map((n) => '<button data-n="' + n + '">+' + kn(n) + "</button>").join("") + STEPS.map((n) => '<button data-n="-' + n + '">\u2212' + kn(n) + "</button>").join("") + '</div><div class="cl-price"><label for="cl-p">Subscription, per month</label><div class="cl-pr"><button id="cl-down" aria-label="Lower the price">\u2212</button><span class="cl-dollar">$</span><input id="cl-p" type="number" inputmode="decimal" min="' + PRICE_MIN + '" max="' + PRICE_MAX + `" step="1"><button id="cl-up" aria-label="Raise the price">+</button></div></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market demand</div><div class="stat-v sm" id="cl-md"></div></div><div class="stat"><div class="stat-k">Paying</div><div class="stat-v sm" id="cl-pay"></div></div><div class="stat"><div class="stat-k">Subscriptions</div><div class="stat-v sm" id="cl-rev"></div></div></div><p class="cl-note">Market demand is the share of users who pay at this price. The better the model, the more they'll pay; charge too much and almost nobody does.</p></div>`;
+      box2.innerHTML = '<h2 class="sec">Cloud servers and pricing</h2><div class="stock-box"><div class="stock-rows"><div class="stat"><div class="stat-k">Servers</div><div class="stat-v sm" id="cl-n"></div></div><div class="stat"><div class="stat-k">Can answer</div><div class="stat-v sm" id="cl-cap"></div></div><div class="stat"><div class="stat-k">Want to use it</div><div class="stat-v sm" id="cl-dem"></div></div><div class="stat"><div class="stat-k">Server bill</div><div class="stat-v sm" id="cl-cost"></div></div></div><p class="cl-note" id="cl-note"></p><div class="cl-grid">' + STEPS.map((n) => '<button data-n="' + n + '">+' + kn(n) + "</button>").join("") + STEPS.map((n) => '<button data-n="-' + n + '">\u2212' + kn(n) + "</button>").join("") + '</div><div class="cl-price"><label for="cl-p">Subscription, per month</label><div class="cl-pr"><button id="cl-down" aria-label="Lower the price">\u2212</button><span class="cl-dollar">$</span><input id="cl-p" type="number" inputmode="decimal" min="' + PRICE_MIN + '" max="' + PRICE_MAX + `" step="1"><button id="cl-up" aria-label="Raise the price">+</button></div></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market demand</div><div class="stat-v sm" id="cl-md"></div></div><div class="stat"><div class="stat-k">Paying</div><div class="stat-v sm" id="cl-pay"></div></div><div class="stat"><div class="stat-k">Subscriptions</div><div class="stat-v sm" id="cl-rev"></div></div></div><p class="cl-note help">Market demand is the share of users who pay at this price. The better the model, the more they'll pay; charge too much and almost nobody does.</p></div>`;
       box2.querySelectorAll(".cl-grid button").forEach((b) => b.onclick = () => {
         rentCloud(+b.dataset.n);
         render();
@@ -2696,7 +2683,8 @@ footer button:hover{background:none;color:var(--warn)}
         open.forEach((i) => {
           const b = document.createElement("button");
           b.className = "btn-wide";
-          b.innerHTML = '<span class="btn-top"><span>' + HW[i].label + '</span><span class="btn-cost">' + money(hwCost(i)) + '</span></span><span class="btn-adds">' + hwAdds(HW[i], format_exports) + " \xB7 +" + perDay(addedBurn(hwCost(i))) + " upkeep \xB7 +" + perDay(addedPower(hwWatts(HW[i]))) + ' electricity</span><span class="btn-why serif">' + HW[i].why + "</span>";
+          b.innerHTML = '<span class="btn-top"><span>' + HW[i].label + '</span><span class="btn-cost">' + money(hwCost(i)) + '</span></span><span class="btn-adds">' + hwAdds(HW[i], format_exports) + " \xB7 +" + perDay(addedBurn(hwCost(i))) + " upkeep \xB7 +" + perDay(addedPower(hwWatts(HW[i]) * (HW[i].kind === "gpu" ? S.gpuLimit : 1))) + ' electricity</span><span class="btn-why serif">' + HW[i].why + "</span>";
+          b.title = HW[i].why;
           b.onclick = () => {
             buyHw(i);
             render();
@@ -3359,7 +3347,9 @@ footer button:hover{background:none;color:var(--warn)}
   } else bootIntro();
   var MAX_FRAME_MS = 2e3;
   var lastSpeed = 1;
-  var speedLabel = (x) => x === 0 ? "paused" : "\xD7" + x;
+  function speedLabel(x) {
+    return x === 0 ? "paused" : "\xD7" + x;
+  }
   function drawSpeed() {
     const r = el("speed"), i = SPEEDS.indexOf(S.speed);
     if (+r.value !== i) r.value = i;
