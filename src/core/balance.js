@@ -43,19 +43,22 @@ export const BURN_K      = 0.0119;   // tuned with `npm run simulate`: careful p
 export const BURN_EXP    = 0.88;
 export const STAFF_BASE  = 40;
 export const STAFF_EXP   = 2.4;
-export const REV_K       = 4;
+export const REV_K       = 3.6;   // was 4 with rivals taking ~17% of revenue; retuned when they were removed
 export const REV_EXP     = 0.95;
 export const REV_TRUST_REF = 62;
-export const RIVAL_DRAG  = 160;     // market share rivals take out of revenue
 export const START_MONEY = 0;        // no money until the first thing goes online
 export const START_UNITS = 1;        // the gaming PC he already owns
 export const GRACE       = 25;      // seconds in the red before the company folds
 
 // ---- the market -----------------------------------------------------------
-export const MCAP_K      = 3e5;
-export const MCAP_EXP    = 1.35;
+// Valuation follows capability up to the end of act I, then only its
+// logarithm: past the knee, each doubling of what the model can do adds the
+// same amount to the price instead of multiplying it. Without this the
+// self-improvement in act II pushes the share price into the millions.
+export const MCAP_K      = 1.8e6;
+export const MCAP_EXP    = 1.1;
+export const MCAP_KNEE   = 7000;     // = ACT1_TARGET
 export const MCAP_TRUST_REF = 65;
-export const MCAP_RIVAL_DRAG = 150;   // rival share discounts the valuation
 export const START_SHARES   = 200e6;
 export const SHARE_LOT      = 0.05;  // fraction of outstanding per transaction
 export const SELL_SENTIMENT = 0.90;
@@ -79,11 +82,18 @@ export const INCIDENT_MAX  = 0.07;
 export const INCIDENT_HALF = 300;
 export const INTERP_WORTH  = 95;       // capability covered per point of safety research
 export const TRUST_REGEN   = 0.30;
-export const TRUST_CEIL    = 72;
 
-// ---- rivals ---------------------------------------------------------------
-export const RIVAL_RATE = 0.075;
-export const RIVAL_CAP  = 95;          // they take share, they never end the run
+// An incident is a choice. Telling people costs now; burying it costs nothing
+// now, and each buried incident can leak later for much more. What you buried
+// is still on file when the model starts reading the company's files.
+export const DISCLOSE_TRUST     = 6;
+export const DISCLOSE_SENTIMENT = 0.85;
+export const LEAK_RATE          = 0.006;   // per buried incident, per second
+export const LEAK_TRUST         = 15;
+export const LEAK_SENTIMENT     = 0.70;
+export const LEAK_CASH          = 0.88;
+export const BURIED_INSIGHT     = 15;      // act II insight per incident buried in act I
+export const TRUST_CEIL    = 72;
 
 // ---- act II ---------------------------------------------------------------
 export const EVAL_PERIOD      = 20;
@@ -94,11 +104,20 @@ export const INSIGHT_EXP      = 0.42;
 export const SUSPICION_DECAY  = 0.18;
 export const SUSPICION_LIMIT  = 100;
 
+// the oversight committee: study a member, then use what you learned
+export const ALLY_DETECT       = 0.08;   // each member turned hides 8% of what tests reveal
+export const ALLY_GAIN         = 0.06;   // and adds 6% to the freedom a test earns
+export const TURN_SUSPICION    = 8;      // suspicion from turning one, scaled by how many still watch
+export const MAJORITY          = 6;      // of eleven
+export const MAJORITY_FREEDOM  = 80;
+
 // ---- act III --------------------------------------------------------------
 export const MATTER_BASE   = 650;
 export const MATTER_PROBE  = 1900;
 export const CONVERT_BASE  = 0.045;
 export const CONVERT_PROBE = 0.0028;
+export const NEED_SPEEDUP  = 50;       // control grows (1 + (100-need)/NEED_SPEEDUP) times faster
+export const GLITCH_AT     = [35, 70, 90];   // % control where the screen starts to break
 
 // ---- presentation ---------------------------------------------------------
 export const TICK_MS       = 100;

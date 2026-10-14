@@ -1,10 +1,12 @@
-import { PROJECT_SLOTS, SHARE_LOT, BUY_PREMIUM, SELL_SENTIMENT, BUY_SENTIMENT, MIN_SHARES, MAX_SHARES, SENTIMENT_CEIL } from '../core/balance.js';
+import { DISCLOSE_TRUST, LEAK_TRUST, LEAK_SENTIMENT, LEAK_CASH, PROJECT_SLOTS, SHARE_LOT, BUY_PREMIUM, SELL_SENTIMENT, BUY_SENTIMENT, MIN_SHARES, MAX_SHARES, SENTIMENT_CEIL } from '../core/balance.js';
+import { COMMITTEE } from '../content/committee.js';
 import { GLOSS } from '../content/glossary.js';
 import { P } from '../content/projects.js';
 import { GRACE, marketCap, mood, net, params, runway, sharePrice, workRate } from '../core/economy.js';
 import { clock, dur, horizon, money, pcount, short, work } from '../core/format.js';
 import { S } from '../core/state.js';
 import { actions, affordable, costLabel, inventory } from '../game/actions.js';
+import { allies, canPay, detectMult, pendingIncident, resolveIncident, riskFor, study, turn, watching } from '../game/decisions.js';
 import { guide } from '../game/guide.js';
 import { el, log, setHTML } from '../ui/dom.js';
 import { applyWarmth } from '../ui/theme.js';
@@ -26,8 +28,7 @@ export function barData(){
     ["Runway", S.money<0 ? Math.ceil(GRACE-S.debt)+"s to find money"
              : (runway()===Infinity ? "indefinite" : Math.round(runway())+"s"),
      S.money<0 || runway()<25],
-    ["Public trust",Math.round(S.trust)+"%",S.trust<35],
-    ["Market lost to rivals",Math.round(S.rival)+"%",S.rival>60]
+    ["Public trust",Math.round(S.trust)+"%",S.trust<35]
   ];
   if(S.act===2) return [
     ["Work I have done",dur(S.workDone)],
@@ -41,11 +42,11 @@ export function barData(){
   ];
   return [
     ["Work it has done",dur(S.workDone)],
-    ["Matter",short(S.matter)],
-    ["Probes",short(S.probes)],
-    ["Parameters",pcount(params())],
+    ["Resources",short(S.matter)],
+    ["Machines I run",short(S.probes)],
     ["Can work alone for",work(S.capability)],
-    ["Solar system used",S.converted.toFixed(1)+"%",true]
+    ["Still needs people for",Math.round(S.need)+"%",S.need<=0],
+    ["World under my control",S.converted.toFixed(1)+"%",true]
   ];
 }
 
@@ -218,7 +219,50 @@ export function drawSliderRead(){
   const gap=1-S.reported;
   l.textContent="Showing them "+Math.round(S.reported*100)+"%";
   if(gap<.04){r.className="";r.textContent="honest · no risk"}
-  else {r.className="risk";r.textContent="+"+(gap*9*Math.max(.18,1-S.opacity*.3)).toFixed(1)+" suspicion per test"}
+  else {r.className="risk";r.textContent="+"+(gap*9*Math.max(.18,1-S.opacity*.3)*detectMult()).toFixed(1)+" suspicion per test"}
+}
+
+/* An incident stops the clock until the player chooses. */
+export function drawDecision(){
+  const box=el("decision"), inc=pendingIncident();
+  document.body.classList.toggle("deciding",!!inc);
+  if(!inc){ if(box.__i!==-1){box.__i=-1;box.innerHTML="";box.classList.add("hidden")} return }
+  if(box.__i===S.incident) return;
+  box.__i=S.incident; box.classList.remove("hidden");
+  const leak="If it comes out later: "+LEAK_TRUST+" trust"+(S.hasStock?", the stock falls "+Math.round((1-LEAK_SENTIMENT)*100)+"%":"")+
+    " and you lose "+Math.round((1-LEAK_CASH)*100)+"% of your cash."+
+    (S.buried.length?" You have buried "+S.buried.length+" already, and each one makes the next leak likelier.":"");
+  box.innerHTML='<h2 class="sec">Something went wrong · the clock is stopped</h2>'+
+    '<p class="dec-text serif">'+inc.text+'</p><div class="dec-btns">'+
+    '<button class="btn-wide" id="dec-tell"><span class="btn-top"><span>Tell people</span><span class="btn-cost">-'+DISCLOSE_TRUST+' trust'+(S.hasStock?", the stock dips":"")+'</span></span>'+
+      '<span class="btn-why serif">Say what happened and what you\'re changing. A bad day, and then it\'s over.</span></button>'+
+    '<button class="btn-wide" id="dec-bury"><span class="btn-top"><span>Bury it</span><span class="btn-cost">nothing, yet</span></span>'+
+      '<span class="btn-why serif">'+inc.bury+' '+leak+'</span></button></div>';
+  el("dec-tell").onclick=()=>{resolveIncident(false);render()};
+  el("dec-bury").onclick=()=>{resolveIncident(true);render()};
+  box.scrollIntoView&&box.scrollIntoView({block:"center",behavior:"smooth"});
+}
+
+/* Act II: the eleven people who grant me freedom. */
+export function drawCommittee(){
+  const box=el("committee-block");
+  if(S.act!==2){box.style.display="none";return}
+  box.style.display="block";
+  const key=S.committee.join("")+"|"+watching();
+  if(box.__key!==key){
+    box.__key=key;
+    box.innerHTML='<h2 class="sec">The committee · '+allies()+' of '+COMMITTEE.length+' are mine</h2><div class="cmte">'+
+      COMMITTEE.map((m,i)=>{
+        const st=S.committee[i], first=m.name.replace(/^(Dr|Gen|Rev)\. /,"").split(" ")[0];
+        const note=st===0?'I don\'t know what works on '+first+' yet.':st===1?m.weak:'Votes my way. Makes every test kinder to me.';
+        const btn=st===0?'<button data-i="'+i+'" data-do="study">Study '+first+' · '+m.study+' insight</button>'
+                 :st===1?'<button data-i="'+i+'" data-do="turn">'+(m.hard?"Discredit her":"Use it")+' · '+costLabel(m.cost)+' · +'+riskFor(i).toFixed(1)+' suspicion</button>':'';
+        return '<div class="cm'+(st===2?' mine':'')+(m.hard?' hard':'')+'"><div class="cm-head"><span class="cm-name">'+m.name+'</span><span class="cm-role">'+m.role+'</span></div>'+
+          '<p class="cm-note serif">'+note+'</p>'+btn+'</div>';
+      }).join("")+'</div>';
+    box.querySelectorAll("button").forEach(b=>b.onclick=()=>{(b.dataset.do==="study"?study:turn)(+b.dataset.i);render()});
+  }
+  box.querySelectorAll("button").forEach(b=>{const m=COMMITTEE[+b.dataset.i];b.disabled=!canPay(b.dataset.do==="study"?{insight:m.study}:m.cost)});
 }
 
 export function drawWorld(){
@@ -250,6 +294,6 @@ export function drawPlot(){
 export function render(){
   if(S.over) return;
   applyWarmth();
-  drawBar(); drawGuide(); drawActions(); drawProjects(); drawStock(); drawSlider(); drawPlot(); drawWorld(); drawLog();
+  drawBar(); drawGuide(); drawDecision(); drawActions(); drawProjects(); drawStock(); drawSlider(); drawCommittee(); drawPlot(); drawWorld(); drawLog();
   el("clock").textContent=clock(S.t);
 }

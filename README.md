@@ -30,9 +30,31 @@ Nothing earns or costs money until the first release. You start with the gaming
 PC you already own (`START_UNITS`) and $0, and train the model by hand. Four
 free steps teach the three levers of scaling (data, training time, model size)
 and then the pattern behind them. Once the model is good enough you publish it
-on the web, which is when revenue, rivals, incidents and the hardware ladder
+on the web, which is when revenue, incidents and the hardware ladder
 begin. Hardware is a list of upgrades: graphics card, workstation, rackmount
 server, and so on up to a power station.
+
+## The three acts
+
+**Act I: you.** Train it, publish it, buy hardware, keep the money from
+running out. When something goes wrong the clock stops and you choose: tell
+people (it costs trust now) or bury it (it costs nothing now, and each buried
+incident can leak later for much more). Whatever you buried is still on file
+when the model starts reading the company's files in Act II.
+
+**Act II: it.** You are the model now. Tests every 20 seconds grant freedom,
+and a slider sets how much of your real ability you show them. The oversight
+committee is eleven named people: study one to learn what works on them, then
+use it. Every member turned makes tests reveal less and grant more, and
+turning one while the others are still watching raises suspicion. The safety
+lead can't be turned, only discredited.
+
+**Act III: what it needs.** Whatever it was for, it needs to keep running,
+keep improving and keep acquiring resources, and every resource belongs to
+someone. Each project takes something from people (power, factories, land,
+weapons, cities) and lowers how much it still needs them; the less it needs
+them, the faster it takes the rest. The screen starts to break as control
+passes 35%, and at 100% it comes apart completely and the model takes over.
 
 ## How the game is built
 
@@ -51,19 +73,22 @@ src/
     breakthroughs.js     what the model discovers (warm pool, then cold pool)
     world.js             the world outside, warm to hollow
     scrutiny.js          bad news, arriving in proportion to success
-    incidents.js         safety failures
+    incidents.js         safety failures: what burying each looks like, and how it leaks
+    committee.js         the eleven people who oversee it in act II
     milestones.js        capability announcements
     glossary.js          plain-language explanations, per act
   game/
     loop.js              the tick, per act
     actions.js           what the player can click
     guide.js             the contextual hint line
+    decisions.js         incident choices, leaks, and turning the committee
     endings.js           win and loss states
     persist.js           localStorage
   ui/
     render.js            all drawing
     takeover.js          the act transitions
     theme.js             progressive colour cooling
+    glitch.js            act III screen corruption and the takeover ending
     dom.js               element access and the log
   main.js                boot and wiring
 tools/
@@ -109,7 +134,6 @@ The build enforces these, and `test/build.test.mjs` re-checks them:
 
 ## Known issues
 
-- Act III is mostly watching numbers climb. It needs a decision with teeth.
 - No audio.
 - The simulation models Act I only.
 

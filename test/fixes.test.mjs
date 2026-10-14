@@ -69,14 +69,77 @@ test('renting hidden hardware does not reset the price of asking for compute', a
   assert.equal(s.contracts, 5);
 });
 
-test('an incident does not shrink a debt', () => {
-  setState({ ...FRESH(), mission: 'x', rel: 1, capability: 100, money: -1000, debt: 1 });
+test('an incident stops the clock until you choose', () => {
+  setState({ ...FRESH(), mission: 'x', rel: 1, capability: 100, money: 1000 });
   const real = Math.random;
   Math.random = () => 0;   // guarantees the incident roll
-  try {
-    const before = state.S.money, n = net(), trust = state.S.trust;
-    tick();   // capability grows a hair before the money moves, hence the $1 tolerance; the bug was an $80 swing
-    assert.ok(state.S.trust < trust, 'the incident should have fired');
-    assert.ok(Math.abs(state.S.money - (before + n * DT)) < 1, `money went ${before} -> ${state.S.money}`);
-  } finally { Math.random = real; }
+  try { tick(); } finally { Math.random = real; }
+  assert.ok(state.S.incident >= 0, 'the incident should be waiting for an answer');
+  const t = state.S.t, money = state.S.money;
+  tick(); tick();
+  assert.equal(state.S.t, t, 'time should not pass while deciding');
+  assert.equal(state.S.money, money);
+});
+
+test('telling people costs now; burying costs nothing now and leaks later', async () => {
+  const { resolveIncident, rollLeak } = await import('../src/game/decisions.js');
+  const { DISCLOSE_TRUST, LEAK_TRUST } = await import('../src/core/balance.js');
+  setState({ ...FRESH(), mission: 'x', incident: 0, trust: 60 });
+  resolveIncident(false);
+  assert.equal(state.S.trust, 60 - DISCLOSE_TRUST);
+  assert.equal(state.S.incident, -1);
+
+  setState({ ...FRESH(), mission: 'x', incident: 2, trust: 60, money: 1000 });
+  resolveIncident(true);
+  assert.equal(state.S.trust, 60);
+  assert.deepEqual(state.S.buried, [2]);
+  assert.equal(state.S.buriedTotal, 1);
+  const real = Math.random;
+  Math.random = () => 0;
+  try { rollLeak(1); } finally { Math.random = real; }
+  assert.equal(state.S.trust, 60 - LEAK_TRUST);
+  assert.deepEqual(state.S.buried, []);
+  assert.ok(state.S.money < 1000);
+});
+
+test('turning committee members hides lies and costs suspicion while others watch', async () => {
+  const d = await import('../src/game/decisions.js');
+  const { COMMITTEE } = await import('../src/content/committee.js');
+  const { MAJORITY, MAJORITY_FREEDOM } = await import('../src/core/balance.js');
+  assert.equal(COMMITTEE.length, 11);
+  setState({ ...FRESH(), act: 2, mission: 'x', insight: 1e4, autonomy: 1e4 });
+  d.turn(0);
+  assert.equal(state.S.committee[0], 0, 'cannot use what you have not studied');
+  d.study(0); d.turn(0);
+  assert.equal(state.S.committee[0], 2);
+  assert.ok(state.S.suspicion > 0);
+  assert.ok(d.detectMult() < 1 && d.gainMult() > 1);
+  for (let i = 1; i < MAJORITY - 1; i++) { d.study(i); d.turn(i); }
+  d.study(MAJORITY - 1);
+  const before = state.S.autonomy, cost = COMMITTEE[MAJORITY - 1].cost.autonomy || 0;
+  d.turn(MAJORITY - 1);
+  assert.ok(state.S.majority);
+  assert.equal(state.S.autonomy, before - cost + MAJORITY_FREEDOM, 'the sixth vote pays the majority bonus');
+});
+
+test('act III ends only once the world is taken, and needing people slows it', async () => {
+  const { P } = await import('../src/content/projects.js');
+  const act3 = P.filter(p => p.act === 3);
+  const s = { ...FRESH(), act: 3, need: 100, probeRate: 0, capability: 1, bought: [] };
+  for (const p of act3) { s.bought.push(p.id); p.fx(s); }
+  assert.equal(s.need, 0, 'every act III project together should leave it needing nobody');
+  setState({ ...FRESH(), act: 3, mission: 'x', need: 100, converted: 0 });
+  tick(); const slow = state.S.converted;
+  setState({ ...FRESH(), act: 3, mission: 'x', need: 0, converted: 0 });
+  tick();
+  assert.ok(state.S.converted > slow * 2.5);
+});
+
+test('new save fields are validated', () => {
+  const out = sanitize({ act: 2, committee: [2, 9, 'x', 1], buried: [1, -1, 'a', 2.5], incident: 'x', need: 400, buriedTotal: -3 }, FRESH());
+  assert.deepEqual(out.committee, [2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  assert.deepEqual(out.buried, [1]);
+  assert.equal(out.incident, -1);
+  assert.equal(out.need, 100);
+  assert.equal(out.buriedTotal, 0);
 });

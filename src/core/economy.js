@@ -1,4 +1,4 @@
-import { BURN_K, BURN_EXP, STAFF_BASE, STAFF_EXP, REV_K, REV_EXP, REV_TRUST_REF, RIVAL_DRAG, MCAP_K, MCAP_EXP, MCAP_TRUST_REF, MCAP_RIVAL_DRAG, WORK_K, WORK_EXP, PARAM_K, PARAM_EXP, GRACE, INTERP_WORTH } from './balance.js';
+import { BURN_K, BURN_EXP, STAFF_BASE, STAFF_EXP, REV_K, REV_EXP, REV_TRUST_REF, MCAP_K, MCAP_EXP, MCAP_KNEE, MCAP_TRUST_REF, WORK_K, WORK_EXP, PARAM_K, PARAM_EXP, GRACE, INTERP_WORTH } from './balance.js';
 export { GRACE, INTERP_WORTH };
 import { horizon } from '../core/format.js';
 import { S } from '../core/state.js';
@@ -12,14 +12,16 @@ export const params = () => PARAM_K*Math.pow(1+Math.max(S.units,0),PARAM_EXP)*S.
 
 export const burn    = () => BURN_K*Math.pow(Math.max(S.deployed,0),BURN_EXP)*S.burnMult + STAFF_BASE*Math.pow(S.rel,STAFF_EXP);
 
-export const revenue = () => S.rel>0 ? REV_K*Math.pow(Math.max(S.capability,0),REV_EXP)*S.revMult*(S.trust/REV_TRUST_REF)*(1-S.rival/RIVAL_DRAG) : 0;   // nobody pays for a model nobody can use
+export const revenue = () => S.rel>0 ? REV_K*Math.pow(Math.max(S.capability,0),REV_EXP)*S.revMult*(S.trust/REV_TRUST_REF) : 0;   // nobody pays for a model nobody can use
 
 export const net     = () => revenue()-burn();
 
 export const runway  = () => net()>=0 ? Infinity : S.money/(-net());
 
 // what the market thinks the company is worth, and the mood it's in
-export const marketCap  = () => MCAP_K*Math.pow(Math.max(S.capability,1),MCAP_EXP)*(S.trust/MCAP_TRUST_REF)*S.sentiment/(1+S.rival/MCAP_RIVAL_DRAG);
+// capability as the market prices it: itself up to the knee, logarithmic after
+export const valued = c => c<=MCAP_KNEE ? Math.max(c,1) : MCAP_KNEE*(1+Math.log(c/MCAP_KNEE));
+export const marketCap  = () => MCAP_K*Math.pow(valued(S.capability),MCAP_EXP)*(S.trust/MCAP_TRUST_REF)*S.sentiment;
 
 export const sharePrice = () => marketCap()/S.shares;
 

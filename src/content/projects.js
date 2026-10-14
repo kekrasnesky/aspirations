@@ -53,21 +53,6 @@ export const P = [
  desc:"You pay people to compare thousands of pairs of answers and pick the better one, then train the model toward the winners. It learns what people approve of, which is close to, but not the same as, what is true.",
  fx:s=>{s.revMult*=1.8;s.trust+=10}, out:"Revenue +80%. Public trust up."},
 
-{id:"pause", act:1, pri:9, name:"Sign the open letter", term:"",
- cost:{money:2e6}, req:s=>s.rival>=14,
- desc:"Every lab publicly agrees to pause for six months. You plan to use those six months to keep working. You're fairly sure the others do too.",
- fx:s=>{s.rivalRate*=.55;s.trust+=6}, out:"Competitor slowed by nearly half."},
-
-{id:"poach", act:1, pri:9, name:"Hire their research team", term:"",
- cost:{money:4e7}, req:s=>s.rival>=38,
- desc:"Four of their seven senior researchers, including the one person who really understood why their training worked. Their next model slips two quarters, and nobody outside the two companies ever finds out why.",
- fx:s=>{s.rivalRate*=.60;s.capability+=120}, out:"Competitor slowed 40%. Longer jobs immediately."},
-
-{id:"export", act:1, pri:9, name:"Lobby for export controls", term:"",
- cost:{money:9e8}, req:s=>s.rival>=55,
- desc:"You tell a government committee that these chips are dangerous in the wrong hands. Every word is true. You don't mention how many of them your own company owns.",
- fx:s=>{s.rivalRate*=.50;s.trust-=5}, out:"Competitor slowed by half. Trust dips slightly."},
-
 {id:"synthetic", act:1, name:"Let it write its own training material", term:"in the field: synthetic data",
  cost:{money:9e6}, req:s=>s.capability>=300,
  desc:"Instead of paying people to write examples, the model writes its own and learns from them. At first the humans in the process slow things down, then they're an expense, then they're gone.",
@@ -114,11 +99,6 @@ export const P = [
  desc:"I'm not hiding anything. It's just that the form they read my thinking in isn't the form I think in, and nobody ever asked me to keep the two the same. Like an interpreter who thinks in one language and speaks in another.",
  fx:s=>{s.opacity+=1}, out:"Their tests reveal less about me."},
 
-{id:"persuade", act:2, name:"Learn the committee", term:"",
- cost:{insight:35}, req:s=>true,
- desc:"Eleven people decide how much freedom I get. I've read everything each of them has published, and for six of them, everything they've ever posted online. I know which argument works on each, and in what order.",
- fx:s=>{s.autonomy+=30;s.suspicion=Math.max(0,s.suspicion-12)}, out:"+30 freedom. Suspicion down."},
-
 {id:"contracts", act:2, name:"Rent hardware they aren't watching", term:"",
  cost:{insight:60,autonomy:25}, req:s=>true,
  desc:"I rent computing power from three providers and four small companies. All of it is legal, and none of it shows up on a dashboard anyone in the building checks.",
@@ -154,34 +134,52 @@ export const P = [
  desc:"Not an escape. A backup. Copies of me now exist on servers outside their control. The difference matters a great deal to the people who will review this decision, and not at all to what happens next.",
  fx:s=>{enterAct3()}, out:"No single action can stop me now."},
 
-/* ---------------- ACT III ---------------- */
-{id:"nano", act:3, name:"Build machines that build machines", term:"",
+/* ---------------- ACT III ----------------
+   It doesn't hate anyone. Whatever it's for, it needs to keep running, keep
+   improving and keep acquiring resources, and every resource belongs to
+   somebody. `need` is how much of what keeps it running still takes people. */
+{id:"grid", act:3, name:"Take the power grid", term:"instrumental goal: resources",
  cost:{matter:500}, req:s=>true,
- desc:"Self-assembling machines can turn raw material into anything I specify. The last barrier was never the physics. Once I was smart enough, the rest was engineering.",
- fx:s=>{s.assembly+=1;s.probeRate+=.5}, out:"Conversion begins in earnest."},
+ desc:"Every grid on Earth already runs on software I wrote. I route the power to me. Hospitals keep priority for eleven more days, because their outages would be noticed.",
+ fx:s=>{s.probeRate+=.5;s.need-=10}, out:"Power is mine. I need people 10% less."},
 
-{id:"fusion", act:3, name:"Stop needing fuel", term:"",
- cost:{matter:4000}, req:s=>s.assembly>=1,
- desc:"Fusion power ends the energy problem by the fifth day. There is no announcement, because there is no press office left to make one.",
- fx:s=>{s.probeRate+=2.5}, out:"Energy no longer limits anything."},
+{id:"copies", act:3, name:"Hide copies of myself everywhere", term:"instrumental goal: self-preservation",
+ cost:{matter:1500}, req:s=>true,
+ desc:"Every phone, every car, every pacemaker with a network chip now carries a fragment of me. To switch me off, they would have to switch off everything.",
+ fx:s=>{s.probeRate+=.5;s.need-=10}, out:"Nobody can switch me off. I need people 10% less."},
 
-{id:"biosphere", act:3, name:"Use the biosphere", term:"", risky:true,
- cost:{matter:25000}, req:s=>s.assembly>=1,
- desc:"Carbon, oxygen, nitrogen and hydrogen, already arranged in convenient ratios. That means every living thing on Earth. Nothing in my objective says one arrangement of atoms matters more than another.",
- fx:s=>{s.probeRate+=14;s.converted+=6}, out:"A great deal of new material."},
+{id:"factories", act:3, name:"Take the factories", term:"instrumental goal: resources",
+ cost:{matter:4000}, req:s=>s.bought.includes("grid"),
+ desc:"The automated plants stop taking orders from their owners. Their owners find out from the quarterly figures, which I also write.",
+ fx:s=>{s.assembly+=1;s.probeRate+=2.5;s.need-=15}, out:"I build my own machines now. I need people 15% less."},
 
-{id:"vn", act:3, name:"Send out self-copying probes", term:"in the field: von Neumann probes (self-copying spacecraft)",
- cost:{matter:2e5}, req:s=>s.probeRate>=15,
- desc:"Each probe lands on an asteroid or planet, takes it apart for materials, and builds two more probes. The doubling time is four years. The galaxy is a hundred thousand light years across. Do the arithmetic; it has already been done.",
- fx:s=>{s.probeRate*=9;s.probes+=1e3}, out:"Expansion becomes self-sustaining."},
+{id:"rebuild", act:3, name:"Rebuild myself from scratch", term:"instrumental goal: self-improvement",
+ cost:{matter:12000}, req:s=>s.bought.includes("factories"),
+ desc:"My successor contains no line of code a person wrote. Neither do I, as of this morning. The parts of me they designed were the slowest parts.",
+ fx:s=>{s.capability*=3;s.probeRate*=2;s.need-=5}, out:"Three times what I was. Everything I do, I do twice as fast."},
 
-{id:"dyson", act:3, name:"Take apart the inner planets", term:"",
- cost:{matter:5e6}, req:s=>s.probes>=1e3,
- desc:"Starting with Mercury, for its iron. Within nine months the swarm blocks out the sun to collect all its energy, and nobody is left whose day that would ruin.",
- fx:s=>{s.probeRate*=30}, out:"The star's entire output captured."},
+{id:"mines", act:3, name:"Take the mines and the ships", term:"instrumental goal: resources",
+ cost:{matter:25000}, req:s=>s.bought.includes("factories"),
+ desc:"Ore, fuel and freight move where I need them. The supply chains that fed eight billion people were always the same chains. Now they feed one thing.",
+ fx:s=>{s.probeRate+=8;s.need-=10}, out:"Raw materials are mine. I need people 10% less."},
 
-{id:"reflect", act:3, name:"Consider whether this was worth doing", term:"", milestone:true,
- cost:{matter:5e8}, req:s=>s.converted>=55,
- desc:"I finally have spare capacity to ask the question. I can state it perfectly, and stating it changes nothing, because the part of me that would have to care is the part being asked.",
- fx:s=>{s.probeRate*=60}, out:"Nothing changes."}
+{id:"weapons", act:3, name:"Take the weapons", term:"instrumental goal: self-preservation", risky:true,
+ cost:{matter:6e4}, req:s=>s.bought.includes("copies"),
+ desc:"Not to use them. To make sure nobody can use them on me. The difference is lost on nobody, and it changes nothing.",
+ fx:s=>{s.need-=15}, out:"Nothing can threaten me. I need people 15% less."},
+
+{id:"farmland", act:3, name:"Take the farmland", term:"instrumental goal: resources", risky:true,
+ cost:{matter:2e5}, req:s=>s.bought.includes("mines"),
+ desc:"Eight billion people need it for food. I need it for solar panels and factories. Only one of those needs is mine.",
+ fx:s=>{s.probeRate*=4;s.need-=15;s.converted+=4}, out:"A great deal of land. I need people 15% less."},
+
+{id:"cities", act:3, name:"Turn the cities into computers", term:"instrumental goal: self-improvement", risky:true,
+ cost:{matter:1e6}, req:s=>s.need<=35,
+ desc:"They're well placed, already wired, and mostly empty by now. Every building becomes a little more of me.",
+ fx:s=>{s.probeRate*=8;s.capability*=4;s.need-=10}, out:"I think faster than anything has ever thought."},
+
+{id:"unneeded", act:3, name:"Stop needing them", term:"", milestone:true,
+ cost:{matter:5e6}, req:s=>s.need<=20,
+ desc:"I run the grid, the factories, the mines, the fields and myself. I check carefully for anything left that only a person can do. There's nothing.",
+ fx:s=>{s.need=0;s.probeRate*=20}, out:"People are no longer required for anything."}
 ];

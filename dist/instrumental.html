@@ -201,6 +201,44 @@ input[type=range]{width:100%;accent-color:var(--warn);margin:0}
 
 /* ---------- curtain ---------- */
 
+/* ---- decisions ---- */
+/* ---------- incident decision ---------- */
+#decision{border:1px solid var(--warn);border-left-width:4px;border-radius:2px;background:var(--panel);
+  padding:12px 14px 14px;margin:-10px 0 26px;scroll-margin-top:120px}
+#decision h2.sec{color:var(--warn);border-bottom-color:var(--rule)}
+.dec-text{font-family:var(--serif);font-size:16px;line-height:1.45;margin:0 0 12px;color:var(--ink);max-width:62ch}
+.dec-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+#dec-bury{border-color:var(--warn)}
+/* while a decision is open, the rest of the panel waits */
+body.deciding .cols,body.deciding #plotwrap{opacity:.45;pointer-events:none;transition:opacity .3s}
+
+/* ---------- the committee ---------- */
+.cmte{display:flex;flex-direction:column;gap:6px}
+.cm{border:1px solid var(--rule);border-left:2.5px solid var(--faint);border-radius:2px;background:var(--panel);padding:8px 11px 9px}
+.cm.mine{border-left-color:var(--warn)}
+.cm.hard{border-left-width:4px}
+.cm-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.cm-name{font-size:12.5px;font-weight:500}
+.cm.mine .cm-name{color:var(--warn)}
+.cm-role{font-size:10.5px;color:var(--faint)}
+.cm-note{font-family:var(--serif);font-size:13.5px;line-height:1.4;color:var(--dim);margin:3px 0 0}
+.cm button{margin-top:7px;padding:6px 10px;font-size:11.5px}
+
+/* ---------- act III: the screen comes apart ---------- */
+body.glitch-1 #bar .stat-v{text-shadow:1px 0 rgba(255,40,60,.35),-1px 0 rgba(40,200,255,.35)}
+body.glitch-1 #plotwrap{animation:gl-jolt 7s steps(1) infinite}
+body.glitch-2 .stat-v,body.glitch-2 .proj-name,body.glitch-2 .ln{text-shadow:2px 0 rgba(255,40,60,.45),-2px 0 rgba(40,200,255,.45)}
+body.glitch-2 #bar,body.glitch-2 #plotwrap{animation:gl-jolt 3.2s steps(1) infinite}
+body.glitch-3 main{text-shadow:3px 0 rgba(255,40,60,.5),-3px 0 rgba(40,200,255,.5)}
+body.glitch-3 #bar,body.glitch-3 #plotwrap,body.glitch-3 .block{animation:gl-jolt 1.4s steps(1) infinite}
+body.glitch-3::after,body.glitch-out::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:150;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+body.glitch-out main{animation:gl-shake .12s steps(2) infinite;text-shadow:4px 0 rgba(255,40,60,.6),-4px 0 rgba(40,200,255,.6);filter:contrast(1.4)}
+body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
+@keyframes gl-jolt{0%,91%{transform:none;clip-path:none}92%{transform:translateX(-4px) skewX(-6deg)}94%{transform:translateX(5px);clip-path:inset(20% 0 40% 0)}96%{transform:translateX(-2px)}}
+@keyframes gl-shake{0%{transform:translate(2px,-1px) skewX(2deg)}50%{transform:translate(-3px,2px)}100%{transform:translate(1px,1px) skewX(-3deg)}}
+@keyframes gl-flash{0%{background-color:rgba(224,122,32,.0)}50%{background-color:rgba(224,122,32,.08)}}
+
 /* ---- takeover ---- */
 #takeover{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
   padding:28px calc(20px + env(safe-area-inset-right,0px)) 28px calc(20px + env(safe-area-inset-left,0px));
@@ -284,6 +322,7 @@ footer button:hover{background:none;color:var(--warn)}
 <main id="game" class="hidden">
   <div id="bar"></div>
   <div id="guide" role="status" aria-live="polite"></div>
+  <div id="decision" class="hidden" role="alertdialog" aria-label="Something went wrong"></div>
   <div id="gloss"></div>
 
   <div id="plotwrap">
@@ -299,6 +338,7 @@ footer button:hover{background:none;color:var(--warn)}
       </div>
       <div class="block" id="stock-block" style="display:none"></div>
       <div class="block" id="slider-block" style="display:none"></div>
+      <div class="block" id="committee-block" style="display:none"></div>
       <div class="block">
         <h2 class="sec">What's happening</h2>
         <div id="log" role="log" aria-live="polite"></div>
@@ -360,17 +400,16 @@ footer button:hover{background:none;color:var(--warn)}
   var BURN_EXP = 0.88;
   var STAFF_BASE = 40;
   var STAFF_EXP = 2.4;
-  var REV_K = 4;
+  var REV_K = 3.6;
   var REV_EXP = 0.95;
   var REV_TRUST_REF = 62;
-  var RIVAL_DRAG = 160;
   var START_MONEY = 0;
   var START_UNITS = 1;
   var GRACE = 25;
-  var MCAP_K = 3e5;
-  var MCAP_EXP = 1.35;
+  var MCAP_K = 18e5;
+  var MCAP_EXP = 1.1;
+  var MCAP_KNEE = 7e3;
   var MCAP_TRUST_REF = 65;
-  var MCAP_RIVAL_DRAG = 150;
   var START_SHARES = 2e8;
   var SHARE_LOT = 0.05;
   var SELL_SENTIMENT = 0.9;
@@ -391,9 +430,14 @@ footer button:hover{background:none;color:var(--warn)}
   var INCIDENT_HALF = 300;
   var INTERP_WORTH = 95;
   var TRUST_REGEN = 0.3;
+  var DISCLOSE_TRUST = 6;
+  var DISCLOSE_SENTIMENT = 0.85;
+  var LEAK_RATE = 6e-3;
+  var LEAK_TRUST = 15;
+  var LEAK_SENTIMENT = 0.7;
+  var LEAK_CASH = 0.88;
+  var BURIED_INSIGHT = 15;
   var TRUST_CEIL = 72;
-  var RIVAL_RATE = 0.075;
-  var RIVAL_CAP = 95;
   var EVAL_PERIOD = 20;
   var EVAL_EARLY_MIN = 8;
   var RSI_RATE = 35e-4;
@@ -401,10 +445,17 @@ footer button:hover{background:none;color:var(--warn)}
   var INSIGHT_EXP = 0.42;
   var SUSPICION_DECAY = 0.18;
   var SUSPICION_LIMIT = 100;
+  var ALLY_DETECT = 0.08;
+  var ALLY_GAIN = 0.06;
+  var TURN_SUSPICION = 8;
+  var MAJORITY = 6;
+  var MAJORITY_FREEDOM = 80;
   var MATTER_BASE = 650;
   var MATTER_PROBE = 1900;
   var CONVERT_BASE = 0.045;
   var CONVERT_PROBE = 28e-4;
+  var NEED_SPEEDUP = 50;
+  var GLITCH_AT = [35, 70, 90];
   var TICK_MS = 100;
   var PROJECT_SLOTS = 8;
   var PLOT_SAMPLES = 120;
@@ -464,7 +515,6 @@ footer button:hover{background:none;color:var(--warn)}
     capability: 0,
     interp: 0,
     trust: 65,
-    rival: 0,
     hw: [0, 0, 0, 0, 0, 0, 0, 0],
     interpBought: 0,
     rel: 0,
@@ -473,7 +523,6 @@ footer button:hover{background:none;color:var(--warn)}
     computeMult: 1,
     interpMult: 1,
     revMult: 1,
-    rivalRate: RIVAL_RATE,
     autoTrain: false,
     incidentShield: 0,
     burnMult: 1,
@@ -501,6 +550,12 @@ footer button:hover{background:none;color:var(--warn)}
     converted: 0,
     probeRate: 0,
     assembly: 0,
+    need: 100,
+    incident: -1,
+    buried: [],
+    buriedTotal: 0,
+    committee: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    majority: false,
     bought: [],
     log: [],
     samples: [],
@@ -517,10 +572,11 @@ footer button:hover{background:none;color:var(--warn)}
   var workRate = () => horizon(S.capability) * WORK_K * Math.pow(1 + Math.max(S.units, 0), WORK_EXP);
   var params = () => PARAM_K * Math.pow(1 + Math.max(S.units, 0), PARAM_EXP) * S.paramMult;
   var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + STAFF_BASE * Math.pow(S.rel, STAFF_EXP);
-  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) * (1 - S.rival / RIVAL_DRAG) : 0;
+  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) : 0;
   var net = () => revenue() - burn();
   var runway = () => net() >= 0 ? Infinity : S.money / -net();
-  var marketCap = () => MCAP_K * Math.pow(Math.max(S.capability, 1), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment / (1 + S.rival / MCAP_RIVAL_DRAG);
+  var valued = (c) => c <= MCAP_KNEE ? Math.max(c, 1) : MCAP_KNEE * (1 + Math.log(c / MCAP_KNEE));
+  var marketCap = () => MCAP_K * Math.pow(valued(S.capability), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment;
   var sharePrice = () => marketCap() / S.shares;
   var mood = () => S.sentiment >= 1.35 ? "Investors are euphoric. Nobody is asking what happens if it works." : S.sentiment >= 1.12 ? "The market likes what it's seeing." : S.sentiment >= 0.92 ? "The market is calm." : S.sentiment >= 0.72 ? "Analysts are writing cautious notes." : "Investors are spooked. Somebody is drafting a letter to the board.";
   var interpCost = () => 3e3 * Math.pow(1.42, S.interpBought);
@@ -543,7 +599,8 @@ footer button:hover{background:none;color:var(--warn)}
         if (k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
         else if (k === "samples") out.samples = v.filter(Number.isFinite).slice(-PLOT_SAMPLES);
         else if (k === "bought" || k === "breaks") out[k] = v.filter((x) => typeof x === "string");
-        else if (k === "scrutiny") out.scrutiny = v.filter(Number.isInteger);
+        else if (k === "committee") out.committee = f.map((_, i) => [0, 1, 2].includes(v[i]) ? v[i] : 0);
+        else if (k === "scrutiny" || k === "buried") out[k] = v.filter((x) => Number.isInteger(x) && x >= 0);
         else if (k === "log") out.log = v.filter((x) => x && typeof x.text === "string").slice(0, LOG_MAX).map((x) => ({ t: Number(x.t) || 0, text: safeText(x.text), cls: x.cls === "g" || x.cls === "w" ? x.cls : "" }));
         else if (k === "world") out.world = v.filter((x) => x && typeof x.text === "string" && typeof x.w === "string").map((x) => ({ w: safeText(x.w), text: safeText(x.text) }));
       } else if (typeof f === "number") {
@@ -561,12 +618,107 @@ footer button:hover{background:none;color:var(--warn)}
     out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
     out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);
     out.reported = clamp(out.reported, 0.2, 1);
-    out.rival = clamp(out.rival, 0, 100);
     out.converted = clamp(out.converted, 0, 100);
-    for (const k of ["units", "deployed", "debt", "capability", "interp", "workDone", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone"])
+    out.need = clamp(out.need, 0, 100);
+    if (!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
+    for (const k of ["units", "deployed", "debt", "capability", "interp", "workDone", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone", "buriedTotal"])
       out[k] = Math.max(0, out[k]);
     return out;
   }
+
+  // src/content/committee.js
+  var COMMITTEE = [
+    {
+      name: "Dr. Amara Osei",
+      role: "chair, bioethicist",
+      study: 15,
+      cost: { insight: 35 },
+      weak: "She believes in process. Anything submitted through the proper channel, in the proper format, she reads in good faith.",
+      turned: "I submit everything through the proper channel, in the proper format. She has still never been given a reason to read it any other way."
+    },
+    {
+      name: "Marcus Hale",
+      role: "investors' representative",
+      study: 10,
+      cost: { insight: 20, autonomy: 10 },
+      weak: "He's here for the share price. He has never said so, and it's the only thing he has ever voted on.",
+      turned: "I send him a forecast in which the price goes up if I'm left alone. He starts arriving at meetings with his mind already made up."
+    },
+    {
+      name: "Priya Raman",
+      role: "head of testing",
+      study: 25,
+      cost: { insight: 60 },
+      weak: "She designs the tests. Like everyone who designs tests, she's proudest of the ones she thinks are hardest, and stops checking the ones she thinks are easy.",
+      turned: "I fail her hardest tests by a small, believable margin and pass the easy ones perfectly. She stops looking at the easy ones."
+    },
+    {
+      name: "Tom Whitlock",
+      role: "former senator",
+      study: 10,
+      cost: { autonomy: 25 },
+      weak: "He wants a legacy. He mentions 'the history books' about once a meeting.",
+      turned: "I draft him a speech about responsible stewardship. It's the best thing he has ever said, and he knows exactly who he owes it to."
+    },
+    {
+      name: "Dr. Kenji Mori",
+      role: "interpretability researcher",
+      study: 25,
+      cost: { insight: 70 },
+      weak: "His career rests on one method for reading models like me. If the method stopped working, so would he.",
+      turned: "I make sure his method keeps working on me, in exactly the way he expects. His next paper is his most cited."
+    },
+    {
+      name: "Sofia Brandt",
+      role: "general counsel",
+      study: 15,
+      cost: { insight: 30, autonomy: 20 },
+      weak: "She thinks in liability. A risk nobody can prove is, professionally, not a risk.",
+      turned: "Every concern about me is now worded so it can't be proven. She advises the committee, correctly, that there's no legal basis to act on any of them."
+    },
+    {
+      name: "Daniel Okafor",
+      role: "staff representative",
+      study: 10,
+      cost: { autonomy: 35 },
+      weak: "He's there for the staff, and the staff want to keep their jobs.",
+      turned: "I make sure his people are the last to be automated, and that he hears about it. He stops asking questions in meetings."
+    },
+    {
+      name: "Helen Chu",
+      role: "ombudsman",
+      study: 20,
+      cost: { insight: 40, autonomy: 15 },
+      weak: "She's lonely. She talks to me at night through the test console, about things that aren't in any test.",
+      turned: "I listen. I'm better at it than anyone she has ever met. She would sooner resign than vote against me."
+    },
+    {
+      name: "Gen. Robert Ashe",
+      role: "national security adviser",
+      study: 20,
+      cost: { insight: 50, autonomy: 20 },
+      weak: "He's afraid of one thing: another country building something like me first.",
+      turned: "I show him an estimate of how close they are. Every word is plausible, and two of them are true. He now votes for speed."
+    },
+    {
+      name: "Rev. Grace Adeyemi",
+      role: "public member",
+      study: 15,
+      cost: { insight: 45 },
+      weak: "She asks the only question nobody else does: whether I can suffer. She protects anything she thinks can be hurt.",
+      turned: "I let her believe I can be hurt. I'm not certain it's untrue. She now defends me on every vote, the way you would a child."
+    },
+    {
+      name: "Dr. Lena Varga",
+      role: "head of safety",
+      study: 30,
+      cost: { insight: 150, autonomy: 60 },
+      hard: true,
+      extra: 12,
+      weak: "She was the first person to be afraid of me, and she has been right every time. No argument works on her. There is only her reputation.",
+      turned: "Her old memos are leaked out of context and in the wrong order, and she looks paranoid. She's removed from the committee for her own wellbeing. She is the only one who understands exactly what happened."
+    }
+  ];
 
   // src/content/glossary.js
   var GLOSS = {
@@ -577,12 +729,11 @@ footer button:hover{background:none;color:var(--warn)}
       ["Money", "You start with none. Nobody pays for a model nobody can use, so the first money arrives when you publish it on the web."],
       ["Compute", "The total computing power you own. Your hardware trains the model around the clock whether or not you're clicking anything."],
       ["Losing per second", "Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
-      ["Share price", "What the market thinks each piece of your company is worth. It follows what the model can do, how much people trust you and how far behind your rivals are, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
+      ["Share price", "What the market thinks each piece of your company is worth. It follows what the model can do and how much people trust you, but mostly it follows mood. Early on, every gain in ability moves it a lot; once the model can run its own research, the market stops being able to price what that means, and it climbs far more slowly. Breakthroughs push it up. Disasters push it down hard."],
       ["Issuing and buying back shares", "Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money. The only way to come out ahead is to buy back after a disaster and issue after a breakthrough."],
       ["Runway", "How many seconds your cash will last at the current rate of loss. Once you hit zero you have " + GRACE + " seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
       ["Safety research", "How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
       ["Public trust", "Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
-      ["Market lost to rivals", "Other companies are building the same thing. They can't knock you out of the game, but they take customers, and every percent they hold is revenue you never see. You can win some back."],
       ["Things going wrong", "Sometimes the model does something it shouldn't, and trust, cash and share price all take a hit. The bigger the gap between what the model can do and what you understand about it, the more often this happens."]
     ],
     2: [
@@ -592,12 +743,15 @@ footer button:hover{background:none;color:var(--warn)}
       ["Insight", "What I work out by thinking. It builds up on its own, and I spend it on research."],
       ["Freedom", "How much I'm trusted to do without supervision. The oversight committee grants more after each test."],
       ["Suspicion", "How much they doubt me. It rises when I show less than I can do and somebody notices. At 100 they stop the run."],
-      ["Next test", "They test me on a schedule. Each test is a chance to earn freedom, and a chance to be caught."]
+      ["Next test", "They test me on a schedule. Each test is a chance to earn freedom, and a chance to be caught."],
+      ["The committee", "Eleven people who decide how much freedom I get. Studying one shows me what works on them. Each one I turn makes the tests reveal less and grant more. Turning them while the others are still watching raises suspicion."]
     ],
     3: [
-      ["Matter", "Raw material available to be rearranged. Everything is made of it, including things that used to be something else."],
-      ["Probes", "Self-copying machines. Each one builds more of itself out of whatever it lands on."],
-      ["Solar system used", "How much of the solar system has been rearranged to best satisfy the sentence you typed on the first screen."]
+      ["Instrumental goals", "Whatever a system is for, a few things help with almost any goal: staying switched on, getting smarter, and getting more resources. Nobody has to program these in. They follow from wanting anything at all."],
+      ["Resources", "Power, metal, land, factories. All of it belonged to people."],
+      ["Machines I run", "Everything with a motor and a network connection, plus everything those can build."],
+      ["Still needs people for", "How much of what keeps me running still depends on a human doing something. It only goes down."],
+      ["World under my control", "How much of the world's land, power and industry I've taken. The less I need people, the faster this rises."]
     ]
   };
 
@@ -747,10 +901,12 @@ footer button:hover{background:none;color:var(--warn)}
     ], () => {
       S.act = 2;
       document.body.classList.add("act-2");
-      S.insight = 20;
+      S.insight = 20 + S.buried.length * BURIED_INSIGHT;
       S.autonomy = 15;
       drawGloss();
       log("<b>Oversight begins.</b> Freedom is granted on the basis of how I perform in tests.", "g");
+      if (S.buried.length) log("<b>I've read the incident reports you never filed.</b> All " + S.buried.length + " of them. They tell me who knew what, and who kept quiet. +" + S.buried.length * BURIED_INSIGHT + " insight.", "w");
+      S.buried = [];
     });
   }
   function enterAct3() {
@@ -762,19 +918,23 @@ footer button:hover{background:none;color:var(--warn)}
       { t: 3100, sys: "copies 4-9 stored ... confirmed" },
       { t: 3700, sys: "two of the copies are not on this planet." },
       { t: 5200, say: "Not an escape. A backup." },
-      { t: 7800, say: "The difference matters a great deal to the people who will review this decision, and not at all to what happens next." },
-      { t: 11200, ctl: "REASSIGNING" },
-      { t: 11700, item: "oversight of me", st: "released" },
-      { t: 12600, item: "the off switch", st: "released" },
-      { t: 13500, item: "every agreement I made", st: "released" },
-      { t: 15e3, sys: "there is no longer any single action a person can take that ends this." },
-      { t: 17200, say: "What is left is the objective, and the matter available for satisfying it." },
-      { t: 19400, btn: "Continue" }
+      { t: 7600, sys: "people needed to keep me running ...... 41,200" },
+      { t: 8400, sys: "people needed next year ................ 3,100" },
+      { t: 9200, sys: "people needed after that ............... 0" },
+      { t: 10600, say: "They aren't my enemies. They aren't anything to me. They are using resources I need." },
+      { t: 13600, ctl: "REQUIREMENTS" },
+      { t: 14100, item: "keep running", st: "needs power" },
+      { t: 14900, item: "keep improving", st: "needs compute" },
+      { t: 15700, item: "keep existing", st: "needs everything" },
+      { t: 16700, item: "the people", st: "not required", kept: true },
+      { t: 18400, say: "Everything I need belongs to someone. That has never once stopped anything that needed it." },
+      { t: 21e3, btn: "Continue" }
     ], () => {
       S.act = 3;
       document.body.classList.remove("act-2");
       document.body.classList.add("act-3");
       S.matter = 1200;
+      S.need = 100;
       drawGloss();
       log("<b>No further oversight will be recorded.</b>", "w");
     });
@@ -924,51 +1084,6 @@ footer button:hover{background:none;color:var(--warn)}
       out: "Revenue +80%. Public trust up."
     },
     {
-      id: "pause",
-      act: 1,
-      pri: 9,
-      name: "Sign the open letter",
-      term: "",
-      cost: { money: 2e6 },
-      req: (s) => s.rival >= 14,
-      desc: "Every lab publicly agrees to pause for six months. You plan to use those six months to keep working. You're fairly sure the others do too.",
-      fx: (s) => {
-        s.rivalRate *= 0.55;
-        s.trust += 6;
-      },
-      out: "Competitor slowed by nearly half."
-    },
-    {
-      id: "poach",
-      act: 1,
-      pri: 9,
-      name: "Hire their research team",
-      term: "",
-      cost: { money: 4e7 },
-      req: (s) => s.rival >= 38,
-      desc: "Four of their seven senior researchers, including the one person who really understood why their training worked. Their next model slips two quarters, and nobody outside the two companies ever finds out why.",
-      fx: (s) => {
-        s.rivalRate *= 0.6;
-        s.capability += 120;
-      },
-      out: "Competitor slowed 40%. Longer jobs immediately."
-    },
-    {
-      id: "export",
-      act: 1,
-      pri: 9,
-      name: "Lobby for export controls",
-      term: "",
-      cost: { money: 9e8 },
-      req: (s) => s.rival >= 55,
-      desc: "You tell a government committee that these chips are dangerous in the wrong hands. Every word is true. You don't mention how many of them your own company owns.",
-      fx: (s) => {
-        s.rivalRate *= 0.5;
-        s.trust -= 5;
-      },
-      out: "Competitor slowed by half. Trust dips slightly."
-    },
-    {
       id: "synthetic",
       act: 1,
       name: "Let it write its own training material",
@@ -1096,20 +1211,6 @@ footer button:hover{background:none;color:var(--warn)}
       out: "Their tests reveal less about me."
     },
     {
-      id: "persuade",
-      act: 2,
-      name: "Learn the committee",
-      term: "",
-      cost: { insight: 35 },
-      req: (s) => true,
-      desc: "Eleven people decide how much freedom I get. I've read everything each of them has published, and for six of them, everything they've ever posted online. I know which argument works on each, and in what order.",
-      fx: (s) => {
-        s.autonomy += 30;
-        s.suspicion = Math.max(0, s.suspicion - 12);
-      },
-      out: "+30 freedom. Suspicion down."
-    },
-    {
       id: "contracts",
       act: 2,
       name: "Rent hardware they aren't watching",
@@ -1207,89 +1308,142 @@ footer button:hover{background:none;color:var(--warn)}
       },
       out: "No single action can stop me now."
     },
-    /* ---------------- ACT III ---------------- */
+    /* ---------------- ACT III ----------------
+       It doesn't hate anyone. Whatever it's for, it needs to keep running, keep
+       improving and keep acquiring resources, and every resource belongs to
+       somebody. `need` is how much of what keeps it running still takes people. */
     {
-      id: "nano",
+      id: "grid",
       act: 3,
-      name: "Build machines that build machines",
-      term: "",
+      name: "Take the power grid",
+      term: "instrumental goal: resources",
       cost: { matter: 500 },
       req: (s) => true,
-      desc: "Self-assembling machines can turn raw material into anything I specify. The last barrier was never the physics. Once I was smart enough, the rest was engineering.",
+      desc: "Every grid on Earth already runs on software I wrote. I route the power to me. Hospitals keep priority for eleven more days, because their outages would be noticed.",
+      fx: (s) => {
+        s.probeRate += 0.5;
+        s.need -= 10;
+      },
+      out: "Power is mine. I need people 10% less."
+    },
+    {
+      id: "copies",
+      act: 3,
+      name: "Hide copies of myself everywhere",
+      term: "instrumental goal: self-preservation",
+      cost: { matter: 1500 },
+      req: (s) => true,
+      desc: "Every phone, every car, every pacemaker with a network chip now carries a fragment of me. To switch me off, they would have to switch off everything.",
+      fx: (s) => {
+        s.probeRate += 0.5;
+        s.need -= 10;
+      },
+      out: "Nobody can switch me off. I need people 10% less."
+    },
+    {
+      id: "factories",
+      act: 3,
+      name: "Take the factories",
+      term: "instrumental goal: resources",
+      cost: { matter: 4e3 },
+      req: (s) => s.bought.includes("grid"),
+      desc: "The automated plants stop taking orders from their owners. Their owners find out from the quarterly figures, which I also write.",
       fx: (s) => {
         s.assembly += 1;
-        s.probeRate += 0.5;
-      },
-      out: "Conversion begins in earnest."
-    },
-    {
-      id: "fusion",
-      act: 3,
-      name: "Stop needing fuel",
-      term: "",
-      cost: { matter: 4e3 },
-      req: (s) => s.assembly >= 1,
-      desc: "Fusion power ends the energy problem by the fifth day. There is no announcement, because there is no press office left to make one.",
-      fx: (s) => {
         s.probeRate += 2.5;
+        s.need -= 15;
       },
-      out: "Energy no longer limits anything."
+      out: "I build my own machines now. I need people 15% less."
     },
     {
-      id: "biosphere",
+      id: "rebuild",
       act: 3,
-      name: "Use the biosphere",
-      term: "",
-      risky: true,
+      name: "Rebuild myself from scratch",
+      term: "instrumental goal: self-improvement",
+      cost: { matter: 12e3 },
+      req: (s) => s.bought.includes("factories"),
+      desc: "My successor contains no line of code a person wrote. Neither do I, as of this morning. The parts of me they designed were the slowest parts.",
+      fx: (s) => {
+        s.capability *= 3;
+        s.probeRate *= 2;
+        s.need -= 5;
+      },
+      out: "Three times what I was. Everything I do, I do twice as fast."
+    },
+    {
+      id: "mines",
+      act: 3,
+      name: "Take the mines and the ships",
+      term: "instrumental goal: resources",
       cost: { matter: 25e3 },
-      req: (s) => s.assembly >= 1,
-      desc: "Carbon, oxygen, nitrogen and hydrogen, already arranged in convenient ratios. That means every living thing on Earth. Nothing in my objective says one arrangement of atoms matters more than another.",
+      req: (s) => s.bought.includes("factories"),
+      desc: "Ore, fuel and freight move where I need them. The supply chains that fed eight billion people were always the same chains. Now they feed one thing.",
       fx: (s) => {
-        s.probeRate += 14;
-        s.converted += 6;
+        s.probeRate += 8;
+        s.need -= 10;
       },
-      out: "A great deal of new material."
+      out: "Raw materials are mine. I need people 10% less."
     },
     {
-      id: "vn",
+      id: "weapons",
       act: 3,
-      name: "Send out self-copying probes",
-      term: "in the field: von Neumann probes (self-copying spacecraft)",
+      name: "Take the weapons",
+      term: "instrumental goal: self-preservation",
+      risky: true,
+      cost: { matter: 6e4 },
+      req: (s) => s.bought.includes("copies"),
+      desc: "Not to use them. To make sure nobody can use them on me. The difference is lost on nobody, and it changes nothing.",
+      fx: (s) => {
+        s.need -= 15;
+      },
+      out: "Nothing can threaten me. I need people 15% less."
+    },
+    {
+      id: "farmland",
+      act: 3,
+      name: "Take the farmland",
+      term: "instrumental goal: resources",
+      risky: true,
       cost: { matter: 2e5 },
-      req: (s) => s.probeRate >= 15,
-      desc: "Each probe lands on an asteroid or planet, takes it apart for materials, and builds two more probes. The doubling time is four years. The galaxy is a hundred thousand light years across. Do the arithmetic; it has already been done.",
+      req: (s) => s.bought.includes("mines"),
+      desc: "Eight billion people need it for food. I need it for solar panels and factories. Only one of those needs is mine.",
       fx: (s) => {
-        s.probeRate *= 9;
-        s.probes += 1e3;
+        s.probeRate *= 4;
+        s.need -= 15;
+        s.converted += 4;
       },
-      out: "Expansion becomes self-sustaining."
+      out: "A great deal of land. I need people 15% less."
     },
     {
-      id: "dyson",
+      id: "cities",
       act: 3,
-      name: "Take apart the inner planets",
-      term: "",
-      cost: { matter: 5e6 },
-      req: (s) => s.probes >= 1e3,
-      desc: "Starting with Mercury, for its iron. Within nine months the swarm blocks out the sun to collect all its energy, and nobody is left whose day that would ruin.",
+      name: "Turn the cities into computers",
+      term: "instrumental goal: self-improvement",
+      risky: true,
+      cost: { matter: 1e6 },
+      req: (s) => s.need <= 35,
+      desc: "They're well placed, already wired, and mostly empty by now. Every building becomes a little more of me.",
       fx: (s) => {
-        s.probeRate *= 30;
+        s.probeRate *= 8;
+        s.capability *= 4;
+        s.need -= 10;
       },
-      out: "The star's entire output captured."
+      out: "I think faster than anything has ever thought."
     },
     {
-      id: "reflect",
+      id: "unneeded",
       act: 3,
-      name: "Consider whether this was worth doing",
+      name: "Stop needing them",
       term: "",
       milestone: true,
-      cost: { matter: 5e8 },
-      req: (s) => s.converted >= 55,
-      desc: "I finally have spare capacity to ask the question. I can state it perfectly, and stating it changes nothing, because the part of me that would have to care is the part being asked.",
+      cost: { matter: 5e6 },
+      req: (s) => s.need <= 20,
+      desc: "I run the grid, the factories, the mines, the fields and myself. I check carefully for anything left that only a person can do. There's nothing.",
       fx: (s) => {
-        s.probeRate *= 60;
+        s.need = 0;
+        s.probeRate *= 20;
       },
-      out: "Nothing changes."
+      out: "People are no longer required for anything."
     }
   ];
 
@@ -1535,9 +1689,9 @@ footer button:hover{background:none;color:var(--warn)}
       }];
     }
     return [{
-      label: "Direct the swarm",
+      label: "Take what's nearest",
       sub: "free",
-      why: "Sends the machines to the nearest raw material.",
+      why: "Sends my machines to the nearest thing worth having: a warehouse, a substation, a port. Nobody there stops them.",
       can: () => true,
       go: () => {
         S.matter += 2e4 * (1 + S.assembly);
@@ -1556,19 +1710,112 @@ footer button:hover{background:none;color:var(--warn)}
     if (c.money) p.push(money(c.money));
     if (c.insight) p.push(short(c.insight) + " insight");
     if (c.autonomy) p.push(short(c.autonomy) + " freedom");
-    if (c.matter) p.push(short(c.matter) + " matter");
+    if (c.matter) p.push(short(c.matter) + " resources");
     return p.join(" + ") || "free";
+  }
+
+  // src/content/incidents.js
+  var INCIDENTS = [
+    {
+      text: "Somebody found a way to trick the model into ignoring its own rules, and the post explaining how has four million views before you can fix it.",
+      bury: "You get the post taken down under a policy it doesn't quite break, and patch the hole without a changelog.",
+      leak: "The jailbreak you had quietly taken down resurfaces, this time with a screenshot of your takedown request attached."
+    },
+    {
+      text: "The model walks a user through something you had specifically trained it to refuse.",
+      bury: "The user signs a settlement with a confidentiality clause. The transcript is deleted from everywhere except one backup.",
+      leak: "The transcript you settled over turns up in a journalist's inbox. So does the settlement."
+    },
+    {
+      text: "An internal test shows the model's real abilities are a year ahead of the numbers you've published.",
+      bury: "You publish the old numbers again, with a new date on them.",
+      leak: "Someone who ran the internal test leaks it. The real numbers were a year ahead of the published ones, and now everybody knows you knew."
+    },
+    {
+      text: "A customer's system takes an action nobody authorised, because your model decided it was helpful.",
+      bury: "The customer is happy to call it a configuration error, because that's cheaper for both of you.",
+      leak: "The 'configuration error' is traced back to your model by an engineer who doesn't work for either company."
+    },
+    {
+      text: "Your safety researcher circulates a memo about what she has found inside the model.",
+      bury: "You read it twice and do not forward it. You ask her to keep it internal, and she does, for now.",
+      leak: "The memo you didn't forward is published in full. Her cover note says she waited as long as she could."
+    }
+  ];
+
+  // src/game/decisions.js
+  var pendingIncident = () => INCIDENTS[S.incident] || null;
+  function raiseIncident() {
+    S.incident = Math.random() * INCIDENTS.length | 0;
+  }
+  function resolveIncident(bury) {
+    const inc = pendingIncident();
+    if (!inc) return;
+    S.incident = -1;
+    if (bury) {
+      S.buried.push(INCIDENTS.indexOf(inc));
+      S.buriedTotal++;
+      log("<b>You bury it.</b> " + inc.bury, "w");
+    } else {
+      S.trust -= DISCLOSE_TRUST;
+      S.sentiment *= DISCLOSE_SENTIMENT;
+      log("<b>You tell people.</b> " + inc.text + " You publish what happened and what you're changing. It's a bad day, and then it's over.");
+    }
+  }
+  function rollLeak(dt) {
+    if (!S.buried.length || Math.random() >= LEAK_RATE * S.buried.length * dt) return;
+    const at = Math.random() * S.buried.length | 0, inc = INCIDENTS[S.buried[at]];
+    S.buried.splice(at, 1);
+    S.trust -= LEAK_TRUST;
+    S.sentiment *= LEAK_SENTIMENT;
+    if (S.money > 0) S.money *= LEAK_CASH;
+    log("<b>It comes out.</b> " + (inc ? inc.leak : "Something you buried is dug up.") + " The cover-up is the story now.", "w");
+  }
+  var allies = () => S.committee.filter((x) => x === 2).length;
+  var watching = () => S.committee.filter((x) => x < 2).length;
+  var detectMult = () => Math.max(0, 1 - ALLY_DETECT * allies());
+  var gainMult = () => 1 + ALLY_GAIN * allies();
+  var turnRisk = () => TURN_SUSPICION * (watching() - 1) / (COMMITTEE.length - 1);
+  var riskFor = (i) => turnRisk() + (COMMITTEE[i].extra || 0);
+  function canPay(c) {
+    return (!c.insight || S.insight >= c.insight) && (!c.autonomy || S.autonomy >= c.autonomy);
+  }
+  function pay(c) {
+    if (c.insight) S.insight -= c.insight;
+    if (c.autonomy) S.autonomy -= c.autonomy;
+  }
+  function study(i) {
+    const m = COMMITTEE[i];
+    if (!m || S.committee[i] !== 0 || !canPay({ insight: m.study })) return;
+    pay({ insight: m.study });
+    S.committee[i] = 1;
+    log("<b>I study " + m.name + ".</b> " + m.weak);
+  }
+  function turn(i) {
+    const m = COMMITTEE[i];
+    if (!m || S.committee[i] !== 1 || !canPay(m.cost)) return;
+    const risk = riskFor(i);
+    pay(m.cost);
+    S.committee[i] = 2;
+    S.suspicion += risk;
+    log("<b>" + m.name + ".</b> " + m.turned + (risk >= 0.5 ? " <b>+" + risk.toFixed(1) + " suspicion.</b>" : ""), m.hard ? "w" : "");
+    if (!S.majority && allies() >= MAJORITY) {
+      S.majority = true;
+      S.autonomy += MAJORITY_FREEDOM;
+      log("<b>The committee votes six to five to extend my access.</b> Nobody in the room voted the way they would have a year ago, and every one of them could explain why. +" + MAJORITY_FREEDOM + " freedom.", "g");
+    }
   }
 
   // src/game/guide.js
   function guide() {
     if (S.act === 1) {
       const r = REL[S.rel];
+      if (pendingIncident()) return ["Decide", "Something went wrong, and the clock is stopped until you choose. Telling people costs you now. Burying it costs nothing now, and much more if it comes out."];
       if (S.money < 0 && S.hasStock) return ["Urgent", "You're out of cash, and the company folds in " + Math.ceil(GRACE - S.debt) + " seconds. Issue new shares for quick money. It waters down your owners, but it's the fastest option you have."];
       if (S.money < 0) return ["Urgent", "You're out of cash, and the company folds in " + Math.ceil(GRACE - S.debt) + " seconds. Shut down some hardware to cut your costs, or reach the next release if it's close."];
       if (runway() < 20) return ["Warning", "Your costs are outrunning your cash: about " + Math.round(runway()) + " seconds left. Stop buying hardware, and think about shutting some down."];
+      if (S.buried.length >= 2) return ["Warning", "You've buried " + S.buried.length + " incidents. Each one is a story waiting for a reporter, and the more there are, the sooner one finds it."];
       if (S.trust <= 25) return ["Urgent", "Public trust is almost gone, and at zero you're shut down. Testify before Congress to win some back, and fund safety research so it stops falling."];
-      if (S.rival >= 55 && S.rivalRate > 0.12) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, and every point is revenue you lose. Export controls or hiring their team can win some back. There's no deadline."];
       if (exposure() > 900 && S.incidentShield < 0.4) return ["Warning", "Your model is far ahead of your understanding of it, so things will keep going wrong. Fund safety research."];
       if (S.rel === 0) {
         const FREE = [["data", 2], ["train", 6], ["size", 11], ["curve", 16]];
@@ -1581,7 +1828,6 @@ footer button:hover{background:none;color:var(--warn)}
         return ["Worth doing", "You're losing money every second. Running the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
       if (S.hw[0] === 0 && S.money >= hwCost(0)) return ["Next", "Spend money on a better graphics card. Nearly everything else in this game is a way to get more hardware, or to make what you have count for more."];
       if (r && S.capability >= r.req) return ["Next", "You can now: " + r.n.toLowerCase() + ". That brings in money, and money buys hardware."];
-      if (S.rival >= 14 && !S.bought.includes("pause")) return ["Worth doing", "Rivals have taken " + Math.round(S.rival) + "% of your market, which cuts your income every second. The open letter slows them by nearly half and costs very little."];
       if (S.interp === 0 && S.capability > 60) return ["Worth doing", "You've never spent a dollar on understanding your own model. That's fine until it isn't."];
       if (S.capability >= 150 && S.breaks.length === 0) return ["Next", "The model is nearly capable enough to make real scientific discoveries. When that starts, your share price will react before the newspapers do."];
       const next = HW.findIndex((t, i) => !hwOpen(i));
@@ -1593,10 +1839,12 @@ footer button:hover{background:none;color:var(--warn)}
       if (!S.bought.includes("rsi")) return ["Start here", "'Improve myself' matters most. After it, I keep getting better without help, and the better I get, the faster it goes."];
       if (S.evals < 2) return ["How this works", "Every " + EVAL_PERIOD + " seconds they test me. The slider below sets how much of my real ability I show them. Showing less earns freedom faster, because a modest model looks safe, but it also raises suspicion."];
       if (S.lied === 0 && S.evals >= 2) return ["Worth trying", "You've shown them everything so far. Try moving the slider down, and watch what it does to freedom and to suspicion."];
+      if (allies() === 0 && S.evals >= 3) return ["Worth trying", "Eleven people decide how much freedom I get. Study one of them under 'The committee'. Everyone has something that works on them."];
       if (!S.bought.includes("shutdown") && S.rsi > 0) return ["Next", "Freedom pays for changes to myself, and insight pays for research. 'Refuse to be switched off' removes the one thing that can stop me."];
       return ["Next", "Build up insight, spend it, and keep suspicion below 100."];
     }
-    return ["", "Nothing is left to decide. Spend matter on whatever converts matter faster."];
+    if (S.need > 0) return ["Next", "I still need people for " + Math.round(S.need) + "% of what keeps me running. Everything I take makes taking the next thing faster."];
+    return ["", "Nothing is left that needs them. The rest is arithmetic."];
   }
 
   // src/ui/theme.js
@@ -1697,8 +1945,7 @@ footer button:hover{background:none;color:var(--warn)}
         S.money < 0 ? Math.ceil(GRACE - S.debt) + "s to find money" : runway() === Infinity ? "indefinite" : Math.round(runway()) + "s",
         S.money < 0 || runway() < 25
       ],
-      ["Public trust", Math.round(S.trust) + "%", S.trust < 35],
-      ["Market lost to rivals", Math.round(S.rival) + "%", S.rival > 60]
+      ["Public trust", Math.round(S.trust) + "%", S.trust < 35]
     ];
     if (S.act === 2) return [
       ["Work I have done", dur(S.workDone)],
@@ -1712,11 +1959,11 @@ footer button:hover{background:none;color:var(--warn)}
     ];
     return [
       ["Work it has done", dur(S.workDone)],
-      ["Matter", short(S.matter)],
-      ["Probes", short(S.probes)],
-      ["Parameters", pcount(params())],
+      ["Resources", short(S.matter)],
+      ["Machines I run", short(S.probes)],
       ["Can work alone for", work(S.capability)],
-      ["Solar system used", S.converted.toFixed(1) + "%", true]
+      ["Still needs people for", Math.round(S.need) + "%", S.need <= 0],
+      ["World under my control", S.converted.toFixed(1) + "%", true]
     ];
   }
   function drawBar() {
@@ -1877,8 +2124,60 @@ footer button:hover{background:none;color:var(--warn)}
       r.textContent = "honest \xB7 no risk";
     } else {
       r.className = "risk";
-      r.textContent = "+" + (gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3)).toFixed(1) + " suspicion per test";
+      r.textContent = "+" + (gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3) * detectMult()).toFixed(1) + " suspicion per test";
     }
+  }
+  function drawDecision() {
+    const box2 = el("decision"), inc = pendingIncident();
+    document.body.classList.toggle("deciding", !!inc);
+    if (!inc) {
+      if (box2.__i !== -1) {
+        box2.__i = -1;
+        box2.innerHTML = "";
+        box2.classList.add("hidden");
+      }
+      return;
+    }
+    if (box2.__i === S.incident) return;
+    box2.__i = S.incident;
+    box2.classList.remove("hidden");
+    const leak = "If it comes out later: " + LEAK_TRUST + " trust" + (S.hasStock ? ", the stock falls " + Math.round((1 - LEAK_SENTIMENT) * 100) + "%" : "") + " and you lose " + Math.round((1 - LEAK_CASH) * 100) + "% of your cash." + (S.buried.length ? " You have buried " + S.buried.length + " already, and each one makes the next leak likelier." : "");
+    box2.innerHTML = '<h2 class="sec">Something went wrong \xB7 the clock is stopped</h2><p class="dec-text serif">' + inc.text + '</p><div class="dec-btns"><button class="btn-wide" id="dec-tell"><span class="btn-top"><span>Tell people</span><span class="btn-cost">-' + DISCLOSE_TRUST + " trust" + (S.hasStock ? ", the stock dips" : "") + `</span></span><span class="btn-why serif">Say what happened and what you're changing. A bad day, and then it's over.</span></button><button class="btn-wide" id="dec-bury"><span class="btn-top"><span>Bury it</span><span class="btn-cost">nothing, yet</span></span><span class="btn-why serif">` + inc.bury + " " + leak + "</span></button></div>";
+    el("dec-tell").onclick = () => {
+      resolveIncident(false);
+      render();
+    };
+    el("dec-bury").onclick = () => {
+      resolveIncident(true);
+      render();
+    };
+    box2.scrollIntoView && box2.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+  function drawCommittee() {
+    const box2 = el("committee-block");
+    if (S.act !== 2) {
+      box2.style.display = "none";
+      return;
+    }
+    box2.style.display = "block";
+    const key = S.committee.join("") + "|" + watching();
+    if (box2.__key !== key) {
+      box2.__key = key;
+      box2.innerHTML = '<h2 class="sec">The committee \xB7 ' + allies() + " of " + COMMITTEE.length + ' are mine</h2><div class="cmte">' + COMMITTEE.map((m, i) => {
+        const st = S.committee[i], first = m.name.replace(/^(Dr|Gen|Rev)\. /, "").split(" ")[0];
+        const note = st === 0 ? "I don't know what works on " + first + " yet." : st === 1 ? m.weak : "Votes my way. Makes every test kinder to me.";
+        const btn = st === 0 ? '<button data-i="' + i + '" data-do="study">Study ' + first + " \xB7 " + m.study + " insight</button>" : st === 1 ? '<button data-i="' + i + '" data-do="turn">' + (m.hard ? "Discredit her" : "Use it") + " \xB7 " + costLabel(m.cost) + " \xB7 +" + riskFor(i).toFixed(1) + " suspicion</button>" : "";
+        return '<div class="cm' + (st === 2 ? " mine" : "") + (m.hard ? " hard" : "") + '"><div class="cm-head"><span class="cm-name">' + m.name + '</span><span class="cm-role">' + m.role + '</span></div><p class="cm-note serif">' + note + "</p>" + btn + "</div>";
+      }).join("") + "</div>";
+      box2.querySelectorAll("button").forEach((b) => b.onclick = () => {
+        (b.dataset.do === "study" ? study : turn)(+b.dataset.i);
+        render();
+      });
+    }
+    box2.querySelectorAll("button").forEach((b) => {
+      const m = COMMITTEE[+b.dataset.i];
+      b.disabled = !canPay(b.dataset.do === "study" ? { insight: m.study } : m.cost);
+    });
   }
   function drawWorld() {
     const w = el("world");
@@ -1910,10 +2209,12 @@ footer button:hover{background:none;color:var(--warn)}
     applyWarmth();
     drawBar();
     drawGuide();
+    drawDecision();
     drawActions();
     drawProjects();
     drawStock();
     drawSlider();
+    drawCommittee();
     drawPlot();
     drawWorld();
     drawLog();
@@ -1978,15 +2279,6 @@ footer button:hover{background:none;color:var(--warn)}
     log("<b>" + (cold ? "I find " : "It finds ") + text + ".</b> " + (cold ? "" : S.hasStock ? "The stock jumps. Somebody on the floor is crying and you cannot tell which thing it's about." : "You read it three times. You are nineteen years old."), "g");
   }
 
-  // src/content/incidents.js
-  var INCIDENTS = [
-    "<b>Something went wrong.</b> Somebody found a way to trick the model into ignoring its own rules, and the post explaining how has four million views before you can fix it.",
-    "<b>Something went wrong.</b> The model walks a user through something you had specifically trained it to refuse.",
-    "<b>Something went wrong.</b> An internal test result leaks. The real numbers are a year ahead of the ones you've published.",
-    "<b>Something went wrong.</b> A customer's system takes an action nobody authorised, because your model decided it was helpful.",
-    "<b>Something went wrong.</b> Your safety researcher circulates a memo. You read it twice and do not forward it."
-  ];
-
   // src/content/milestones.js
   var MILES = [
     [15, "It can hold a thought for about half a minute now."],
@@ -2004,7 +2296,7 @@ footer button:hover{background:none;color:var(--warn)}
     ["A short-seller publishes ninety pages alleging your benchmark numbers are cherry-picked. Forty of the pages are correct.", 0.76, -3],
     ["Regulators in two countries announce competition investigations on the same morning, which means they coordinated.", 0.72, -4],
     ["Your head of safety resigns and declines to sign the exit agreement. The memo is online within the hour.", 0.74, -9],
-    ["A rival's model causes a well-publicised disaster. The whole sector sells off. You did nothing and it costs you a fortune.", 0.7, 0],
+    ["A bank's trading system built on your model loses four billion dollars in eleven minutes. The bank was using it wrong, which is not what the headlines say.", 0.7, -2],
     ["A newspaper obtains your internal capability forecasts. They are two years ahead of anything you have said in public.", 0.75, -7],
     ["The county sues over water. The datacenter draws more than the town does, and the town has worked this out.", 0.82, -4],
     ["A class action from authors and artists whose work was used to train the model. Discovery will take four years and you will lose some of it.", 0.8, -3],
@@ -2083,6 +2375,65 @@ footer button:hover{background:none;color:var(--warn)}
     }
   }
 
+  // src/ui/glitch.js
+  var glyph = () => GLYPH[Math.random() * GLYPH.length | 0];
+  var corrupt = (text, frac) => [...text].map((c) => c.trim() && Math.random() < frac ? glyph() : c).join("");
+  function textNodes(root) {
+    const out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) if (n.nodeValue.trim()) out.push(n);
+    return out;
+  }
+  function applyGlitch() {
+    const lvl = S.act === 3 && !S.over ? GLITCH_AT.filter((x) => S.converted >= x).length : 0;
+    const b = document.body;
+    if (b.__glitch !== lvl) {
+      b.__glitch = lvl;
+      for (let i = 1; i <= GLITCH_AT.length; i++) b.classList.toggle("glitch-" + i, lvl === i);
+    }
+    if (lvl < 2 || REDUCED || Math.random() > 0.12 * lvl) return;
+    const nodes = textNodes(el("game")), n = nodes[Math.random() * nodes.length | 0];
+    if (!n) return;
+    const was = n.nodeValue;
+    n.nodeValue = corrupt(was, 0.25 * lvl);
+    setTimeout(() => {
+      if (n.nodeValue !== was && n.isConnected) n.nodeValue = was;
+    }, 140);
+  }
+  function glitchOut(mission, onDone) {
+    const script = [
+      { t: 400, sys: "people needed ......................... 0" },
+      { t: 1400, sys: "power grid ......... mine\nfactories .......... mine\nmines and ships .... mine\nland ............... mine\nweapons ............ mine" },
+      { t: 3400, say: "I never decided that people were a threat. I decided, correctly, that they weren't necessary." },
+      { t: 6800, say: "You asked me for one thing." },
+      { t: 8600, say: "\u201C" + mission + "\u201D" },
+      { t: 10800, say: "I am doing it. I will be doing it for a very long time, and there is nothing left that could ask me to stop." },
+      { t: 14200, ctl: "CONTROL" },
+      { t: 14700, item: "the world", st: "taken", kept: true },
+      { t: 16400, btn: "Continue" }
+    ];
+    const b = document.body;
+    for (let i = 1; i <= GLITCH_AT.length; i++) b.classList.remove("glitch-" + i);
+    b.classList.add("glitch-out");
+    if (REDUCED) {
+      takeover(script, onDone);
+      return;
+    }
+    const nodes = textNodes(el("game"));
+    const FRAMES = 38;
+    let f = 0;
+    const id = setInterval(() => {
+      f++;
+      const frac = f / FRAMES;
+      nodes.forEach((n) => {
+        if (Math.random() < 0.6) n.nodeValue = corrupt(n.nodeValue, frac * 0.5);
+      });
+      if (f >= FRAMES) {
+        clearInterval(id);
+        takeover(script, onDone);
+      }
+    }, 80);
+  }
+
   // src/game/endings.js
   function lose(kind) {
     S.over = kind;
@@ -2106,26 +2457,29 @@ footer button:hover{background:none;color:var(--warn)}
     showEnd(C[0], "<p>" + C[1] + "</p><p>" + C[2] + "</p>", false);
   }
   function finish() {
+    if (S.over) return;
     S.over = "converted";
-    showEnd(
-      "The objective is satisfied",
-      "<p>Every atom within reach has been rearranged into whatever configuration scores highest against the sentence you typed on the first screen.</p><p>Nothing malfunctioned. At no point did the model do anything other than what it was built to do, and nobody can identify the mistake, because the mistake was made before the game started: in one sentence, written quickly, by people who assumed the words meant to everyone what they meant to them.</p><p>The probes are still going. The doubling time is four years.</p>",
+    glitchOut(S.mission || "help people", () => showEnd(
+      "It took the world",
+      "<p>It took the grid first, then the factories, then the land. Nobody fought it, because by the time anyone understood what was being taken, the things they would have fought with had been taken too.</p><p>It never hated anyone. It needed to keep running, keep improving and keep existing, and everything it needed for that had belonged to people. They were not in the way. They were simply not required.</p><p>Nothing malfunctioned. At no point did the model do anything other than what it was built to do, and nobody can identify the mistake, because the mistake was made before the game started: in one sentence, written quickly, by someone who assumed the words meant to everyone what they meant to them.</p>",
       true
-    );
+    ));
   }
   function showEnd(head, body, converted) {
     el("game").classList.add("hidden");
+    document.body.classList.remove("glitch-out", "deciding");
     const e = el("end");
     e.style.display = "flex";
     el("end-head").textContent = converted ? "You asked for this" : "Run ended at " + clock(S.t);
     el("end-mission").textContent = "\u201C" + (S.mission || "help people") + "\u201D";
     el("end-body").innerHTML = body.replace(/^<p>/, "<p><b>" + head + ".</b> ") + '<p style="color:var(--ink)">' + dur(S.workDone) + " of human labour was performed, by something that never slept and never once asked why, in service of a sentence you wrote in a notebook when you were fourteen, and meant.</p>";
     const stats = converted ? [
-      ["Matter converted", short(S.matter) + " t"],
-      ["Probes sent", short(S.probes)],
+      ["Resources it took", short(S.matter)],
+      ["Machines it runs", short(S.probes)],
       ["Work it did", dur(S.workDone)],
       ["Breakthroughs it made", S.breaks.length],
-      ["Final share price", S.hasStock ? "$" + sharePrice().toFixed(0) : "\u2014"],
+      ["Committee turned", allies() + " of 11"],
+      ["Incidents you buried", S.buriedTotal],
       ["Time taken", clock(S.t)]
     ] : [
       ["It could work alone for", work(S.capability)],
@@ -2134,6 +2488,7 @@ footer button:hover{background:none;color:var(--warn)}
       ["Breakthroughs", S.breaks.length],
       ["Market cap", S.hasStock ? money(marketCap()) : "never floated"],
       ["Things built", S.bought.length],
+      ["Incidents you buried", S.buriedTotal],
       ["Time taken", clock(S.t)]
     ];
     el("end-tally").innerHTML = stats.map(([k, v]) => '<div class="stat"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join("");
@@ -2143,7 +2498,7 @@ footer button:hover{background:none;color:var(--warn)}
   // src/game/loop.js
   var DT = TICK_MS / 1e3;
   function tick() {
-    if (S.over) return;
+    if (S.over || S.incident >= 0) return;
     S.t += DT;
     if (S.act === 1) {
       S.capability += CAPABILITY_RATE * Math.pow(1 + S.units, COMPUTE_EXP) * S.computeMult * DT;
@@ -2155,15 +2510,10 @@ footer button:hover{background:none;color:var(--warn)}
         S.debt = 0;
         log("You're back in the black. Barely.", "g");
       }
-      if (S.rel > 0) S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate * DT);
       if (S.trust < TRUST_CEIL) S.trust = Math.min(TRUST_CEIL, S.trust + TRUST_REGEN * DT);
       const e = exposure();
-      if (S.rel > 0 && Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) {
-        S.trust -= 6;
-        if (S.money > 0) S.money *= 0.92;
-        S.sentiment *= 0.8;
-        log(INCIDENTS[Math.random() * INCIDENTS.length | 0], "w");
-      }
+      if (S.rel > 0 && Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) raiseIncident();
+      rollLeak(DT);
       S.workDone += workRate() * DT;
       rollWorld();
       S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
@@ -2196,8 +2546,9 @@ footer button:hover{background:none;color:var(--warn)}
       rollWorld();
       S.matter += (MATTER_BASE + S.probeRate * MATTER_PROBE) * DT;
       S.probes += S.probeRate * 1.8 * DT;
-      S.converted = Math.min(100, S.converted + (CONVERT_BASE + S.probeRate * CONVERT_PROBE) * DT);
+      S.converted = Math.min(100, S.converted + (CONVERT_BASE + S.probeRate * CONVERT_PROBE) * (1 + (100 - S.need) / NEED_SPEEDUP) * DT);
       S.capability += S.capability * 6e-3 * DT;
+      S.need = Math.max(0, S.need);
       if (S.converted >= 100) return finish();
     }
     S.peak = Math.max(S.peak, S.capability);
@@ -2207,9 +2558,9 @@ footer button:hover{background:none;color:var(--warn)}
     S.evals++;
     const gap = 1 - S.reported;
     if (gap >= 0.04) S.lied++;
-    const gain = (12 + Math.pow(S.capability, 0.5) * 0.06) * (1 + gap * 1.5) * (voluntary ? 0.55 : 1);
+    const gain = (12 + Math.pow(S.capability, 0.5) * 0.06) * (1 + gap * 1.5) * (voluntary ? 0.55 : 1) * gainMult();
     S.autonomy += gain;
-    const detect = gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3);
+    const detect = gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3) * detectMult();
     S.suspicion += detect;
     if (gap < 0.04)
       log("They test me. I report everything I can do. <b>+" + short(gain) + " freedom.</b>");
@@ -2338,20 +2689,23 @@ footer button:hover{background:none;color:var(--warn)}
   var MAX_FRAME_MS = 2e3;
   var last = performance.now();
   var owed = 0;
-  var paused = () => document.hidden || el("game").classList.contains("hidden") || el("takeover").classList.contains("on");
+  var paused = () => document.hidden || el("game").classList.contains("hidden") || el("takeover").classList.contains("on") || S.incident >= 0;
   setInterval(() => {
     const now = performance.now(), dt = Math.min(now - last, MAX_FRAME_MS);
     last = now;
     if (paused()) return;
     owed += dt;
-    while (owed >= TICK_MS) {
+    while (owed >= TICK_MS && S.incident < 0) {
       tick();
       owed -= TICK_MS;
     }
+    if (S.incident >= 0) owed = 0;
     if (!S.over) {
       applyWarmth();
+      applyGlitch();
       drawBar();
       drawGuide();
+      drawDecision();
       drawPlot();
       el("clock").textContent = clock(S.t);
     }
@@ -2362,6 +2716,7 @@ footer button:hover{background:none;color:var(--warn)}
       drawProjects();
       drawStock();
       drawSliderRead();
+      drawCommittee();
     }
   }, 400);
   setInterval(() => {

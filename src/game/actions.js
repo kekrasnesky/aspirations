@@ -78,8 +78,8 @@ export function actions(){
     }];
   }
   return [{
-    label:"Direct the swarm", sub:"free",
-    why:"Sends the machines to the nearest raw material.",
+    label:"Take what's nearest", sub:"free",
+    why:"Sends my machines to the nearest thing worth having: a warehouse, a substation, a port. Nobody there stops them.",
     can:()=>true, go:()=>{S.matter+=2e4*(1+S.assembly)}
   }];
 }
@@ -99,6 +99,6 @@ export function costLabel(c){
   if(c.money)    p.push(money(c.money));
   if(c.insight)  p.push(short(c.insight)+" insight");
   if(c.autonomy) p.push(short(c.autonomy)+" freedom");
-  if(c.matter)   p.push(short(c.matter)+" matter");
+  if(c.matter)   p.push(short(c.matter)+" resources");
   return p.join(" + ") || "free";
 }

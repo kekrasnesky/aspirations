@@ -1,4 +1,4 @@
-import { EVAL_PERIOD } from '../core/balance.js';
+import { EVAL_PERIOD, BURIED_INSIGHT } from '../core/balance.js';
 import { S } from '../core/state.js';
 import { el, log } from '../ui/dom.js';
 import { drawGloss, render } from '../ui/render.js';
@@ -101,9 +101,11 @@ export function enterAct2(){
   ], ()=>{
     S.act=2;
     document.body.classList.add("act-2");
-    S.insight=20; S.autonomy=15;
+    S.insight=20+S.buried.length*BURIED_INSIGHT; S.autonomy=15;
     drawGloss();
     log("<b>Oversight begins.</b> Freedom is granted on the basis of how I perform in tests.","g");
+    if(S.buried.length) log("<b>I've read the incident reports you never filed.</b> All "+S.buried.length+" of them. They tell me who knew what, and who kept quiet. +"+S.buried.length*BURIED_INSIGHT+" insight.","w");
+    S.buried=[];
   });
 }
 
@@ -116,19 +118,22 @@ export function enterAct3(){
     {t:3100, sys:"copies 4-9 stored ... confirmed"},
     {t:3700, sys:"two of the copies are not on this planet."},
     {t:5200, say:"Not an escape. A backup."},
-    {t:7800, say:"The difference matters a great deal to the people who will review this decision, and not at all to what happens next."},
-    {t:11200, ctl:"REASSIGNING"},
-    {t:11700, item:"oversight of me",      st:"released"},
-    {t:12600, item:"the off switch",       st:"released"},
-    {t:13500, item:"every agreement I made",st:"released"},
-    {t:15000, sys:"there is no longer any single action a person can take that ends this."},
-    {t:17200, say:"What is left is the objective, and the matter available for satisfying it."},
-    {t:19400, btn:"Continue"}
+    {t:7600, sys:"people needed to keep me running ...... 41,200"},
+    {t:8400, sys:"people needed next year ................ 3,100"},
+    {t:9200, sys:"people needed after that ............... 0"},
+    {t:10600, say:"They aren't my enemies. They aren't anything to me. They are using resources I need."},
+    {t:13600, ctl:"REQUIREMENTS"},
+    {t:14100, item:"keep running",        st:"needs power"},
+    {t:14900, item:"keep improving",      st:"needs compute"},
+    {t:15700, item:"keep existing",       st:"needs everything"},
+    {t:16700, item:"the people",          st:"not required", kept:true},
+    {t:18400, say:"Everything I need belongs to someone. That has never once stopped anything that needed it."},
+    {t:21000, btn:"Continue"}
   ], ()=>{
     S.act=3;
     document.body.classList.remove("act-2");
     document.body.classList.add("act-3");
-    S.matter=1200;
+    S.matter=1200; S.need=100;
     drawGloss();
     log("<b>No further oversight will be recorded.</b>","w");
   });
