@@ -27,7 +27,8 @@ export function sanitize(raw, fresh){
       if(k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
       else if(k === "samples") out.samples = v.filter(Number.isFinite).slice(-PLOT_SAMPLES);
       else if(k === "bought" || k === "breaks") out[k] = v.filter(x => typeof x === "string");
-      else if(k === "scrutiny") out.scrutiny = v.filter(Number.isInteger);
+      else if(k === "committee") out.committee = f.map((_, i) => [0,1,2].includes(v[i]) ? v[i] : 0);
+      else if(k === "scrutiny" || k === "buried") out[k] = v.filter(x => Number.isInteger(x) && x >= 0);
       else if(k === "log") out.log = v.filter(x => x && typeof x.text === "string").slice(0, LOG_MAX)
         .map(x => ({t:Number(x.t)||0, text:safeText(x.text), cls:x.cls === "g" || x.cls === "w" ? x.cls : ""}));
       else if(k === "world") out.world = v.filter(x => x && typeof x.text === "string" && typeof x.w === "string")
@@ -46,7 +47,9 @@ export function sanitize(raw, fresh){
   out.reported = clamp(out.reported, .2, 1);
   out.rival = clamp(out.rival, 0, 100);
   out.converted = clamp(out.converted, 0, 100);
-  for(const k of ["units","deployed","debt","capability","interp","workDone","rel","insight","autonomy","suspicion","matter","probes","milestone"])
+  out.need = clamp(out.need, 0, 100);
+  if(!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
+  for(const k of ["units","deployed","debt","capability","interp","workDone","rel","insight","autonomy","suspicion","matter","probes","milestone","buriedTotal"])
     out[k] = Math.max(0, out[k]);
   return out;
 }

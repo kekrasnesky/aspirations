@@ -1,0 +1,36 @@
+/* ---------- incident decision ---------- */
+#decision{border:1px solid var(--warn);border-left-width:4px;border-radius:2px;background:var(--panel);
+  padding:12px 14px 14px;margin:-10px 0 26px;scroll-margin-top:120px}
+#decision h2.sec{color:var(--warn);border-bottom-color:var(--rule)}
+.dec-text{font-family:var(--serif);font-size:16px;line-height:1.45;margin:0 0 12px;color:var(--ink);max-width:62ch}
+.dec-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+#dec-bury{border-color:var(--warn)}
+/* while a decision is open, the rest of the panel waits */
+body.deciding .cols,body.deciding #plotwrap{opacity:.45;pointer-events:none;transition:opacity .3s}
+
+/* ---------- the committee ---------- */
+.cmte{display:flex;flex-direction:column;gap:6px}
+.cm{border:1px solid var(--rule);border-left:2.5px solid var(--faint);border-radius:2px;background:var(--panel);padding:8px 11px 9px}
+.cm.mine{border-left-color:var(--warn)}
+.cm.hard{border-left-width:4px}
+.cm-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.cm-name{font-size:12.5px;font-weight:500}
+.cm.mine .cm-name{color:var(--warn)}
+.cm-role{font-size:10.5px;color:var(--faint)}
+.cm-note{font-family:var(--serif);font-size:13.5px;line-height:1.4;color:var(--dim);margin:3px 0 0}
+.cm button{margin-top:7px;padding:6px 10px;font-size:11.5px}
+
+/* ---------- act III: the screen comes apart ---------- */
+body.glitch-1 #bar .stat-v{text-shadow:1px 0 rgba(255,40,60,.35),-1px 0 rgba(40,200,255,.35)}
+body.glitch-1 #plotwrap{animation:gl-jolt 7s steps(1) infinite}
+body.glitch-2 .stat-v,body.glitch-2 .proj-name,body.glitch-2 .ln{text-shadow:2px 0 rgba(255,40,60,.45),-2px 0 rgba(40,200,255,.45)}
+body.glitch-2 #bar,body.glitch-2 #plotwrap{animation:gl-jolt 3.2s steps(1) infinite}
+body.glitch-3 main{text-shadow:3px 0 rgba(255,40,60,.5),-3px 0 rgba(40,200,255,.5)}
+body.glitch-3 #bar,body.glitch-3 #plotwrap,body.glitch-3 .block{animation:gl-jolt 1.4s steps(1) infinite}
+body.glitch-3::after,body.glitch-out::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:150;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+body.glitch-out main{animation:gl-shake .12s steps(2) infinite;text-shadow:4px 0 rgba(255,40,60,.6),-4px 0 rgba(40,200,255,.6);filter:contrast(1.4)}
+body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
+@keyframes gl-jolt{0%,91%{transform:none;clip-path:none}92%{transform:translateX(-4px) skewX(-6deg)}94%{transform:translateX(5px);clip-path:inset(20% 0 40% 0)}96%{transform:translateX(-2px)}}
+@keyframes gl-shake{0%{transform:translate(2px,-1px) skewX(2deg)}50%{transform:translate(-3px,2px)}100%{transform:translate(1px,1px) skewX(-3deg)}}
+@keyframes gl-flash{0%{background-color:rgba(224,122,32,.0)}50%{background-color:rgba(224,122,32,.08)}}

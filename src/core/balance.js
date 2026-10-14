@@ -79,6 +79,17 @@ export const INCIDENT_MAX  = 0.07;
 export const INCIDENT_HALF = 300;
 export const INTERP_WORTH  = 95;       // capability covered per point of safety research
 export const TRUST_REGEN   = 0.30;
+
+// An incident is a choice. Telling people costs now; burying it costs nothing
+// now, and each buried incident can leak later for much more. What you buried
+// is still on file when the model starts reading the company's files.
+export const DISCLOSE_TRUST     = 6;
+export const DISCLOSE_SENTIMENT = 0.85;
+export const LEAK_RATE          = 0.006;   // per buried incident, per second
+export const LEAK_TRUST         = 15;
+export const LEAK_SENTIMENT     = 0.70;
+export const LEAK_CASH          = 0.88;
+export const BURIED_INSIGHT     = 15;      // act II insight per incident buried in act I
 export const TRUST_CEIL    = 72;
 
 // ---- rivals ---------------------------------------------------------------
@@ -94,11 +105,20 @@ export const INSIGHT_EXP      = 0.42;
 export const SUSPICION_DECAY  = 0.18;
 export const SUSPICION_LIMIT  = 100;
 
+// the oversight committee: study a member, then use what you learned
+export const ALLY_DETECT       = 0.08;   // each member turned hides 8% of what tests reveal
+export const ALLY_GAIN         = 0.06;   // and adds 6% to the freedom a test earns
+export const TURN_SUSPICION    = 8;      // suspicion from turning one, scaled by how many still watch
+export const MAJORITY          = 6;      // of eleven
+export const MAJORITY_FREEDOM  = 80;
+
 // ---- act III --------------------------------------------------------------
 export const MATTER_BASE   = 650;
 export const MATTER_PROBE  = 1900;
 export const CONVERT_BASE  = 0.045;
 export const CONVERT_PROBE = 0.0028;
+export const NEED_SPEEDUP  = 50;       // control grows (1 + (100-need)/NEED_SPEEDUP) times faster
+export const GLITCH_AT     = [35, 70, 90];   // % control where the screen starts to break
 
 // ---- presentation ---------------------------------------------------------
 export const TICK_MS       = 100;

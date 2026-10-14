@@ -9,7 +9,8 @@ export const FRESH = () => ({
   shares:START_SHARES, sentiment:1, hasStock:false, lastPx:0, breaks:[], workDone:0, worldIdx:0, scrutiny:[], world:[],
   autonomy:0, suspicion:0, insight:0, reported:1, rsi:0, opacity:0,
   evalTimer:EVAL_PERIOD, contracts:0, shutdownProof:false,
-  matter:0, probes:0, converted:0, probeRate:0, assembly:0,
+  matter:0, probes:0, converted:0, probeRate:0, assembly:0, need:100,
+  incident:-1, buried:[], buriedTotal:0, committee:[0,0,0,0,0,0,0,0,0,0,0], majority:false,
   bought:[], log:[], samples:[], peak:0, evals:0, lied:0
 });
 

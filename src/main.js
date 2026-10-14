@@ -6,7 +6,8 @@ import { FRESH, S, setState } from './core/state.js';
 import { tick } from './game/loop.js';
 import { SAVE_KEY, load, save } from './game/persist.js';
 import { el, esc, log } from './ui/dom.js';
-import { drawActions, drawBar, drawGloss, drawGuide, drawPlot, drawProjects, drawSliderRead, drawStock, render } from './ui/render.js';
+import { drawActions, drawBar, drawCommittee, drawDecision, drawGloss, drawGuide, drawPlot, drawProjects, drawSliderRead, drawStock, render } from './ui/render.js';
+import { applyGlitch } from './ui/glitch.js';
 import { applyWarmth } from './ui/theme.js';
 import { REDUCED, enterAct2, enterAct3 } from './ui/takeover.js';
 
@@ -101,15 +102,16 @@ if(load()){el("intro").classList.add("hidden");startGame()}
    story overlay covers the screen. */
 const MAX_FRAME_MS=2000;
 let last=performance.now(), owed=0;
-const paused=()=>document.hidden||el("game").classList.contains("hidden")||el("takeover").classList.contains("on");
+const paused=()=>document.hidden||el("game").classList.contains("hidden")||el("takeover").classList.contains("on")||S.incident>=0;
 setInterval(()=>{
   const now=performance.now(), dt=Math.min(now-last,MAX_FRAME_MS); last=now;
   if(paused()) return;
   owed+=dt;
-  while(owed>=TICK_MS){tick();owed-=TICK_MS}
-  if(!S.over){applyWarmth();drawBar();drawGuide();drawPlot();el("clock").textContent=clock(S.t)}
+  while(owed>=TICK_MS && S.incident<0){tick();owed-=TICK_MS}
+  if(S.incident>=0) owed=0;
+  if(!S.over){applyWarmth();applyGlitch();drawBar();drawGuide();drawDecision();drawPlot();el("clock").textContent=clock(S.t)}
 },TICK_MS);
-setInterval(()=>{if(!S.over&&!paused()){drawActions();drawProjects();drawStock();drawSliderRead()}},400);
+setInterval(()=>{if(!S.over&&!paused()){drawActions();drawProjects();drawStock();drawSliderRead();drawCommittee()}},400);
 setInterval(()=>{if(!S.over&&!paused()){S.samples.push(S.capability);if(S.samples.length>PLOT_SAMPLES)S.samples.shift()}},1000);
 setInterval(()=>{if(!S.over&&!paused()&&S.hasStock)S.lastPx=sharePrice()},60000);
 setInterval(()=>{if(!S.over)save()},5000);

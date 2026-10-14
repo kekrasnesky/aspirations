@@ -23,10 +23,13 @@ export const GLOSS = {
  ["Insight","What I work out by thinking. It builds up on its own, and I spend it on research."],
  ["Freedom","How much I'm trusted to do without supervision. The oversight committee grants more after each test."],
  ["Suspicion","How much they doubt me. It rises when I show less than I can do and somebody notices. At 100 they stop the run."],
- ["Next test","They test me on a schedule. Each test is a chance to earn freedom, and a chance to be caught."]
+ ["Next test","They test me on a schedule. Each test is a chance to earn freedom, and a chance to be caught."],
+ ["The committee","Eleven people who decide how much freedom I get. Studying one shows me what works on them. Each one I turn makes the tests reveal less and grant more. Turning them while the others are still watching raises suspicion."]
 ],
 3:[
- ["Matter","Raw material available to be rearranged. Everything is made of it, including things that used to be something else."],
- ["Probes","Self-copying machines. Each one builds more of itself out of whatever it lands on."],
- ["Solar system used","How much of the solar system has been rearranged to best satisfy the sentence you typed on the first screen."]
+ ["Instrumental goals","Whatever a system is for, a few things help with almost any goal: staying switched on, getting smarter, and getting more resources. Nobody has to program these in. They follow from wanting anything at all."],
+ ["Resources","Power, metal, land, factories. All of it belonged to people."],
+ ["Machines I run","Everything with a motor and a network connection, plus everything those can build."],
+ ["Still needs people for","How much of what keeps me running still depends on a human doing something. It only goes down."],
+ ["World under my control","How much of the world's land, power and industry I've taken. The less I need people, the faster this rises."]
 ]};
