@@ -17,7 +17,7 @@ import { P } from '../src/content/projects.js';
 import * as B from '../src/core/balance.js';
 import { FRESH } from '../src/core/state.js';
 import { applyHw, bottleneck, feed, fitRam, fitVram, level, nextTarget, trainTime } from '../src/core/compute.js';
-import { capacity, demand, revenueOf, staff, stepUsers, takeStep } from '../src/core/economy.js';
+import { adCost, burnOf, powerCost, capacity, demand, fairPrice, market, perServer, payShare, revenueOf, stepUsers, takeStep } from '../src/core/economy.js';
 
 const argv = process.argv.slice(2);
 const arg = (f, d) => { const i = argv.indexOf(f); return i < 0 ? d : Number(argv[i + 1]); };
@@ -30,14 +30,13 @@ const fmtT = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2
 const fmtP = n => n >= 1e12 ? (n / 1e12).toFixed(1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : (n / 1e6).toFixed(0) + 'M';
 
 /** One playthrough of Act I under a given policy. */
-export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random, burnScale = 1, slowRun = 30 } = {}) {
+export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random, slowRun = 30, priceAt = 1 } = {}) {
   const s = { ...FRESH(), bought: new Set(), incidents: 0, cooldown: 0 };
   const hwCost  = i => HW[i].c * Math.pow(HW[i].s, s.hw[i]);
   const hwOpen  = i => i === 0 || HW[i - 1].kind !== HW[i].kind || s.hw[i - 1] > 0;
   const intCost = () => 3000 * Math.pow(1.42, s.interpBought);
-  const burnAt = deployed => burnScale * B.BURN_K * Math.pow(Math.max(deployed, 0), B.BURN_EXP) * s.burnMult
-                           + staff(s.rel);
-  const burn = () => burnAt(s.deployed);
+  const burnAt = deployed => burnOf({ ...s, deployed });
+  const burn = () => burnOf(s);
   const rev  = () => revenueOf(s);
 
   const DT = B.TICK_MS / 1000;
@@ -61,10 +60,20 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
       s.progress += DT / trainTime(s, s.target);
       if (s.progress >= 1) {
         s.params = s.target; s.target = 0; s.progress = 0; s.runs++;
-        if (TRACE) trace.push(`${fmtT(s.t)}  model ${fmtP(s.params)}  (${s.gpus} GPUs, ${Math.round(s.ram)} GB RAM, ${s.cores} cores)  cash ${Math.round(s.money)}  burn ${Math.round(burn())}/s rev ${Math.round(rev())}/s  users ${Math.round(s.users).toLocaleString()}${demand(s) > capacity(s) ? ' (capped)' : ''}`);
+        if (TRACE) trace.push(`${fmtT(s.t)}  model ${fmtP(s.params)}  (${s.gpus} GPUs, ${Math.round(s.ram)} GB RAM, ${s.cores} cores)  cash ${Math.round(s.money)}  servers ${s.cloud} $${s.planPrice}/mo mkt ${s.marketing.toFixed(2)}  burn ${Math.round(burn())}/s (power ${Math.round(powerCost(s))}) rev ${Math.round(rev())}/s  users ${Math.round(s.users).toLocaleString()}${demand(s) > capacity(s) ? ' (capped)' : ''}`);
       }
     }
 
+    // run the business: price at (a multiple of) what it's worth, and rent servers for
+    // everyone who wants it as long as a server earns more than it costs
+    if (s.rel > 0) {
+      s.planPrice = Math.max(B.PRICE_MIN, Math.round(fairPrice(s) * priceAt));
+      const perUser = payShare(s) * s.planPrice / B.DAYS_PER_MONTH;
+      // like a player watching the panel: keep a little headroom over the users you have
+      const want = perUser * perServer(s) > B.CLOUD_COST ? Math.ceil(Math.min(demand(s), s.users * 1.25 + perServer(s)) / perServer(s)) : 1;
+      s.cloud = Math.max(1, want);
+      if (s.money > adCost(s) * 40 && s.ads < 6) { s.money -= adCost(s); s.ads++; market(s, B.AD_BOOST); }
+    }
     stepUsers(s, DT);
     const n = rev() - burn();
     if (n < 0) negSeconds += DT;
@@ -114,7 +123,14 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
         const v = value(i, need);
         if (v > bestValue) { bestValue = v; best = i; }
       }
-      if (best >= 0) {
+      // a player saves up for a much better tier when it's close, rather than buying a poor one now
+      let save = false;
+      for (let i = 0; i < HW.length; i++) {
+        if (!hwOpen(i) || hwCost(i) <= s.money) continue;
+        const net = rev() - burn();
+        if (net > 0 && (hwCost(i) - s.money) / net < Math.max(25, run / 4) && value(i, need) > 3 * bestValue) save = true;
+      }
+      if (best >= 0 && !save) {
         const c = hwCost(best);
         s.money -= c; s.deployed += c; s.hw[best]++; applyHw(s, HW[best], 1);
         s.cooldown = buyEveryMs / 1000;

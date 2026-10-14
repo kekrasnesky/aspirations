@@ -46,36 +46,66 @@ export const LEVEL_K   = 73.2;
 export const LEVEL_EXP = 0.6;
 
 // ---- money ----------------------------------------------------------------
-// Burn scales with deployed capital; revenue scales with the model. Each
-// size step needs more hardware than the last earns back, so the company is
-// never durably profitable. That is the point, not an oversight.
-export const BURN_K      = 0.03;    // tuned with `npm run simulate`: careful play survives, reckless play goes bankrupt
+// Burn is hardware upkeep (repairs, cooling, rack space), electricity, cloud
+// servers and staff. Revenue is subscriptions. Each size step needs more
+// hardware than the last earns back, so the company is never durably
+// profitable. That is the point, not an oversight.
+export const BURN_K      = 0.006;   // upkeep: tuned with `npm run simulate`
 export const BURN_EXP    = 0.88;
 export const STAFF_BASE  = 40;
 export const STAFF_EXP   = 2.4;
 export const STAFF_FROM  = 2;       // nobody is on the payroll until you quit your job and raise money (step 3)
 export const REV_TRUST_REF = 62;
+export const DAYS_PER_MONTH = 30;   // one second of play is about a day
 
-// ---- users and subscribers -------------------------------------------------
-// One second of play is about a day. Revenue is people paying for a plan:
-// users × the share who pay × the plan's monthly price / 30. Users drift
-// toward a target set by how good the model is, how much people trust you, and
-// how many of them your GPUs can serve; they arrive slowly and leave faster.
-export const DAYS_PER_MONTH = 30;
-export const USERS_K     = 4500;     // users per unit of level^USERS_EXP
-export const USERS_EXP   = 0.95;
-export const USERS_GROW  = 0.04;     // per second, toward the target
+// ---- electricity -----------------------------------------------------------
+// Everything you own draws power, all the time. GPUs draw their full rating
+// while a run is training and GPU_IDLE of it otherwise. GPU watts are per tier
+// (hardware.js); RAM and CPU are per unit.
+export const POWER_PRICE = 1.0;     // dollars per kWh, cooling and the building included
+export const BASE_W      = 100;     // the rest of the PC: board, disks, fans
+export const START_GPU_W = 300;     // the graphics card you start with
+export const W_PER_GB    = 0.4;     // system RAM
+export const W_PER_CORE  = 12;      // CPU cores
+export const GPU_IDLE    = 0.3;
+
+// ---- users, cloud servers and subscriptions --------------------------------
+// People use it through cloud servers you rent by the day. Each server answers
+// CLOUD_USERS people for a model of 1B parameters or less; bigger models take
+// more of a server per person. Users drift toward demand, capped by what the
+// servers can answer. They arrive at the marketing rate and leave faster.
+export const CLOUD_COST  = 6;        // dollars per server per day
+export const CLOUD_USERS = 4000;     // people one server answers, for a <=1B model
+export const SERVE_EXP   = 0.4;      // bigger models cost more to serve per person
+export const USERS_K     = 82;       // demand = USERS_K * level^USERS_EXP * ...
+export const USERS_EXP   = 1.5;      // small models draw few people; big ones draw crowds
+export const USERS_GROW  = 0.04;     // per second toward demand, at marketing x1
 export const USERS_CHURN = 0.08;     // per second, when above it
-export const SERVE_K     = 5000;     // users one TFLOPS can serve, for a 1B model
-export const SERVE_EXP   = 0.5;      // bigger models cost more to serve per user
+export const MARKETING_MIN = 0.2;
+export const MARKETING_MAX = 20;
+export const AD_BASE     = 400;      // an ad campaign costs at least this
+export const AD_PER_USER = 0.04;     // or this much per current user, whichever is more
+export const AD_STEP     = 1.6;      // and each one costs more than the last
+export const AD_BOOST    = 1.15;     // marketing rate x this per campaign
+// Market demand: the share of users who pay at a given monthly price.
+// share = MAX_PAY * exp(-price / fair price); fair price rises with the model.
+// Revenue per user peaks when the price equals the fair price.
+export const MAX_PAY     = 0.09;
+export const PRICE_K     = 0.9;      // fair price = PRICE_K * level^PRICE_EXP * product multiplier
+export const PRICE_EXP   = 0.45;
+export const START_PRICE = 3;
+export const PRICE_MIN   = 1;
+export const PRICE_MAX   = 2000;
 export const DISCLOSE_USERS = 0.96;  // share of users who stay after you own up
 export const LEAK_USERS     = 0.85;  // and after a cover-up comes out
+export const DISCLOSE_MARKETING = 0.92;
+export const LEAK_MARKETING     = 0.75;
 
 // letters from people using it, while you wait on training runs
 export const LETTER_MIN  = 18;       // seconds between letters, at least
 export const LETTER_MAX  = 40;
 export const WORLD_MAX   = 40;       // entries kept in the feed
-export const START_MONEY = 0;       // no money until the first thing goes online
+export const START_MONEY = 1500;    // your savings: enough electricity to get to the first release
 export const SELL_BACK   = 0.35;    // second-hand hardware fetches about a third
 export const GRACE       = 25;      // seconds in the red before the company folds
 

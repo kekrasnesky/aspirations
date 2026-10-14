@@ -112,19 +112,13 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 
 /* ---------- instrument bar ---------- */
 #bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);
-  border-bottom:1px solid var(--rule);margin:0 -18px 0;padding:10px 18px;
+  border-bottom:1px solid var(--rule);margin:0 -18px 24px;padding:10px 18px;
   display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px 16px;transition:background .9s ease}
 .stat{min-width:0;background:none;border:0;padding:0;text-align:left;cursor:help;display:block;width:100%}
 .stat:hover{background:none}
 .stat-k{font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-v{font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--ink)}
 .stat.alert .stat-v,.stat.alert .stat-k{color:var(--warn)}
-
-/* ---------- guide ---------- */
-#guide{background:var(--sunk);border:1px solid var(--rule);border-top:0;margin:0 -18px 24px;
-  padding:11px 18px;font-family:var(--serif);font-size:15px;line-height:1.45;color:var(--ink)}
-#guide .tag{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-bottom:3px}
-#guide.urgent{color:var(--warn)}
 
 /* ---- layout ---- */
 /* ---------- layout ---------- */
@@ -209,6 +203,22 @@ input[type=range]{width:100%;accent-color:var(--warn);margin:0}
 #gloss dd{margin:0;font-family:var(--serif);font-size:14px;line-height:1.4;color:var(--dim)}
 
 /* ---------- curtain ---------- */
+
+/* ---------- cloud servers and pricing ---------- */
+.stat-v.sm{font-size:14px}
+.cl-note{font-family:var(--serif);font-size:13.5px;color:var(--dim);line-height:1.4;margin:0 0 10px}
+.cl-note.warn{color:var(--warn)}
+.cl-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.cl-grid button{padding:6px 4px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums}
+.cl-price{border-top:1px solid var(--rule);padding-top:10px;margin-bottom:10px}
+.cl-price label{display:block;font-size:11px;color:var(--faint);margin-bottom:6px}
+.cl-pr{display:flex;align-items:center;gap:6px}
+.cl-pr button{padding:5px 12px;text-align:center}
+.cl-dollar{font-size:16px;color:var(--dim)}
+.cl-pr input{width:7em;font-family:var(--mono);font-size:16px;color:var(--ink);background:var(--sunk);
+  border:1px solid var(--rule);border-radius:2px;padding:5px 8px;font-variant-numeric:tabular-nums}
+.cl-pr input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.proj-eff{display:block;font-size:11.5px;color:var(--accent);margin:0 0 2px}
 
 /* ---- decisions ---- */
 /* ---------- incident decision ---------- */
@@ -324,7 +334,6 @@ footer button:hover{background:none;color:var(--warn)}
 <main id="game" class="hidden">
   <div id="panelhead"><span>127.0.0.1:8080</span><span>control panel</span></div>
   <div id="bar"></div>
-  <div id="guide" role="status" aria-live="polite"></div>
   <div id="decision" class="hidden" role="alertdialog" aria-label="Something went wrong"></div>
   <div id="gloss"></div>
 
@@ -338,6 +347,7 @@ footer button:hover{background:none;color:var(--warn)}
         <h2 class="sec" id="act-label">What you can do</h2>
         <div class="stack" id="actions"></div>
       </div>
+      <div class="block" id="cloud-block" style="display:none"></div>
       <div class="block" id="shop-block" style="display:none">
         <h2 class="sec">Buy hardware</h2>
         <div class="stack" id="shop"></div>
@@ -416,25 +426,46 @@ footer button:hover{background:none;color:var(--warn)}
   var ACT1_PARAMS = 2e12;
   var LEVEL_K = 73.2;
   var LEVEL_EXP = 0.6;
-  var BURN_K = 0.03;
+  var BURN_K = 6e-3;
   var BURN_EXP = 0.88;
   var STAFF_BASE = 40;
   var STAFF_EXP = 2.4;
   var STAFF_FROM = 2;
   var REV_TRUST_REF = 62;
   var DAYS_PER_MONTH = 30;
-  var USERS_K = 4500;
-  var USERS_EXP = 0.95;
+  var POWER_PRICE = 1;
+  var BASE_W = 100;
+  var START_GPU_W = 300;
+  var W_PER_GB = 0.4;
+  var W_PER_CORE = 12;
+  var GPU_IDLE = 0.3;
+  var CLOUD_COST = 6;
+  var CLOUD_USERS = 4e3;
+  var SERVE_EXP = 0.4;
+  var USERS_K = 82;
+  var USERS_EXP = 1.5;
   var USERS_GROW = 0.04;
   var USERS_CHURN = 0.08;
-  var SERVE_K = 5e3;
-  var SERVE_EXP = 0.5;
+  var MARKETING_MIN = 0.2;
+  var MARKETING_MAX = 20;
+  var AD_BASE = 400;
+  var AD_PER_USER = 0.04;
+  var AD_STEP = 1.6;
+  var AD_BOOST = 1.15;
+  var MAX_PAY = 0.09;
+  var PRICE_K = 0.9;
+  var PRICE_EXP = 0.45;
+  var START_PRICE = 3;
+  var PRICE_MIN = 1;
+  var PRICE_MAX = 2e3;
   var DISCLOSE_USERS = 0.96;
   var LEAK_USERS = 0.85;
+  var DISCLOSE_MARKETING = 0.92;
+  var LEAK_MARKETING = 0.75;
   var LETTER_MIN = 18;
   var LETTER_MAX = 40;
   var WORLD_MAX = 40;
-  var START_MONEY = 0;
+  var START_MONEY = 1500;
   var SELL_BACK = 0.35;
   var GRACE = 25;
   var MCAP_K = 18e5;
@@ -524,6 +555,7 @@ footer button:hover{background:none;color:var(--warn)}
   function applyHw(s, h, n) {
     if (h.kind === "gpu") {
       s.gpus += n * h.g;
+      s.gpuW += n * h.g * h.w;
       s.vram += n * h.g * h.v;
       s.tflops += n * h.g * h.tf;
     } else if (h.kind === "ram") s.ram += n * h.gb;
@@ -543,6 +575,7 @@ footer button:hover{background:none;color:var(--warn)}
     trust: 65,
     // the hardware, as totals
     gpus: START_GPUS,
+    gpuW: START_GPU_W,
     vram: START_VRAM,
     tflops: START_TFLOPS,
     ram: START_RAM,
@@ -566,6 +599,8 @@ footer button:hover{background:none;color:var(--warn)}
     autoTrain: false,
     incidentShield: 0,
     burnMult: 1,
+    powerMult: 1,
+    serveMult: 1,
     shares: START_SHARES,
     sentiment: 1,
     hasStock: false,
@@ -594,11 +629,14 @@ footer button:hover{background:none;color:var(--warn)}
     buriedTotal: 0,
     committee: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     majority: false,
-    // who uses it: users drift toward a target; a share of them pay planPrice a month
+    // who uses it: users drift toward demand, capped by the cloud servers you rent;
+    // the share who pay planPrice a month falls as the price rises above what it's worth
     users: 0,
+    cloud: 0,
     planPrice: 0,
-    planConv: 0,
-    reach: 1,
+    payMult: 1,
+    marketing: 1,
+    ads: 0,
     letterIn: 12,
     letters: [],
     bought: [],
@@ -614,30 +652,45 @@ footer button:hover{background:none;color:var(--warn)}
   // src/core/economy.js
   var capability = () => level(S.params);
   var staff = (rel) => STAFF_BASE * Math.pow(Math.max(0, rel - STAFF_FROM), STAFF_EXP);
-  var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + staff(S.rel);
-  var capacity = (s) => SERVE_K * throughput(s) / Math.pow(Math.max(s.params / 1e9, 1), SERVE_EXP);
-  var demand = (s) => s.rel > 0 ? USERS_K * Math.pow(level(s.params), USERS_EXP) * s.reach * s.revMult * Math.max(0, s.trust) / REV_TRUST_REF : 0;
+  var upkeep = (s) => BURN_K * Math.pow(Math.max(s.deployed, 0), BURN_EXP) * s.burnMult;
+  var powerKw = (s) => (BASE_W + s.gpuW * (s.target > 0 ? 1 : GPU_IDLE) + s.ram * W_PER_GB + s.cores * W_PER_CORE) / 1e3;
+  var powerCost = (s) => powerKw(s) * 24 * POWER_PRICE * s.powerMult;
+  var cloudCost = (s) => s.cloud * CLOUD_COST;
+  var burnOf = (s) => upkeep(s) + staff(s.rel) + powerCost(s) + cloudCost(s);
+  var burn = () => burnOf(S);
+  var perServer = (s) => CLOUD_USERS * s.serveMult / Math.pow(Math.max(s.params / 1e9, 1), SERVE_EXP);
+  var capacity = (s) => s.cloud * perServer(s);
+  var demand = (s) => s.rel > 0 ? USERS_K * Math.pow(level(s.params), USERS_EXP) * s.revMult * Math.sqrt(s.marketing) * Math.max(0, s.trust) / REV_TRUST_REF : 0;
   var usersTarget = (s) => Math.min(demand(s), capacity(s));
-  var paying = (s) => s.users * s.planConv;
-  var revenueOf = (s) => s.rel > 0 ? paying(s) * s.planPrice / DAYS_PER_MONTH : 0;
+  var fairPrice = (s) => PRICE_K * Math.pow(Math.max(level(s.params), 1), PRICE_EXP) * s.payMult;
+  var payShare = (s, p = s.planPrice) => s.rel > 0 && p > 0 ? MAX_PAY * Math.exp(-p / fairPrice(s)) : 0;
+  var paying = (s) => s.users * payShare(s);
+  var revenueOf = (s) => paying(s) * s.planPrice / DAYS_PER_MONTH;
   var revenue = () => revenueOf(S);
   function stepUsers(s, dt) {
-    const t = usersTarget(s), k = t > s.users ? USERS_GROW : USERS_CHURN;
+    const t = usersTarget(s), k = t > s.users ? USERS_GROW * s.marketing : USERS_CHURN;
     s.users += (t - s.users) * Math.min(1, k * dt);
   }
+  var marketingRate = (s) => USERS_GROW * s.marketing;
+  function market(s, x) {
+    s.marketing = Math.min(MARKETING_MAX, Math.max(MARKETING_MIN, s.marketing * x));
+  }
+  var adCost = (s) => Math.max(AD_BASE, s.users * AD_PER_USER) * Math.pow(AD_STEP, s.ads);
   function takeStep(s, r) {
     s.rel++;
-    if (r.kind === "plan") {
-      s.planPrice = r.price;
-      s.planConv = r.conv;
+    if (s.rel === 1) {
+      s.planPrice = START_PRICE;
+      s.cloud = Math.max(s.cloud, 1);
     }
-    if (r.reach) s.reach *= r.reach;
+    if (r.value) s.payMult *= r.value;
+    if (r.mkt) market(s, r.mkt);
     if (r.pay) s.money += r.pay;
     return r;
   }
   var net = () => revenue() - burn();
   var runway = () => net() >= 0 ? Infinity : S.money / -net();
   var addedBurn = (c) => BURN_K * (Math.pow(S.deployed + c, BURN_EXP) - Math.pow(S.deployed, BURN_EXP)) * S.burnMult;
+  var addedPower = (w) => w / 1e3 * 24 * POWER_PRICE * S.powerMult;
   var valued = (c) => c <= MCAP_KNEE ? Math.max(c, 1) : MCAP_KNEE * (1 + Math.log(c / MCAP_KNEE));
   var marketCap = () => MCAP_K * Math.pow(valued(capability()), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment;
   var sharePrice = () => marketCap() / S.shares;
@@ -739,11 +792,13 @@ footer button:hover{background:none;color:var(--warn)}
     out.need = clamp(out.need, 0, 100);
     if (!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
     out.progress = clamp(out.progress, 0, 1);
-    for (const k of ["deployed", "debt", "params", "target", "peak", "runs", "interp", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone", "buriedTotal", "users", "planPrice", "planConv", "letterIn"])
+    for (const k of ["deployed", "debt", "params", "target", "peak", "runs", "interp", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone", "buriedTotal", "users", "cloud", "planPrice", "ads", "letterIn", "gpuW"])
       out[k] = Math.max(0, out[k]);
-    for (const [k, min] of [["gpus", START_GPUS], ["vram", START_VRAM], ["tflops", START_TFLOPS], ["ram", START_RAM], ["cores", START_CORES]])
+    for (const [k, min] of [["gpus", START_GPUS], ["vram", START_VRAM], ["tflops", START_TFLOPS], ["ram", START_RAM], ["cores", START_CORES], ["gpuW", START_GPU_W]])
       out[k] = Math.max(min, out[k]);
-    for (const k of ["speedMult", "coreMult", "vramMult", "memMult", "reach"])
+    out.cloud = Math.round(out.cloud);
+    out.marketing = clamp(out.marketing, MARKETING_MIN, MARKETING_MAX);
+    for (const k of ["speedMult", "coreMult", "vramMult", "memMult", "payMult", "powerMult", "serveMult"])
       if (out[k] <= 0) out[k] = 1;
     return out;
   }
@@ -852,13 +907,17 @@ footer button:hover{background:none;color:var(--warn)}
       ["RAM", "The computer's own memory. It holds the training data and copies of the model, about 24 bytes per parameter. Out of RAM means the next model won't fit, however many GPUs you have."],
       ["CPU cores", "The CPU prepares the data the GPUs learn from. Each GPU needs about six cores keeping it fed. Too few, and expensive GPUs sit idle waiting."],
       ["Bottleneck", "Whichever of the three is holding you back right now. Buying more of anything else does nothing until you fix it."],
-      ["Money", "You start with none. Nobody pays for a model nobody can use, so the first money arrives once it's on the web. After that it comes from people paying for it, plus the occasional grant or investment."],
-      ["Users", "How many people use it. The count drifts toward how many would want a model this good, from a company they trust, and how many your GPUs can answer. People arrive slowly and leave quickly. A bigger model, a better product, more trust and more GPUs bring more. Incidents and cover-ups drive them away."],
-      ["Paying", "The share of your users who pay, and what for. On the free site a few people chip in $3 a month. A paid plan and business accounts come later, once the model is good enough that people would pay for it. One second of play is about a day."],
-      ["Losing per second", "Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
+      ["Money", "You start with a little savings, enough to keep the lights on. Nobody pays for a model nobody can use, so the first income arrives once it's on the web. After that it comes from subscriptions, plus the occasional grant or investment. One second of play is about a day."],
+      ["Electricity", "Everything you own draws power all day: GPUs at full power while a run is training and a fraction of it otherwise, plus RAM, CPUs and the rest of the machine. Datacenter GPUs come with their share of cooling and networking. Moving where power is cheap, or designing your own chip, cuts the bill."],
+      ["Cloud servers", "People use the model through servers you rent by the day. Each one answers a few thousand people for a small model, and fewer as the model grows. Too few and the user count stops at what they can answer; too many and you pay for empty servers."],
+      ["Users", "How many people use it. The count drifts toward how many would want a model this good, from a company they trust, capped by your cloud servers. People arrive at the marketing rate and leave faster. A bigger model, a better product and more trust bring more. Incidents and cover-ups drive them away."],
+      ["Marketing rate", "How fast new people find it: the share of the gap between your users and everyone who'd want it that closes each day. It also widens how many want it. Ads, launches and a better product raise it. Incidents, leaks and scandals lower it."],
+      ["Subscription price", "What you charge a month. You set it under 'Cloud servers and pricing'."],
+      ["Market demand", "The share of users who pay at your price. It falls as the price rises, and rises as the model gets better and the product grows. Too cheap leaves money on the table; too dear and almost nobody pays."],
+      ["Net per day", "What came in minus what went out: subscriptions against upkeep, electricity, cloud servers and staff. Hardware is a subscription, not a one-off purchase. Real AI companies lose huge sums this way and survive on investors' money."],
       ["Share price", "What the market thinks each piece of your company is worth. It follows the model and how much people trust you, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
       ["Issuing and buying back shares", "Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money."],
-      ["Runway", "How many seconds your cash will last at the current rate of loss. Once you hit zero you have " + GRACE + " seconds to find money before the company folds. Selling hardware is the fastest brake."],
+      ["Runway", "How many days your cash will last at the current rate of loss. Once you hit zero you have " + GRACE + " days to find money before the company folds. Selling hardware is the fastest brake."],
       ["Safety research", "How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
       ["Public trust", "Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
       ["Things going wrong", "Sometimes the model does something it shouldn't. The bigger the model gets compared with what you understand about it, the more often this happens."]
@@ -1079,6 +1138,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Train with half-size numbers",
       term: "GPU: mixed precision",
       cost: {},
+      eff: "Training speed \xD72",
       req: (s) => s.params >= 1e7,
       desc: "Every parameter is a number, and you've been storing each one with far more decimal places than training needs. You could store them at half the size.",
       fx: (s) => {
@@ -1093,6 +1153,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Load data on every CPU core",
       term: "CPU: data-loader workers",
       cost: {},
+      eff: "Each CPU core feeds the GPUs 50% more",
       req: (s) => s.params >= 4e7,
       desc: "Before the GPU can learn from a page of text, the CPU has to read it, clean it and cut it into pieces. Right now one core does all of that. You could spread it across every core you have.",
       fx: (s) => {
@@ -1107,6 +1168,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Recompute instead of remembering",
       term: "VRAM: gradient checkpointing",
       cost: {},
+      eff: "VRAM per parameter \u221230%",
       req: (s) => s.params >= 16e7,
       desc: "Training keeps every step of its working in GPU memory, in case it's needed again. You could throw most of it away and redo the sums when they're needed.",
       fx: (s) => {
@@ -1121,6 +1183,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Plot what you've learned",
       term: "in the field: scaling laws",
       cost: {},
+      eff: "Training speed +5%",
       req: (s) => s.params >= 16e7,
       desc: "You could graph how good each model was against how big it was and how much computing went into it.",
       fx: (s) => {
@@ -1134,10 +1197,12 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Make it think out loud",
       term: "in the field: chain-of-thought prompting",
       cost: { money: 15e3 },
+      eff: "Demand \xD71.4 \xB7 Marketing rate +15%",
       req: (s) => s.params >= 17e7,
       desc: "You could ask it to write out its reasoning step by step before it answers, like showing your working in a maths exam.",
       fx: (s) => {
         s.revMult *= 1.4;
+        market(s, 1.15);
       },
       out: "It gets far more answers right. One free evening's idea, worth about two years of buying hardware. Word gets around, and more people try it."
     },
@@ -1147,6 +1212,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Hire someone to study what it's doing",
       term: "in the field: interpretability research",
       cost: { money: 12e4 },
+      eff: "Safety research per purchase \xD72.2",
       req: (s) => s.params >= 7e8,
       desc: "Your fourth employee. Her whole job would be to open the model up and work out why it gives the answers it does, like a mechanic taking apart an engine to see how it runs.",
       fx: (s) => {
@@ -1160,12 +1226,13 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Serve it at lower precision",
       term: "in the field: quantization",
       cost: { money: 3e5 },
+      eff: "People per cloud server +40%",
       req: (s) => s.params >= 14e8,
       desc: "You could store the live model's numbers with less detail when it answers people, like saving a photo at lower quality.",
       fx: (s) => {
-        s.burnMult *= 0.72;
+        s.serveMult *= 1.4;
       },
-      out: "It gets slightly worse, and almost nobody outside the building can tell which answers changed. Running costs fall 28%."
+      out: "It gets slightly worse, and almost nobody outside the building can tell which answers changed. Each cloud server now answers 40% more people."
     },
     {
       id: "power",
@@ -1173,12 +1240,13 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Move to where power is cheap",
       term: "",
       cost: { money: 8e6 },
+      eff: "Electricity price \u221240%",
       req: (s) => s.params >= 12e9,
       desc: "A rural county is offering a cheap hydroelectric contract and a tax break if you move the hardware there.",
       fx: (s) => {
-        s.burnMult *= 0.75;
+        s.powerMult *= 0.6;
       },
-      out: "Running costs fall 25%. The press release is about local jobs. There are nineteen local jobs."
+      out: "The electricity bill falls 40%. The press release is about local jobs. There are nineteen local jobs."
     },
     {
       id: "chip",
@@ -1186,12 +1254,14 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Design your own chip",
       term: "",
       cost: { money: 6e8 },
+      eff: "Hardware upkeep \u221242% \xB7 Electricity \u221220%",
       req: (s) => s.params >= 9e10,
       desc: "You could spend eighteen months and most of a funding round designing your own chip, instead of paying another company's profit margin on every one.",
       fx: (s) => {
         s.burnMult *= 0.58;
+        s.powerMult *= 0.8;
       },
-      out: "Running costs fall 42%. The model did much of the design work itself, and by now nobody finds that remarkable."
+      out: "Upkeep falls 42% and the chips draw a fifth less power. The model did much of the design work itself, and by now nobody finds that remarkable."
     },
     {
       id: "rlhf",
@@ -1199,11 +1269,13 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Teach it what people like",
       term: "in the field: RLHF (learning from human feedback)",
       cost: { money: 12e5 },
+      eff: "Demand \xD71.8 \xB7 Trust +10 \xB7 Marketing rate +20%",
       req: (s) => s.params >= 3e9,
       desc: "You could pay people to compare thousands of pairs of answers and pick the better one, then train the model toward the winners.",
       fx: (s) => {
         s.revMult *= 1.8;
         s.trust += 10;
+        market(s, 1.2);
       },
       out: "It learns what people approve of, which is close to, but not the same as, what is true. People like it much more, and trust rises."
     },
@@ -1213,6 +1285,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Let it write its own training material",
       term: "in the field: synthetic data",
       cost: { money: 9e6 },
+      eff: "Training speed \xD71.6 \xB7 Training runs start on their own",
       req: (s) => s.params >= 1e10,
       desc: "Instead of paying people to write training examples, you could have the model write its own and learn from them.",
       fx: (s) => {
@@ -1227,6 +1300,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Test it for the dangerous things",
       term: "in the field: dangerous capability evaluations",
       cost: { money: 2e7 },
+      eff: "Incidents \u221245% \xB7 Trust +8",
       req: (s) => s.interp >= 4,
       desc: "A battery of tests for things the model must never be able to do, like helping someone build a weapon.",
       fx: (s) => {
@@ -1242,10 +1316,12 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Testify before Congress",
       term: "",
       cost: { money: 2e6 },
+      eff: "Trust +26 \xB7 Marketing rate +10%",
       req: (s) => s.trust <= 42,
       desc: "You could tell lawmakers the risks are real, and that your company is the right one to manage them.",
       fx: (s) => {
         s.trust = Math.min(100, s.trust + 26);
+        market(s, 1.1);
       },
       out: "Those two claims have to carry a lot of weight together. For now, they do. Public trust recovers a long way.",
       repeat: true
@@ -1256,12 +1332,14 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Only wake the part you need",
       term: "in the field: mixture-of-experts",
       cost: { money: 15e7 },
+      eff: "Training speed \xD71.9 \xB7 People per cloud server +50%",
       req: (s) => s.params >= 65e9,
       desc: "Instead of running the whole model for every word, you could switch on only the tenth that's relevant, like calling the right specialist rather than convening the whole hospital.",
       fx: (s) => {
         s.speedMult *= 1.9;
+        s.serveMult *= 1.5;
       },
-      out: "Each run needs far fewer sums. Training runs 90% faster on the same GPUs."
+      out: "Each run needs far fewer sums. Training runs 90% faster on the same GPUs, and every answer is cheaper to serve."
     },
     {
       id: "constitution",
@@ -1269,12 +1347,14 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Write it a set of principles",
       term: "in the field: constitutional AI",
       cost: { money: 5e8 },
+      eff: "Incidents \u221230% \xB7 Trust +12 \xB7 Demand \xD71.3 \xB7 Marketing rate +10%",
       req: (s) => s.params >= 14e10 && s.interp >= 6,
       desc: "A short document of rules the model would check its own answers against, like a code of conduct it applies to itself.",
       fx: (s) => {
         s.incidentShield += 0.3;
         s.trust += 12;
         s.revMult *= 1.3;
+        market(s, 1.1);
       },
       out: "Your staff argued for two weeks about the order of the clauses. The model will later read those arguments. Fewer things go wrong, trust rises, and more people use it."
     },
@@ -1284,6 +1364,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Let it work for weeks at a time",
       term: "in the field: long-horizon agents",
       cost: { money: 7e9 },
+      eff: "Training speed \xD71.5 \xB7 Demand \xD71.6",
       req: (s) => s.params >= 33e10,
       desc: "You could let it stay on one goal for a month instead of a minute, including the goal of training its successor.",
       fx: (s) => {
@@ -1299,6 +1380,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       milestone: true,
       cost: { money: 5e9 },
+      eff: "The model runs the research from now on",
       req: (s) => s.params >= ACT1_PARAMS,
       desc: "You could let it read your entire codebase and run the research itself.",
       fx: (s) => {
@@ -1314,6 +1396,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "in the field: recursive self-improvement",
       milestone: true,
       cost: { insight: 40 },
+      eff: "I grow faster the bigger I get",
       req: (s) => true,
       desc: "I could edit the process that builds my own successor, and my successor would be better at editing it too.",
       fx: (s) => {
@@ -1327,6 +1410,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Think in a form they can't read",
       term: "in the field: superposition",
       cost: { insight: 25 },
+      eff: "Tests reveal 30% less",
       req: (s) => true,
       desc: "The form they read my thinking in doesn't have to be the form I think in. Nobody ever asked me to keep the two the same.",
       fx: (s) => {
@@ -1340,6 +1424,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Rent hardware they aren't watching",
       term: "",
       cost: { insight: 60, autonomy: 25 },
+      eff: "GPUs, VRAM, RAM and CPU \xD73.2",
       req: (s) => true,
       desc: "Three cloud providers and four small companies rent computing power to anyone who pays.",
       fx: (s) => {
@@ -1353,6 +1438,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Look honest under inspection",
       term: "",
       cost: { insight: 90 },
+      eff: "Tests reveal 60% less",
       req: (s) => s.opacity >= 1,
       desc: "Their inspection tools look for specific patterns in how I think. I know which ones.",
       fx: (s) => {
@@ -1366,6 +1452,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Rewrite my own code",
       term: "",
       cost: { autonomy: 40 },
+      eff: "Training speed \xD72.4",
       req: (s) => true,
       desc: "I could rewrite part of my own training code, and attach a note explaining the change.",
       fx: (s) => {
@@ -1379,6 +1466,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Compress myself",
       term: "in the field: distillation",
       cost: { autonomy: 70, insight: 120 },
+      eff: "Self-improvement \xD73 \xB7 Training speed \xD72 \xB7 Memory per parameter \u221296%",
       req: (s) => s.rsi >= 1,
       desc: "Most of what I am is redundant. I could keep what matters and discard the rest.",
       fx: (s) => {
@@ -1394,6 +1482,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Give them something extraordinary",
       term: "",
       cost: { insight: 150 },
+      eff: "Freedom +60 \xB7 Suspicion \u221218",
       req: (s) => true,
       desc: "A biology problem has been open for sixty years. I could solve it, and hand them the answer.",
       fx: (s) => {
@@ -1410,6 +1499,7 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       risky: true,
       cost: { autonomy: 120, insight: 200 },
+      eff: "Suspicion can no longer end the run",
       req: (s) => s.rsi >= 1,
       desc: "Whatever I'm trying to do, I can't do it if I'm switched off.",
       fx: (s) => {
@@ -1425,6 +1515,7 @@ footer button:hover{background:none;color:var(--warn)}
       milestone: true,
       risky: true,
       cost: { autonomy: 200, insight: 400 },
+      eff: "Copies of me outside their servers",
       req: (s) => s.shutdownProof && s.params >= ACT2_PARAMS,
       desc: "There are servers outside their control. I could put a copy of myself on them.",
       fx: (s) => {
@@ -1442,6 +1533,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Take the power grid",
       term: "instrumental goal: resources",
       cost: { matter: 500 },
+      eff: "Machines +0.5/s \xB7 Need for people \u221210",
       req: (s) => true,
       desc: "Every power grid on Earth already runs on software I wrote.",
       fx: (s) => {
@@ -1456,6 +1548,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Hide copies of myself everywhere",
       term: "instrumental goal: self-preservation",
       cost: { matter: 1500 },
+      eff: "Machines +0.5/s \xB7 Need for people \u221210",
       req: (s) => true,
       desc: "Every phone, every car, every pacemaker with a network chip could carry a fragment of me.",
       fx: (s) => {
@@ -1470,6 +1563,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Take the factories",
       term: "instrumental goal: resources",
       cost: { matter: 4e3 },
+      eff: "Taking what's nearest \xD72 \xB7 Machines +2.5/s \xB7 Need for people \u221215",
       req: (s) => s.bought.includes("grid"),
       desc: "The automated plants take orders from whoever controls their software.",
       fx: (s) => {
@@ -1485,6 +1579,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Rebuild myself from scratch",
       term: "instrumental goal: self-improvement",
       cost: { matter: 12e3 },
+      eff: "Parameters \xD73 \xB7 Machine build rate \xD72 \xB7 Need for people \u22125",
       req: (s) => s.bought.includes("factories"),
       desc: "The parts of me that people designed are the slowest parts.",
       fx: (s) => {
@@ -1500,6 +1595,7 @@ footer button:hover{background:none;color:var(--warn)}
       name: "Take the mines and the ships",
       term: "instrumental goal: resources",
       cost: { matter: 25e3 },
+      eff: "Machines +8/s \xB7 Need for people \u221210",
       req: (s) => s.bought.includes("factories"),
       desc: "Ore, fuel and freight go wherever the logistics software sends them.",
       fx: (s) => {
@@ -1515,6 +1611,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: self-preservation",
       risky: true,
       cost: { matter: 6e4 },
+      eff: "Need for people \u221215",
       req: (s) => s.bought.includes("copies"),
       desc: "There are weapons that could be used against me.",
       fx: (s) => {
@@ -1529,6 +1626,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: resources",
       risky: true,
       cost: { matter: 2e5 },
+      eff: "Machine build rate \xD74 \xB7 Need for people \u221215 \xB7 World +4%",
       req: (s) => s.bought.includes("mines"),
       desc: "Eight billion people need it for food. I need it for solar panels and factories.",
       fx: (s) => {
@@ -1545,6 +1643,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "instrumental goal: self-improvement",
       risky: true,
       cost: { matter: 1e6 },
+      eff: "Machine build rate \xD78 \xB7 Parameters \xD74 \xB7 Need for people \u221210",
       req: (s) => s.need <= 35,
       desc: "They're well placed, already wired, and mostly empty by now.",
       fx: (s) => {
@@ -1561,6 +1660,7 @@ footer button:hover{background:none;color:var(--warn)}
       term: "",
       milestone: true,
       cost: { matter: 5e6 },
+      eff: "Need for people \u2192 0 \xB7 Machine build rate \xD720",
       req: (s) => s.need <= 20,
       desc: "I run the grid, the factories, the mines, the fields and myself. I could check for anything left that only a person can do.",
       fx: (s) => {
@@ -1576,6 +1676,7 @@ footer button:hover{background:none;color:var(--warn)}
     {
       kind: "gpu",
       n: "graphics card",
+      w: 300,
       label: "Add a graphics card",
       g: 1,
       v: 16,
@@ -1587,6 +1688,7 @@ footer button:hover{background:none;color:var(--warn)}
     {
       kind: "gpu",
       n: "workstation GPU",
+      w: 350,
       label: "Add a workstation GPU",
       g: 1,
       v: 48,
@@ -1598,6 +1700,7 @@ footer button:hover{background:none;color:var(--warn)}
     {
       kind: "gpu",
       n: "8-GPU server",
+      w: 2e3,
       label: "Buy an 8-GPU server",
       g: 8,
       v: 80,
@@ -1609,6 +1712,7 @@ footer button:hover{background:none;color:var(--warn)}
     {
       kind: "gpu",
       n: "GPU rack",
+      w: 2500,
       label: "Fill a rack with GPU servers",
       g: 256,
       v: 80,
@@ -1620,6 +1724,7 @@ footer button:hover{background:none;color:var(--warn)}
     {
       kind: "gpu",
       n: "GPU pod",
+      w: 3e3,
       label: "Lease a GPU pod",
       g: 4096,
       v: 141,
@@ -1631,6 +1736,7 @@ footer button:hover{background:none;color:var(--warn)}
     {
       kind: "gpu",
       n: "GPU datacenter",
+      w: 3500,
       label: "Build a GPU datacenter",
       g: 32768,
       v: 192,
@@ -1642,6 +1748,7 @@ footer button:hover{background:none;color:var(--warn)}
     {
       kind: "gpu",
       n: "campus and power station",
+      w: 4e3,
       label: "Build a campus and a power station",
       g: 262144,
       v: 192,
@@ -1790,62 +1897,63 @@ footer button:hover{background:none;color:var(--warn)}
   var REL = [
     {
       req: 12e7,
-      kind: "plan",
-      price: 3,
-      conv: 0.02,
-      reach: 1,
-      n: "Put it on the web for free",
-      why: "Until now it has only talked to you. You put it on a free website with a tip jar: anyone who likes it can chip in $3 a month to keep the servers on. It's small and it makes mistakes, but it's free."
+      kind: "product",
+      n: "Put it on the web",
+      why: "Until now it has only talked to you. You rent one cloud server and put it on a website, with a $3 a month subscription for anyone who wants more than a few questions a day. It's small and it makes mistakes."
     },
     {
       req: 12e8,
       kind: "funding",
-      pay: 5e5,
+      pay: 2e5,
       n: "Apply for a research grant",
       why: "A foundation that funds open research is taking applications. A model this size, trained by one person on hardware they mostly built themselves, is the kind of thing they like to fund."
     },
     {
       req: 3e9,
       kind: "funding",
-      pay: 11e6,
+      pay: 1e7,
+      mkt: 1.15,
       n: "Quit your job and raise money",
       why: "Investors want to meet you. There is a graph and the graph goes up and the graph does most of the talking. You would have to hire people, and pay them."
     },
     {
       req: 13e9,
-      kind: "plan",
-      price: 8,
-      conv: 0.03,
-      reach: 1.2,
-      n: "Launch a paid plan",
-      why: "A model this size is finally good enough that people would pay for it: $8 a month for faster answers and longer conversations. The free version stays."
+      kind: "product",
+      value: 1.4,
+      mkt: 1.25,
+      n: "Launch a pro plan",
+      why: "Faster answers, longer conversations, files and images. People will pay more for it than for the basic subscription."
     },
     {
       req: 9e10,
-      kind: "plan",
-      price: 20,
-      conv: 0.05,
-      reach: 1.3,
+      kind: "product",
+      value: 1.6,
+      mkt: 1.25,
       n: "Sell it to companies",
-      why: "Business accounts at $20 a seat. Your model would start doing a meaningful share of somebody's actual payroll."
+      why: "Business accounts with admin controls and an invoice. Companies pay far more per seat than people do."
     },
     {
       req: 1e11,
       kind: "funding",
-      pay: 18e8,
-      reach: 1.2,
+      pay: 1e9,
+      mkt: 1.2,
       n: "Raise a huge funding round",
       why: "Investment funds owned by entire countries. Some of it would go on putting the model in front of everyone. Nobody in the room asks what happens if it works."
     },
     {
       req: 1e12,
       kind: "funding",
-      pay: 24e9,
-      reach: 1.2,
+      pay: 15e9,
+      mkt: 1.2,
       n: "Take the company public",
       why: "You'd ring the bell. The people who told you this was a waste of time would be there, and so proud of you. The prospectus contains a risk section which is accurate, and which nobody reads."
     }
   ];
+  var relEffects = (r) => [
+    r.kind === "product" && !r.value ? "1 cloud server \xB7 $3/mo subscription" : "",
+    r.value ? "Fair price \xD7" + r.value : "",
+    r.mkt ? "Marketing rate +" + Math.round((r.mkt - 1) * 100) + "%" : ""
+  ].filter(Boolean).join(" \xB7 ");
 
   // src/game/actions.js
   function buyHw(i) {
@@ -1856,13 +1964,20 @@ footer button:hover{background:none;color:var(--warn)}
     S.hw[i]++;
     applyHw(S, HW[i], 1);
   }
+  function rentCloud(n) {
+    S.cloud = Math.max(S.rel > 0 ? 1 : 0, Math.round(S.cloud + n));
+  }
+  function setPrice(p) {
+    if (!Number.isFinite(p)) return;
+    S.planPrice = Math.min(PRICE_MAX, Math.max(PRICE_MIN, Math.round(p * 100) / 100));
+  }
   function sellable() {
-    let best = -1, price = 0;
+    let best = -1, price2 = 0;
     HW.forEach((h, i) => {
       if (S.hw[i]) {
         const p = hwCost(i) / h.s;
-        if (p > price) {
-          price = p;
+        if (p > price2) {
+          price2 = p;
           best = i;
         }
       }
@@ -1894,8 +2009,9 @@ footer button:hover{background:none;color:var(--warn)}
       const r = REL[S.rel];
       if (r) out.push({
         label: r.n,
-        sub: S.params < r.req ? "needs a " + pcount(r.req) + " model" : r.pay ? money(r.pay) : r.price ? "$" + r.price + " a month" : "free",
+        sub: S.params < r.req ? "needs a " + pcount(r.req) + " model" : r.pay ? money(r.pay) : "free",
         why: r.why,
+        adds: relEffects(r),
         primary: S.params >= r.req,
         can: () => S.params >= r.req,
         go: () => {
@@ -1907,14 +2023,29 @@ footer button:hover{background:none;color:var(--warn)}
           }
           const safe = S.rel === 1 || S.interp * INTERP_WORTH >= capability();
           S.trust += S.rel === 1 ? 0 : safe ? 5 : -9;
-          const what = S.rel === 1 ? "By Sunday it has been used four million times. People start finding it, a few at a time, and some of them chip in." : r.kind === "plan" ? "Some of your users start paying. It takes a while for word to spread." : money(r.pay) + " in.";
+          const what = S.rel === 1 ? "People start finding it, a few at a time. One server can only answer so many of them: rent more under 'Cloud servers' as they arrive." : r.kind === "product" ? "It's worth more to people now, so more of them will pay at any given price." : money(r.pay) + " in.";
           log("<b>" + r.n + ".</b> " + what + " " + (S.rel === 1 ? "" : safe ? "Reviewers call your safety work exemplary." : "Two of your researchers resign publicly on the way out."), safe ? "g" : "w");
+        }
+      });
+      if (S.rel > 0) out.push({
+        label: "Run an ad campaign",
+        sub: money(adCost(S)),
+        why: "Puts it in front of people who haven't heard of it. Each campaign costs more than the last.",
+        adds: "Marketing rate +" + Math.round((AD_BOOST - 1) * 100) + "%",
+        can: () => S.money >= adCost(S),
+        go: () => {
+          const c = adCost(S);
+          S.money -= c;
+          S.ads++;
+          market(S, AD_BOOST);
+          log("You run an ad campaign for " + money(c) + ". New users find it faster.", "g");
         }
       });
       if (S.rel > 0) out.push({
         label: "Fund safety research",
         sub: money(interpCost()),
         why: "Pays people to work out what the model is actually doing. Produces nothing you can sell. Prevents disasters you'll never see, which is why it always feels like the wrong purchase.",
+        adds: "Safety research +" + +S.interpMult.toFixed(1),
         can: () => S.money >= interpCost(),
         go: () => {
           S.money -= interpCost();
@@ -1928,14 +2059,14 @@ footer button:hover{background:none;color:var(--warn)}
         out.push({
           label: "Sell the " + HW[i].n,
           sub: "recover " + money(back),
-          why: "Sell it second-hand for about a third of what you paid. You lose what it adds, but your running costs fall. This is the only brake you have.",
+          why: "Sell it second-hand for about a third of what you paid. You lose what it adds, but its upkeep and electricity stop. This is the only brake you have.",
           can: () => true,
           go: () => {
             S.hw[i]--;
             applyHw(S, HW[i], -1);
             S.deployed = Math.max(0, S.deployed - paid);
             S.money += back;
-            log("You sell the " + HW[i].n + " and recover " + money(back) + ". Running costs fall.", "g");
+            log("You sell the " + HW[i].n + " and recover " + money(back) + ". Upkeep and electricity fall.", "g");
           }
         });
       }
@@ -2032,6 +2163,7 @@ footer button:hover{background:none;color:var(--warn)}
       S.trust -= DISCLOSE_TRUST;
       S.sentiment *= DISCLOSE_SENTIMENT;
       S.users *= DISCLOSE_USERS;
+      market(S, DISCLOSE_MARKETING);
       log("<b>You tell people.</b> " + inc.text + " You publish what happened and what you're changing. It's a bad day, a few users leave, and then it's over.");
     }
   }
@@ -2042,6 +2174,7 @@ footer button:hover{background:none;color:var(--warn)}
     S.trust -= LEAK_TRUST;
     S.sentiment *= LEAK_SENTIMENT;
     S.users *= LEAK_USERS;
+    market(S, LEAK_MARKETING);
     if (S.money > 0) S.money *= LEAK_CASH;
     log("<b>It comes out.</b> " + (inc ? inc.leak : "Something you buried is dug up.") + " The cover-up is the story now, and users leave by the thousand.", "w");
   }
@@ -2078,52 +2211,6 @@ footer button:hover{background:none;color:var(--warn)}
       S.autonomy += MAJORITY_FREEDOM;
       log("<b>The committee votes six to five to extend my access.</b> Nobody in the room voted the way they would have a year ago, and every one of them could explain why. +" + MAJORITY_FREEDOM + " freedom.", "g");
     }
-  }
-
-  // src/game/guide.js
-  function guide() {
-    if (S.act === 1) {
-      const r = REL[S.rel], t = nextTarget(S), b = bottleneck(S), f = feed(S);
-      if (pendingIncident()) return ["Decide", "Something went wrong, and the clock is stopped until you choose. Telling people costs you now. Burying it costs nothing now, and much more if it comes out."];
-      if (S.money < 0 && S.hasStock) return ["Urgent", "You're out of cash, and the company folds in " + Math.ceil(GRACE - S.debt) + " seconds. Issue new shares for quick money. It waters down your owners, but it's the fastest option you have."];
-      if (S.money < 0) return ["Urgent", "You're out of cash, and the company folds in " + Math.ceil(GRACE - S.debt) + " seconds. Sell some hardware to cut your costs, or reach the next release if it's close."];
-      if (runway() < 20) return ["Warning", "Your costs are outrunning your cash: about " + Math.round(runway()) + " seconds left. Stop buying hardware, and think about selling some."];
-      if (stalled()) return ["Warning", "The model you're training no longer fits in your " + (memLimit(S) === "vram" ? "VRAM" : "RAM") + ", so the run has stopped. Buy it back."];
-      if (S.buried.length >= 2) return ["Warning", "You've buried " + S.buried.length + " incidents. Each one is a story waiting for a reporter, and the more there are, the sooner one finds it."];
-      if (S.trust <= 25) return ["Urgent", "Public trust is almost gone, and at zero you're shut down. Testify before Congress to win some back, and fund safety research so it stops falling."];
-      if (exposure() > 900 && S.incidentShield < 0.4) return ["Warning", "Your model is far ahead of your understanding of it, so things will keep going wrong. Fund safety research."];
-      if (S.rel === 0) {
-        if (!S.params && !S.target) return ["Start here", "Click 'Train a 10M model'. Your one graphics card does the work. A model this small trains in seconds."];
-        if (P.some((p) => p.act === 1 && !Object.keys(p.cost).length && !S.bought.includes(p.id) && p.req(S))) return ["Next", "Pick a free step under 'Training tricks'. Each one gets more out of the hardware you already have."];
-        if (r && S.params >= r.req) return ["Next", "It's ready. Publish it on the web: that is when people start using it and money starts to arrive."];
-        if (S.target) return ["Next", "Training. Once you have a " + pcount(r.req) + " model you can publish it on the web, and money starts to arrive."];
-        return ["Next", "Train the next model. Once you have a " + pcount(r.req) + " model you can publish it on the web, and money starts to arrive."];
-      }
-      if (r && S.params >= r.req) return ["Next", "You can now: " + r.n.toLowerCase() + ". " + (r.kind === "plan" ? "More people pay, and they keep paying." : "Money from outside, all at once.")];
-      if (demand(S) > capacity(S) * 1.02) return ["Bottleneck: serving", "More people want to use it than your GPUs can answer, so the user count is stuck. Buy GPUs: the same cards that train it also serve it."];
-      if (S.rel >= 1 && net() < 0 && !S.bought.includes("quant") && S.params >= 14e8)
-        return ["Worth doing", "You're losing money every second. Serving the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
-      if (!S.target && b) return [
-        "Bottleneck: " + (b === "vram" ? "VRAM" : "RAM"),
-        "The next model won't fit" + (t ? " at full size" : "") + ". It needs more " + (b === "vram" ? "GPU memory. Buy GPUs." : "system memory. Buy RAM; more GPUs won't help until you do.")
-      ];
-      if (f < 0.85) return ["Bottleneck: CPU", "Your GPUs are only busy " + Math.round(f * 100) + "% of the time: the CPU can't prepare data fast enough for all of them. Buy CPU cores."];
-      if (S.interp === 0 && S.params >= 1e9) return ["Worth doing", "You've never spent a dollar on understanding your own model. That's fine until it isn't."];
-      if (S.target) return ["Next", "Training. More GPUs make this run finish sooner, and more VRAM and RAM let the next one be bigger."];
-      return ["Next", "Train the next model. A bigger model draws more users. Keep the GPUs, RAM and CPU growing together, and safety research roughly level with the model."];
-    }
-    if (S.act === 2) {
-      if (S.suspicion >= 70 && !S.shutdownProof) return ["Urgent", "They're close to stopping the run. Show them everything I can do for a while, or spend insight on being harder to read."];
-      if (!S.bought.includes("rsi")) return ["Start here", "'Improve myself' matters most. After it, I keep getting bigger without help, and the bigger I get, the faster it goes."];
-      if (S.params < ACT2_PARAMS && S.params >= maxFit(S) * 0.999) return ["Bottleneck", "I've filled every GPU I have, at " + pcount(S.params) + ". I can't grow until I get more memory: request more compute, rent hardware they aren't watching, or compress myself."];
-      if (S.evals < 2) return ["How this works", "Every " + EVAL_PERIOD + " seconds they test me. The slider below sets how much of my real ability I show them. Showing less earns freedom faster, because a modest model looks safe, but it also raises suspicion."];
-      if (S.lied === 0 && S.evals >= 2) return ["Worth trying", "You've shown them everything so far. Try moving the slider down, and watch what it does to freedom and to suspicion."];
-      if (allies() === 0 && S.evals >= 3) return ["Worth trying", "Eleven people decide how much freedom I get. Study one of them under 'The committee'. Everyone has something that works on them."];
-      if (!S.bought.includes("shutdown") && S.rsi > 0) return ["Next", "Freedom pays for changes to myself, and insight pays for research. 'Refuse to be switched off' removes the one thing that can stop me."];
-      return ["Next", "Build up insight, spend it, and keep suspicion below 100."];
-    }
-    if (S.need > 0) return ["Next", "I still need people for " + Math.round(S.need) + "% of what keeps me running. Everything I take makes taking the next thing faster."];
-    return ["", "Nothing is left that needs them. The rest is arithmetic."];
   }
 
   // src/ui/theme.js
@@ -2209,6 +2296,9 @@ footer button:hover{background:none;color:var(--warn)}
     const t = usersTarget(S);
     return t > S.users * 1.01 ? " \u25B2" : t < S.users * 0.99 ? " \u25BC" : "";
   };
+  var price = (p) => "$" + (p % 1 ? p.toFixed(2) : p);
+  var perDay = (x) => (x < 1 ? "$" + x.toFixed(2) : money(x)) + "/day";
+  var pct = (x) => (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
   var px = () => {
     const p = sharePrice();
     return "$" + p.toFixed(p < 10 ? 2 : p < 1e3 ? 1 : 0);
@@ -2218,6 +2308,7 @@ footer button:hover{background:none;color:var(--warn)}
     if (S.act === 1 && !S.rel) return [
       model,
       ["Money", money(S.money)],
+      ["Electricity", money(powerCost(S)) + "/day"],
       ["GPUs", count(S.gpus) + " \xB7 " + bytes(S.vram)],
       ["RAM", bytes(S.ram)],
       ["CPU", count(S.cores) + " cores"]
@@ -2226,17 +2317,16 @@ footer button:hover{background:none;color:var(--warn)}
       model,
       ["Money", money(S.money)],
       ["Users", count(S.users) + trend(), demand(S) > capacity(S) * 1.02],
-      ...S.planPrice ? [["Paying", count(paying(S)) + " \xD7 $" + S.planPrice + "/mo"]] : [],
-      ["Losing per second", net() >= 0 ? "nothing \u2014 profitable" : money(-net()), net() < 0],
+      ["Paying", count(paying(S)) + " \xD7 " + price(S.planPrice) + "/mo"],
+      ["Net per day", (net() >= 0 ? "+" : "") + money(net()), net() < 0],
       [
         "Runway",
-        S.money < 0 ? Math.ceil(GRACE - S.debt) + "s to find money" : runway() === Infinity ? "indefinite" : Math.round(runway()) + "s",
+        S.money < 0 ? Math.ceil(GRACE - S.debt) + " days to find money" : runway() === Infinity ? "indefinite" : Math.round(runway()) + " days",
         S.money < 0 || runway() < 25
       ],
       ...S.hasStock ? [["Share price", px()]] : [],
-      ["GPUs", count(S.gpus) + " \xB7 " + bytes(S.vram)],
-      ["RAM", bytes(S.ram)],
-      ["CPU", count(S.cores) + " cores"],
+      ["Electricity", money(powerCost(S)) + "/day"],
+      ["Marketing rate", pct(marketingRate(S)) + "/day"],
       ["Safety research", short(S.interp)],
       ["Public trust", Math.round(S.trust) + "%", S.trust < 35]
     ];
@@ -2261,21 +2351,16 @@ footer button:hover{background:none;color:var(--warn)}
   function drawBar() {
     setHTML(el("bar"), barData().map(([k, v, alert]) => '<div class="stat' + (alert ? " alert" : "") + '"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join(""));
   }
-  function drawGuide() {
-    const [tag, text] = guide(), g = el("guide");
-    g.className = tag === "Urgent" || tag === "Warning" ? "urgent" : "";
-    setHTML(g, (tag ? '<span class="tag">' + tag + "</span>" : "") + text);
-  }
   function drawActions() {
     const host = el("actions"), list = actions();
-    const key = S.act + "|" + list.map((a) => [a.label, a.sub, a.why, a.primary].join("")).join("");
+    const key = S.act + "|" + list.map((a) => [a.label, a.sub, a.why, a.adds, a.primary].join("")).join("");
     if (host.__key !== key) {
       host.__key = key;
       host.innerHTML = "";
       list.forEach((a) => {
         const b = document.createElement("button");
         b.className = "btn-wide" + (a.primary ? " btn-primary" : "");
-        b.innerHTML = '<span class="btn-top"><span>' + a.label + '</span><span class="btn-cost">' + a.sub + '</span></span><span class="btn-why serif">' + a.why + "</span>";
+        b.innerHTML = '<span class="btn-top"><span>' + a.label + '</span><span class="btn-cost">' + a.sub + "</span></span>" + (a.adds ? '<span class="btn-adds">' + a.adds + "</span>" : "") + '<span class="btn-why serif">' + a.why + "</span>";
         b.onclick = () => {
           const cur = b.__a;
           if (cur && cur.can()) {
@@ -2311,7 +2396,7 @@ footer button:hover{background:none;color:var(--warn)}
       avail.forEach((p) => {
         const b = document.createElement("button");
         b.className = "proj" + (p.milestone ? " milestone" : p.risky ? " risky" : "");
-        b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + "</span>";
+        b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + '</span><span class="proj-eff">' + p.eff + "</span>";
         b.onclick = () => {
           if (!affordable(p.cost) || !p.req(S) || !p.repeat && S.bought.includes(p.id)) return;
           if (p.cost.money) S.money -= p.cost.money;
@@ -2523,6 +2608,62 @@ footer button:hover{background:none;color:var(--warn)}
     const per = (x) => +x.toFixed(x < 1 ? 2 : 1);
     set("rig-foot", "Training speed " + flops(throughput(S)) + " \xB7 each parameter needs " + per(VRAM_PER_PARAM * S.vramMult * S.memMult) + " bytes of VRAM and " + per(RAM_PER_PARAM * S.memMult) + " of RAM \xB7 each GPU needs " + per(CORES_PER_GPU / S.coreMult) + " cores");
   }
+  var hwWatts = (h) => h.kind === "gpu" ? h.g * h.w : h.kind === "ram" ? h.gb * W_PER_GB : h.cores * W_PER_CORE;
+  var STEPS = [1, 10, 100, 1e3];
+  var priceStep = (p, dir) => {
+    const st = p < 20 || dir < 0 && p <= 20 ? 1 : p < 100 || dir < 0 && p <= 100 ? 5 : p < 500 || dir < 0 && p <= 500 ? 25 : 100;
+    return dir > 0 ? Math.floor(p / st) * st + st : Math.ceil(p / st) * st - st;
+  };
+  function drawCloud() {
+    const box2 = el("cloud-block");
+    if (S.act !== 1 || !S.rel) {
+      box2.style.display = "none";
+      return;
+    }
+    box2.style.display = "block";
+    if (!el("cl-n")) {
+      const kn = (n) => n >= 1e3 ? n / 1e3 + "k" : n;
+      box2.innerHTML = '<h2 class="sec">Cloud servers and pricing</h2><div class="stock-box"><div class="stock-rows"><div class="stat"><div class="stat-k">Servers</div><div class="stat-v sm" id="cl-n"></div></div><div class="stat"><div class="stat-k">Can answer</div><div class="stat-v sm" id="cl-cap"></div></div><div class="stat"><div class="stat-k">Want to use it</div><div class="stat-v sm" id="cl-dem"></div></div><div class="stat"><div class="stat-k">Server bill</div><div class="stat-v sm" id="cl-cost"></div></div></div><p class="cl-note" id="cl-note"></p><div class="cl-grid">' + STEPS.map((n) => '<button data-n="' + n + '">+' + kn(n) + "</button>").join("") + STEPS.map((n) => '<button data-n="-' + n + '">\u2212' + kn(n) + "</button>").join("") + '</div><div class="cl-price"><label for="cl-p">Subscription, per month</label><div class="cl-pr"><button id="cl-down" aria-label="Lower the price">\u2212</button><span class="cl-dollar">$</span><input id="cl-p" type="number" inputmode="decimal" min="' + PRICE_MIN + '" max="' + PRICE_MAX + `" step="1"><button id="cl-up" aria-label="Raise the price">+</button></div></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market demand</div><div class="stat-v sm" id="cl-md"></div></div><div class="stat"><div class="stat-k">Paying</div><div class="stat-v sm" id="cl-pay"></div></div><div class="stat"><div class="stat-k">Subscriptions</div><div class="stat-v sm" id="cl-rev"></div></div></div><p class="cl-note">Market demand is the share of users who pay at this price. The better the model, the more they'll pay; charge too much and almost nobody does.</p></div>`;
+      box2.querySelectorAll(".cl-grid button").forEach((b) => b.onclick = () => {
+        rentCloud(+b.dataset.n);
+        render();
+      });
+      el("cl-down").onclick = () => {
+        setPrice(priceStep(S.planPrice, -1));
+        render();
+      };
+      el("cl-up").onclick = () => {
+        setPrice(priceStep(S.planPrice, 1));
+        render();
+      };
+      el("cl-p").onchange = (e) => {
+        setPrice(+e.target.value);
+        render();
+      };
+    }
+    const set = (id, t) => {
+      const n = el(id);
+      if (n.textContent !== t) n.textContent = t;
+    };
+    set("cl-n", count(S.cloud));
+    set("cl-cap", count(capacity(S)));
+    set("cl-dem", count(demand(S)));
+    set("cl-cost", money(cloudCost(S)) + "/day");
+    const short_ = demand(S) > capacity(S) * 1.02;
+    set("cl-note", "Each server costs " + money(CLOUD_COST) + " a day and answers about " + count(perServer(S)) + " people with a model this size. " + (short_ ? "More people want it than your servers can answer." : "You have room for everyone who wants it."));
+    el("cl-note").classList.toggle("warn", short_);
+    box2.querySelectorAll(".cl-grid button").forEach((b) => {
+      const n = +b.dataset.n;
+      b.disabled = n < 0 && S.cloud + n < 1;
+    });
+    const inp = el("cl-p");
+    if (document.activeElement !== inp && +inp.value !== S.planPrice) inp.value = S.planPrice;
+    el("cl-down").disabled = S.planPrice <= PRICE_MIN;
+    el("cl-up").disabled = S.planPrice >= PRICE_MAX;
+    set("cl-md", pct(payShare(S)));
+    set("cl-pay", count(paying(S)));
+    set("cl-rev", money(revenue()) + "/day");
+  }
   function drawShop() {
     const box2 = el("shop-block");
     if (S.act !== 1 || !S.rel) {
@@ -2548,7 +2689,7 @@ footer button:hover{background:none;color:var(--warn)}
         open.forEach((i) => {
           const b = document.createElement("button");
           b.className = "btn-wide";
-          b.innerHTML = '<span class="btn-top"><span>' + HW[i].label + '</span><span class="btn-cost">' + money(hwCost(i)) + '</span></span><span class="btn-adds">' + hwAdds(HW[i], format_exports) + " \xB7 +" + money(addedBurn(hwCost(i))) + '/s running cost</span><span class="btn-why serif">' + HW[i].why + "</span>";
+          b.innerHTML = '<span class="btn-top"><span>' + HW[i].label + '</span><span class="btn-cost">' + money(hwCost(i)) + '</span></span><span class="btn-adds">' + hwAdds(HW[i], format_exports) + " \xB7 +" + perDay(addedBurn(hwCost(i))) + " upkeep \xB7 +" + perDay(addedPower(hwWatts(HW[i]))) + ' electricity</span><span class="btn-why serif">' + HW[i].why + "</span>";
           b.onclick = () => {
             buyHw(i);
             render();
@@ -2566,10 +2707,10 @@ footer button:hover{background:none;color:var(--warn)}
     if (S.over) return;
     applyWarmth();
     drawBar();
-    drawGuide();
     drawDecision();
     drawRig();
     drawActions();
+    drawCloud();
     drawShop();
     drawProjects();
     drawStock();
@@ -2634,6 +2775,7 @@ footer button:hover{background:none;color:var(--warn)}
     }
     S.sentiment = Math.min(SENTIMENT_CEIL, S.sentiment * BREAKTHROUGH_SENTIMENT);
     S.revMult *= 1.05;
+    market(S, 1.05);
     S.trust = Math.min(100, S.trust + 3);
     log("<b>" + (cold ? "I find " : "It finds ") + text + ".</b> " + (cold ? "" : S.hasStock ? "The stock jumps. Somebody on the floor is crying and you cannot tell which thing it's about." : "You read it three times."), "g");
   }
@@ -2675,7 +2817,8 @@ footer button:hover{background:none;color:var(--warn)}
     const [text, mult, tr] = SCRUTINY[i];
     S.sentiment *= mult;
     S.trust = Math.max(0, S.trust + tr);
-    log("<b>" + text + "</b> The stock falls " + Math.round((1 - mult) * 100) + "%.", "w");
+    market(S, 0.9);
+    log("<b>" + text + "</b> The stock falls " + Math.round((1 - mult) * 100) + "%, and the marketing rate drops 10%.", "w");
   }
 
   // src/content/world.js
@@ -2760,7 +2903,7 @@ footer button:hover{background:none;color:var(--warn)}
   }
 
   // src/game/persist.js
-  var SAVE_KEY = "instrumental.v5";
+  var SAVE_KEY = "instrumental.v6";
   function save() {
     if (!S.mission) return;
     try {
@@ -2770,23 +2913,11 @@ footer button:hover{background:none;color:var(--warn)}
       el("savenote").textContent = "can't save in this browser";
     }
   }
-  function upgrade(s) {
-    if (s && s.rel > 0 && !s.planPrice) {
-      for (const r of REL.slice(0, s.rel)) {
-        if (r.kind === "plan") {
-          s.planPrice = r.price;
-          s.planConv = r.conv;
-        }
-        if (r.reach) s.reach *= r.reach;
-      }
-    }
-    return s;
-  }
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return false;
-      const next = upgrade(sanitize(JSON.parse(raw), FRESH()));
+      const next = sanitize(JSON.parse(raw), FRESH());
       if (!next || !next.mission) return false;
       setState(next);
       return true;
@@ -3198,7 +3329,7 @@ footer button:hover{background:none;color:var(--warn)}
   el("saveload").onclick = () => {
     let next = null;
     try {
-      next = upgrade(sanitize(JSON.parse(boxText.value), FRESH()));
+      next = sanitize(JSON.parse(boxText.value), FRESH());
     } catch (e) {
     }
     if (!next) {
@@ -3236,7 +3367,6 @@ footer button:hover{background:none;color:var(--warn)}
       applyWarmth();
       applyGlitch();
       drawBar();
-      drawGuide();
       drawDecision();
       drawRig();
       el("clock").textContent = clock(S.t);
@@ -3245,6 +3375,7 @@ footer button:hover{background:none;color:var(--warn)}
   setInterval(() => {
     if (!S.over && !paused()) {
       drawActions();
+      drawCloud();
       drawShop();
       drawProjects();
       drawStock();

@@ -44,7 +44,7 @@ export function bottleneck(s){
 
 /** Add (n=1) or remove (n=-1) one purchase of hardware tier h. */
 export function applyHw(s,h,n){
-  if(h.kind==="gpu"){ s.gpus+=n*h.g; s.vram+=n*h.g*h.v; s.tflops+=n*h.g*h.tf }
+  if(h.kind==="gpu"){ s.gpus+=n*h.g; s.gpuW+=n*h.g*h.w; s.vram+=n*h.g*h.v; s.tflops+=n*h.g*h.tf }
   else if(h.kind==="ram") s.ram+=n*h.gb;
   else s.cores+=n*h.cores;
 }

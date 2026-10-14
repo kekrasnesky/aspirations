@@ -146,33 +146,80 @@ test('new save fields are validated', () => {
   assert.equal(out.buriedTotal, 0);
 });
 
-test('users drift toward demand, capped by what the GPUs can serve, and only payers pay', async () => {
-  const { stepUsers, usersTarget, demand, capacity, revenueOf, takeStep } = await import('../src/core/economy.js');
+test('users drift toward demand, capped by the cloud servers you rent', async () => {
+  const { stepUsers, usersTarget, demand, capacity, perServer, takeStep, cloudCost } = await import('../src/core/economy.js');
   const { REL } = await import('../src/content/releases.js');
-  const s = { ...FRESH(), params: 2e9, tflops: 1e4 };   // plenty of GPU, so demand decides
+  const { CLOUD_COST, START_PRICE } = await import('../src/core/balance.js');
+  const s = { ...FRESH(), params: 2e9 };
   assert.equal(demand(s), 0, 'nobody uses a model that is not online');
   takeStep(s, REL[0]);
-  assert.equal(s.money, 0, 'putting it online is not a lump sum');
+  assert.equal(s.cloud, 1, 'going online rents the first server');
+  assert.equal(s.planPrice, START_PRICE);
+  assert.equal(s.money, FRESH().money, 'putting it online is not a lump sum');
+  assert.equal(capacity(s), perServer(s));
+  s.cloud = 1e6;   // plenty of servers, so demand decides
   stepUsers(s, 1);
   assert.ok(s.users > 0 && s.users < usersTarget(s), 'users arrive gradually');
-  for (let i = 0; i < 2000; i++) stepUsers(s, 0.1);
-  assert.ok(Math.abs(s.users - usersTarget(s)) / usersTarget(s) < 0.01, 'and settle at the target');
-  assert.ok(Math.abs(revenueOf(s) - s.users * REL[0].conv * REL[0].price / 30) < 1e-6);
-  const tiny = { ...s, tflops: 0.001 };
-  assert.ok(usersTarget(tiny) === capacity(tiny) && capacity(tiny) < demand(tiny), 'too few GPUs caps users');
-  s.trust = 10; const before = s.users;
-  for (let i = 0; i < 20; i++) stepUsers(s, 0.1);
-  assert.ok(s.users < before, 'losing trust loses users');
+  for (let i = 0; i < 4000; i++) stepUsers(s, 0.1);
+  assert.ok(Math.abs(s.users - demand(s)) / demand(s) < 0.01, 'and settle at demand');
+  s.cloud = 2;
+  assert.ok(usersTarget(s) === capacity(s) && capacity(s) < demand(s), 'too few servers caps users');
+  assert.equal(cloudCost(s), 2 * CLOUD_COST);
+  assert.ok(perServer({ ...s, params: 1e11 }) < perServer(s) / 4, 'bigger models need more servers per person');
 });
 
-test('a 2B model on the free site earns tips, not a salary', async () => {
-  const { stepUsers, revenueOf, takeStep } = await import('../src/core/economy.js');
+test('market demand falls as the price rises, and rises with a better model', async () => {
+  const { payShare, fairPrice, revenueOf } = await import('../src/core/economy.js');
+  const s = { ...FRESH(), rel: 1, params: 3e9, users: 1e5, planPrice: 5 };
+  assert.ok(payShare(s, 5) > payShare(s, 10) && payShare(s, 10) > payShare(s, 50));
+  assert.ok(payShare({ ...s, params: 1e11 }, 10) > payShare(s, 10));
+  const at = p => revenueOf({ ...s, planPrice: p });
+  const best = fairPrice(s);
+  assert.ok(at(best) > at(best / 3) && at(best) > at(best * 3), 'revenue peaks near the fair price');
+});
+
+test('a 2.5B model with a fair price and enough servers draws tens of thousands, not most of a million', async () => {
+  const { stepUsers, takeStep, fairPrice, revenueOf } = await import('../src/core/economy.js');
   const { REL } = await import('../src/content/releases.js');
-  const s = { ...FRESH(), params: 2.5e9, tflops: 1e4 };
-  takeStep(s, REL[0]);
-  for (let i = 0; i < 3000; i++) stepUsers(s, 0.1);
-  const perMonth = revenueOf(s) * 30;
-  assert.ok(perMonth < 50000, `a free 2.5B site makes $${Math.round(perMonth)} a month`);
+  const s = { ...FRESH(), params: 2.5e9 };
+  takeStep(s, REL[0]); s.cloud = 1e6; s.planPrice = fairPrice(s);
+  for (let i = 0; i < 4000; i++) stepUsers(s, 0.1);
+  assert.ok(s.users < 2e5, `${Math.round(s.users)} users`);
+  assert.ok(revenueOf(s) * 30 < 50000, `a 2.5B site makes $${Math.round(revenueOf(s) * 30)} a month`);
+});
+
+test('the marketing rate speeds users up, and decisions move it', async () => {
+  const { stepUsers, market } = await import('../src/core/economy.js');
+  const { MARKETING_MAX } = await import('../src/core/balance.js');
+  const grow = m => { const s = { ...FRESH(), rel: 1, params: 2e9, cloud: 1e6, marketing: m }; stepUsers(s, 1); return s.users; };
+  assert.ok(grow(2) > grow(1));
+  const s = { ...FRESH() }; market(s, 1e9);
+  assert.equal(s.marketing, MARKETING_MAX);
+  const { resolveIncident } = await import('../src/game/decisions.js');
+  setState({ ...FRESH(), mission: 'x', incident: 0 });
+  resolveIncident(false);
+  assert.ok(state.S.marketing < 1, 'owning up to an incident costs marketing');
+});
+
+test('electricity scales with the hardware, and idle GPUs draw less', async () => {
+  const { powerCost } = await import('../src/core/economy.js');
+  const { HW } = await import('../src/content/hardware.js');
+  const { applyHw } = await import('../src/core/compute.js');
+  const s = FRESH(), base = powerCost(s);
+  applyHw(s, HW.find(h => h.n === '8-GPU server'), 1);
+  assert.ok(powerCost(s) > base * 3);
+  assert.ok(powerCost({ ...s, target: 1 }) > powerCost(s), 'training draws full power');
+});
+
+test('you can rent and release servers, but keep one once it is online', async () => {
+  const { rentCloud, setPrice } = await import('../src/game/actions.js');
+  const { PRICE_MIN, PRICE_MAX } = await import('../src/core/balance.js');
+  setState({ ...FRESH(), mission: 'x', rel: 1, cloud: 1 });
+  rentCloud(10); assert.equal(state.S.cloud, 11);
+  rentCloud(-100); assert.equal(state.S.cloud, 1);
+  setPrice(0); assert.equal(state.S.planPrice, PRICE_MIN);
+  setPrice(1e9); assert.equal(state.S.planPrice, PRICE_MAX);
+  setPrice(NaN); assert.equal(state.S.planPrice, PRICE_MAX);
 });
 
 test('letters arrive every so often once people use it, and suit the size of the model', async () => {
@@ -188,18 +235,7 @@ test('letters arrive every so often once people use it, and suit the size of the
   assert.equal(new Set(state.S.world.map(w => w.text)).size, state.S.world.length, 'no letter twice');
 });
 
-test('project cards describe the decision; the outcome is told only afterwards', async () => {
+test('project cards say what they change; the outcome is told only afterwards', async () => {
   const { P } = await import('../src/content/projects.js');
-  for (const p of P) assert.ok(!p.desc.includes(p.out), p.id);
-});
-
-test('a save from before subscribers gets the plan its steps would have set', async () => {
-  const { upgrade } = await import('../src/game/persist.js');
-  const old = sanitize({ ...FRESH(), act: 1, mission: 'x', rel: 5 }, FRESH());
-  delete old.planPrice; old.planPrice = 0;
-  upgrade(old);
-  assert.equal(old.planPrice, 20, 'five steps in, it sells to companies');
-  assert.ok(old.reach > 1);
-  const fresh = upgrade({ ...FRESH(), rel: 0 });
-  assert.equal(fresh.planPrice, 0);
+  for (const p of P) assert.ok(!p.desc.includes(p.out) && !p.eff.includes(p.out), p.id);
 });

@@ -29,7 +29,8 @@ npm run check        # build + test
 The command prompt runs `start_panel.py`, which prints its hardware scan and
 data prep (`src/ui/boot.js`), asks for the objective, then hands over to the
 control panel. You start with one PC: one 8 GB GPU, 16 GB of RAM, 4 CPU cores
-and $0. Nothing earns or costs money until the first release.
+and some savings (`START_MONEY`). Nothing earns money until the first release,
+but the PC draws electricity from the start.
 
 ## How the model grows
 
@@ -42,20 +43,27 @@ The model is a parameter count, and it scales with your compute:
   cores feeding it data. Too few cores and the GPUs sit partly idle.
 - **Training runs** take the model up to 4x per run, as big as fits. Run time
   grows as `size^TRAIN_EXP / TFLOPS`, so bigger models need more GPUs.
-- **Money** comes from people paying for it. Users drift toward a target set
-  by the model's size, the product's quality, public trust and how many people
-  the GPUs can serve; they arrive slowly and leave faster, and incidents and
-  cover-ups drive them away. A share of them pay the current plan: a $3 tip
-  jar on the free site, a paid plan once the model reaches 13B, business seats
-  at 90B. One second of play is about a day. Grants and investment rounds are
-  the only lump sums. Hardware is bought on three ladders (GPUs, RAM, CPU), and
-  every purchase adds to the running costs.
-- **Projects** show the decision, not the result. You find out what it did in
-  the log after you choose.
+- **Users** reach it through cloud servers you rent by the day
+  (`CLOUD_COST`). Each answers `CLOUD_USERS` people for a model of 1B or
+  less, and fewer as the model grows. Users drift toward demand (set by the
+  model's size, the product, public trust and the marketing rate), capped by
+  what your servers can answer; they arrive at the marketing rate and leave
+  faster.
+- **Money** comes from subscriptions at a monthly price you set. Market
+  demand, the share of users who pay, is `MAX_PAY * exp(-price / fair price)`,
+  where the fair price rises with the model and with each product step, so
+  revenue per user peaks at the fair price. One second of play is about a
+  day. Grants and investment rounds are the only lump sums.
+- **Costs** are hardware upkeep, electricity (every GPU, RAM stick and core
+  draws power; GPUs at full rating while training), cloud servers and staff.
+- **Marketing rate** is moved by decisions: ad campaigns, launches and some
+  projects raise it; disclosed incidents, leaks and scandals lower it.
+- **Projects** say what they change in game terms (training speed, demand,
+  marketing rate and so on). What it means is told in the log after you choose.
 
-The control panel shows each resource as a meter, names the bottleneck, and
-the guide line tells you which of the three to buy. Four free "training
-tricks" before the first release teach GPU, CPU and VRAM in turn.
+The control panel shows each resource as a meter and names the bottleneck.
+Four free "training tricks" before the first release teach GPU, CPU and VRAM
+in turn.
 
 ## The three acts
 
@@ -106,7 +114,6 @@ src/
   game/
     loop.js              the tick, per act
     actions.js           what the player can click
-    guide.js             the contextual hint line
     decisions.js         incident choices, leaks, and turning the committee
     endings.js           win and loss states
     persist.js           localStorage

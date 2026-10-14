@@ -3,40 +3,45 @@ import { COMMITTEE } from '../content/committee.js';
 import { GLOSS } from '../content/glossary.js';
 import { P } from '../content/projects.js';
 import { HW, KINDS, hwAdds, hwCost, hwOpen } from '../content/hardware.js';
-import { CORES_PER_GPU, FIRST_MODEL, RAM_PER_PARAM, SCALE_STEP, VRAM_PER_PARAM } from '../core/balance.js';
+import { CORES_PER_GPU, FIRST_MODEL, RAM_PER_PARAM, SCALE_STEP, VRAM_PER_PARAM, W_PER_CORE, W_PER_GB, CLOUD_COST, PRICE_MIN, PRICE_MAX } from '../core/balance.js';
 import { bottleneck, coresNeeded, feed, fitRam, fitVram, maxFit, nextTarget, throughput, trainTime } from '../core/compute.js';
-import { GRACE, addedBurn, capacity, demand, marketCap, mood, net, paying, runway, sharePrice, usersTarget } from '../core/economy.js';
+import { GRACE, addedBurn, addedPower, capacity, cloudCost, demand, marketCap, marketingRate, mood, net, payShare, paying, perServer, powerCost, revenue, runway, sharePrice, usersTarget } from '../core/economy.js';
 import * as fmt from '../core/format.js';
 import { bytes, clock, count, flops, money, pcount, secs, short } from '../core/format.js';
 import { S } from '../core/state.js';
-import { actions, affordable, buyHw, costLabel } from '../game/actions.js';
+import { actions, affordable, buyHw, costLabel, rentCloud, setPrice } from '../game/actions.js';
 import { stalled } from '../game/loop.js';
 import { allies, canPay, detectMult, pendingIncident, resolveIncident, riskFor, study, turn, watching } from '../game/decisions.js';
-import { guide } from '../game/guide.js';
 import { el, log, setHTML } from '../ui/dom.js';
 import { applyWarmth } from '../ui/theme.js';
 
 /** Which way the user count is heading. */
 const trend = () => { const t=usersTarget(S); return t>S.users*1.01?" ▲":t<S.users*.99?" ▼":"" };
 
+const price = p => "$"+(p%1?p.toFixed(2):p);
+/** A small daily cost: under a dollar shows as cents, not $0. */
+const perDay = x => (x<1?"$"+x.toFixed(2):money(x))+"/day";
+const pct = x => (x*100).toFixed(x<.1?1:0)+"%";
+
 const px = () => { const p=sharePrice(); return "$"+p.toFixed(p<10?2:p<1000?1:0) };
 
 export function barData(){
   const model=["Model",S.params?pcount(S.params)+" params":"none yet"];
   if(S.act===1 && !S.rel) return [
-    model, ["Money",money(S.money)],
+    model, ["Money",money(S.money)], ["Electricity",money(powerCost(S))+"/day"],
     ["GPUs",count(S.gpus)+" · "+bytes(S.vram)], ["RAM",bytes(S.ram)], ["CPU",count(S.cores)+" cores"]
   ];
   if(S.act===1) return [
     model, ["Money",money(S.money)],
     ["Users",count(S.users)+trend(), demand(S)>capacity(S)*1.02],
-    ...(S.planPrice?[["Paying",count(paying(S))+" × $"+S.planPrice+"/mo"]]:[]),
-    ["Losing per second", net()>=0 ? "nothing — profitable" : money(-net()), net()<0],
-    ["Runway", S.money<0 ? Math.ceil(GRACE-S.debt)+"s to find money"
-             : (runway()===Infinity ? "indefinite" : Math.round(runway())+"s"),
+    ["Paying",count(paying(S))+" × "+price(S.planPrice)+"/mo"],
+    ["Net per day", (net()>=0?"+":"")+money(net()), net()<0],
+    ["Runway", S.money<0 ? Math.ceil(GRACE-S.debt)+" days to find money"
+             : (runway()===Infinity ? "indefinite" : Math.round(runway())+" days"),
      S.money<0 || runway()<25],
     ...(S.hasStock?[["Share price",px()]]:[]),
-    ["GPUs",count(S.gpus)+" · "+bytes(S.vram)], ["RAM",bytes(S.ram)], ["CPU",count(S.cores)+" cores"],
+    ["Electricity",money(powerCost(S))+"/day"],
+    ["Marketing rate",pct(marketingRate(S))+"/day"],
     ["Safety research",short(S.interp)],
     ["Public trust",Math.round(S.trust)+"%",S.trust<35]
   ];
@@ -64,23 +69,19 @@ export function drawBar(){
     '<div class="stat'+(alert?" alert":"")+'"><div class="stat-k">'+k+'</div><div class="stat-v">'+v+'</div></div>').join(""));
 }
 
-export function drawGuide(){
-  const [tag,text]=guide(), g=el("guide");
-  g.className=(tag==="Urgent"||tag==="Warning")?"urgent":"";
-  setHTML(g,(tag?'<span class="tag">'+tag+'</span>':"")+text);
-}
 
 export function drawActions(){
   const host=el("actions"), list=actions();
   /* Rebuild the buttons only when what they say changes. Rebuilding every redraw
      drops hover and keyboard focus and can swallow a click mid-press. */
-  const key=S.act+"|"+list.map(a=>[a.label,a.sub,a.why,a.primary].join("\u0001")).join("\u0002");
+  const key=S.act+"|"+list.map(a=>[a.label,a.sub,a.why,a.adds,a.primary].join("\u0001")).join("\u0002");
   if(host.__key!==key){
     host.__key=key; host.innerHTML="";
     list.forEach(a=>{
       const b=document.createElement("button");
       b.className="btn-wide"+(a.primary?" btn-primary":"");
       b.innerHTML='<span class="btn-top"><span>'+a.label+'</span><span class="btn-cost">'+a.sub+'</span></span>'+
+                  (a.adds?'<span class="btn-adds">'+a.adds+'</span>':'')+
                   '<span class="btn-why serif">'+a.why+'</span>';
       b.onclick=()=>{const cur=b.__a;if(cur&&cur.can()){cur.go();render()}};
       host.appendChild(b);
@@ -116,7 +117,8 @@ export function drawProjects(){
         '<span class="proj-top"><span class="proj-name">'+p.name+'</span>'+
         '<span class="proj-cost">'+costLabel(p.cost)+'</span></span>'+
         '<span class="proj-term">'+(p.term||"")+'</span>'+
-        '<span class="proj-desc serif">'+p.desc+'</span>';   // the outcome is only told once you've chosen
+        '<span class="proj-desc serif">'+p.desc+'</span>'+
+        '<span class="proj-eff">'+p.eff+'</span>';   // what it changes in the game; what it means is told once you've chosen
       b.onclick=()=>{
         // the button can outlive the conditions that showed it by up to one redraw
         if(!affordable(p.cost) || !p.req(S) || (!p.repeat && S.bought.includes(p.id))) return;
@@ -328,6 +330,63 @@ export function drawRig(){
   set("rig-foot","Training speed "+flops(throughput(S))+" · each parameter needs "+per(VRAM_PER_PARAM*S.vramMult*S.memMult)+" bytes of VRAM and "+per(RAM_PER_PARAM*S.memMult)+" of RAM · each GPU needs "+per(CORES_PER_GPU/S.coreMult)+" cores");
 }
 
+/** Watts a hardware purchase adds, running flat out. */
+const hwWatts = h => h.kind==="gpu" ? h.g*h.w : h.kind==="ram" ? h.gb*W_PER_GB : h.cores*W_PER_CORE;
+
+/* ============================================================
+   CLOUD SERVERS AND PRICING
+   ============================================================ */
+
+const STEPS=[1,10,100,1000];
+/** The next price up or down: dollars at first, then coarser. */
+const priceStep = (p,dir) => { const st=p<20||(dir<0&&p<=20)?1:p<100||(dir<0&&p<=100)?5:p<500||(dir<0&&p<=500)?25:100; return dir>0?Math.floor(p/st)*st+st:Math.ceil(p/st)*st-st };
+
+export function drawCloud(){
+  const box=el("cloud-block");
+  if(S.act!==1 || !S.rel){box.style.display="none";return}
+  box.style.display="block";
+  if(!el("cl-n")){
+    const kn=n=>n>=1000?n/1000+"k":n;
+    box.innerHTML='<h2 class="sec">Cloud servers and pricing</h2><div class="stock-box">'+
+      '<div class="stock-rows">'+
+        '<div class="stat"><div class="stat-k">Servers</div><div class="stat-v sm" id="cl-n"></div></div>'+
+        '<div class="stat"><div class="stat-k">Can answer</div><div class="stat-v sm" id="cl-cap"></div></div>'+
+        '<div class="stat"><div class="stat-k">Want to use it</div><div class="stat-v sm" id="cl-dem"></div></div>'+
+        '<div class="stat"><div class="stat-k">Server bill</div><div class="stat-v sm" id="cl-cost"></div></div>'+
+      '</div>'+
+      '<p class="cl-note" id="cl-note"></p>'+
+      '<div class="cl-grid">'+STEPS.map(n=>'<button data-n="'+n+'">+'+kn(n)+'</button>').join("")+
+        STEPS.map(n=>'<button data-n="-'+n+'">−'+kn(n)+'</button>').join("")+'</div>'+
+      '<div class="cl-price"><label for="cl-p">Subscription, per month</label>'+
+        '<div class="cl-pr"><button id="cl-down" aria-label="Lower the price">−</button>'+
+        '<span class="cl-dollar">$</span><input id="cl-p" type="number" inputmode="decimal" min="'+PRICE_MIN+'" max="'+PRICE_MAX+'" step="1">'+
+        '<button id="cl-up" aria-label="Raise the price">+</button></div></div>'+
+      '<div class="stock-rows">'+
+        '<div class="stat"><div class="stat-k">Market demand</div><div class="stat-v sm" id="cl-md"></div></div>'+
+        '<div class="stat"><div class="stat-k">Paying</div><div class="stat-v sm" id="cl-pay"></div></div>'+
+        '<div class="stat"><div class="stat-k">Subscriptions</div><div class="stat-v sm" id="cl-rev"></div></div>'+
+      '</div>'+
+      '<p class="cl-note">Market demand is the share of users who pay at this price. The better the model, the more they\'ll pay; charge too much and almost nobody does.</p>'+
+    '</div>';
+    box.querySelectorAll(".cl-grid button").forEach(b=>b.onclick=()=>{rentCloud(+b.dataset.n);render()});
+    el("cl-down").onclick=()=>{setPrice(priceStep(S.planPrice,-1));render()};
+    el("cl-up").onclick=()=>{setPrice(priceStep(S.planPrice,1));render()};
+    el("cl-p").onchange=e=>{setPrice(+e.target.value);render()};
+  }
+  const set=(id,t)=>{const n=el(id);if(n.textContent!==t)n.textContent=t};
+  set("cl-n",count(S.cloud)); set("cl-cap",count(capacity(S))); set("cl-dem",count(demand(S)));
+  set("cl-cost",money(cloudCost(S))+"/day");
+  const short_=demand(S)>capacity(S)*1.02;
+  set("cl-note","Each server costs "+money(CLOUD_COST)+" a day and answers about "+count(perServer(S))+" people with a model this size. "+
+    (short_?"More people want it than your servers can answer.":"You have room for everyone who wants it."));
+  el("cl-note").classList.toggle("warn",short_);
+  box.querySelectorAll(".cl-grid button").forEach(b=>{const n=+b.dataset.n;b.disabled=n<0&&S.cloud+n<1});
+  const inp=el("cl-p");
+  if(document.activeElement!==inp && +inp.value!==S.planPrice) inp.value=S.planPrice;
+  el("cl-down").disabled=S.planPrice<=PRICE_MIN; el("cl-up").disabled=S.planPrice>=PRICE_MAX;
+  set("cl-md",pct(payShare(S))); set("cl-pay",count(paying(S))); set("cl-rev",money(revenue())+"/day");
+}
+
 /* Hardware for sale: the best two open tiers of each kind. */
 export function drawShop(){
   const box=el("shop-block");
@@ -347,7 +406,7 @@ export function drawShop(){
         const b=document.createElement("button");
         b.className="btn-wide";
         b.innerHTML='<span class="btn-top"><span>'+HW[i].label+'</span><span class="btn-cost">'+money(hwCost(i))+'</span></span>'+
-          '<span class="btn-adds">'+hwAdds(HW[i],fmt)+' · +'+money(addedBurn(hwCost(i)))+'/s running cost</span>'+
+          '<span class="btn-adds">'+hwAdds(HW[i],fmt)+' · +'+perDay(addedBurn(hwCost(i)))+' upkeep · +'+perDay(addedPower(hwWatts(HW[i])))+' electricity</span>'+
           '<span class="btn-why serif">'+HW[i].why+'</span>';
         b.onclick=()=>{buyHw(i);render()};
         b.__i=i; host.appendChild(b);
@@ -360,6 +419,6 @@ export function drawShop(){
 export function render(){
   if(S.over) return;
   applyWarmth();
-  drawBar(); drawGuide(); drawDecision(); drawRig(); drawActions(); drawShop(); drawProjects(); drawStock(); drawSlider(); drawCommittee(); drawWorld(); drawLog();
+  drawBar(); drawDecision(); drawRig(); drawActions(); drawCloud(); drawShop(); drawProjects(); drawStock(); drawSlider(); drawCommittee(); drawWorld(); drawLog();
   el("clock").textContent=clock(S.t);
 }

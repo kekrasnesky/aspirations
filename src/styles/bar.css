@@ -4,16 +4,10 @@
 
 /* ---------- instrument bar ---------- */
 #bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);
-  border-bottom:1px solid var(--rule);margin:0 -18px 0;padding:10px 18px;
+  border-bottom:1px solid var(--rule);margin:0 -18px 24px;padding:10px 18px;
   display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px 16px;transition:background .9s ease}
 .stat{min-width:0;background:none;border:0;padding:0;text-align:left;cursor:help;display:block;width:100%}
 .stat:hover{background:none}
 .stat-k{font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-v{font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--ink)}
 .stat.alert .stat-v,.stat.alert .stat-k{color:var(--warn)}
-
-/* ---------- guide ---------- */
-#guide{background:var(--sunk);border:1px solid var(--rule);border-top:0;margin:0 -18px 24px;
-  padding:11px 18px;font-family:var(--serif);font-size:15px;line-height:1.45;color:var(--ink)}
-#guide .tag{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-bottom:3px}
-#guide.urgent{color:var(--warn)}

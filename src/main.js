@@ -4,9 +4,9 @@ import { clock } from './core/format.js';
 import { sanitize } from './core/sanitize.js';
 import { FRESH, S, setState } from './core/state.js';
 import { tick } from './game/loop.js';
-import { SAVE_KEY, load, save, upgrade } from './game/persist.js';
+import { SAVE_KEY, load, save } from './game/persist.js';
 import { el, esc, log } from './ui/dom.js';
-import { drawActions, drawBar, drawCommittee, drawDecision, drawGloss, drawGuide, drawProjects, drawRig, drawShop, drawSliderRead, drawStock, render } from './ui/render.js';
+import { drawActions, drawBar, drawCommittee, drawDecision, drawCloud, drawGloss, drawProjects, drawRig, drawShop, drawSliderRead, drawStock, render } from './ui/render.js';
 import { bootIntro, cancelBoot, launchPanel } from './ui/boot.js';
 import { applyGlitch } from './ui/glitch.js';
 import { applyWarmth } from './ui/theme.js';
@@ -86,7 +86,7 @@ el("import").onclick=()=>openBox("import");
 el("saveclose").onclick=()=>box.classList.add("hidden");
 el("saveload").onclick=()=>{
   let next=null;
-  try{next=upgrade(sanitize(JSON.parse(boxText.value),FRESH()))}catch(e){}
+  try{next=sanitize(JSON.parse(boxText.value),FRESH())}catch(e){}
   if(!next){boxMsg.textContent="That doesn't look like a save from this game.";return}
   if(!next.mission) next.mission=DEFAULT_MISSION;
   setState(next); document.body.className="";
@@ -111,9 +111,9 @@ setInterval(()=>{
   owed+=dt;
   while(owed>=TICK_MS && S.incident<0){tick();owed-=TICK_MS}
   if(S.incident>=0) owed=0;
-  if(!S.over){applyWarmth();applyGlitch();drawBar();drawGuide();drawDecision();drawRig();el("clock").textContent=clock(S.t)}
+  if(!S.over){applyWarmth();applyGlitch();drawBar();drawDecision();drawRig();el("clock").textContent=clock(S.t)}
 },TICK_MS);
-setInterval(()=>{if(!S.over&&!paused()){drawActions();drawShop();drawProjects();drawStock();drawSliderRead();drawCommittee()}},400);
+setInterval(()=>{if(!S.over&&!paused()){drawActions();drawCloud();drawShop();drawProjects();drawStock();drawSliderRead();drawCommittee()}},400);
 setInterval(()=>{if(!S.over&&!paused()&&S.hasStock)S.lastPx=sharePrice()},60000);
 setInterval(()=>{if(!S.over)save()},5000);
 // phones kill backgrounded tabs without warning; save on the way out
