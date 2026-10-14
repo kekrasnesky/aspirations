@@ -47,7 +47,3 @@ export function showEnd(head,body,converted){
     '<div class="stat"><div class="stat-k">'+k+'</div><div class="stat-v">'+v+'</div></div>').join("");
   save();
 }
-
-/* ============================================================
-   RENDER
-   ============================================================ */

@@ -1,6 +1,13 @@
-import { MIN_SHARES, MAX_SHARES, SENTIMENT_FLOOR, SENTIMENT_CEIL } from './balance.js';
+import { MIN_SHARES, MAX_SHARES, SENTIMENT_FLOOR, SENTIMENT_CEIL, EVAL_PERIOD, PLOT_SAMPLES } from './balance.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+/* Log and world text is drawn with innerHTML, and a save can be pasted in from
+   anywhere. The game itself only ever writes <b>, so every other tag goes. */
+export const safeText = s => String(s).replace(/<(?!\/?b>)[^>]*>?/gi, "");
+
+export const LOG_MAX = 90;
+export const MISSION_MAX = 110;
 
 /**
  * Merge a parsed save onto a fresh state, keeping only values of the right
@@ -18,16 +25,21 @@ export function sanitize(raw, fresh){
     if(Array.isArray(f)){
       if(!Array.isArray(v)) continue;
       if(k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
-      else if(k === "samples") out.samples = v.filter(Number.isFinite);
-      else if(k === "bought") out.bought = v.filter(x => typeof x === "string");
-      else if(k === "log") out.log = v.filter(x => x && typeof x.text === "string").map(x => ({t:Number(x.t)||0, text:x.text, cls:typeof x.cls === "string" ? x.cls : ""}));
-      else out[k] = v;
+      else if(k === "samples") out.samples = v.filter(Number.isFinite).slice(-PLOT_SAMPLES);
+      else if(k === "bought" || k === "breaks") out[k] = v.filter(x => typeof x === "string");
+      else if(k === "scrutiny") out.scrutiny = v.filter(Number.isInteger);
+      else if(k === "log") out.log = v.filter(x => x && typeof x.text === "string").slice(0, LOG_MAX)
+        .map(x => ({t:Number(x.t)||0, text:safeText(x.text), cls:x.cls === "g" || x.cls === "w" ? x.cls : ""}));
+      else if(k === "world") out.world = v.filter(x => x && typeof x.text === "string" && typeof x.w === "string")
+        .map(x => ({w:safeText(x.w), text:safeText(x.text)}));
     }
     else if(typeof f === "number"){ if(Number.isFinite(v)) out[k] = v }
     else if(typeof f === "boolean"){ if(typeof v === "boolean") out[k] = v }
     else if(typeof f === "string"){ if(typeof v === "string") out[k] = v }
   }
+  out.mission = out.mission.slice(0, MISSION_MAX);
   out.t = Math.max(0, out.t);
+  out.evalTimer = clamp(out.evalTimer, 0, EVAL_PERIOD);
   out.trust = clamp(out.trust, 0, 100);
   out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
   out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);

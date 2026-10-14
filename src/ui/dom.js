@@ -1,3 +1,4 @@
+import { LOG_MAX } from '../core/sanitize.js';
 import { S } from '../core/state.js';
 import { drawLog } from '../ui/render.js';
 
@@ -13,10 +14,6 @@ export const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&l
 
 export function log(text,cls){
   S.log.unshift({t:Math.floor(S.t),text,cls:cls||""});
-  if(S.log.length>90) S.log.pop();
+  if(S.log.length>LOG_MAX) S.log.pop();
   drawLog();
 }
-
-/* ============================================================
-   HARDWARE LADDER
-   ============================================================ */

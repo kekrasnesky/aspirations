@@ -5,7 +5,6 @@ import { GRACE, marketCap, mood, net, params, runway, sharePrice, workRate } fro
 import { clock, dur, horizon, money, pcount, short, work } from '../core/format.js';
 import { S } from '../core/state.js';
 import { actions, affordable, costLabel, inventory } from '../game/actions.js';
-import { finish } from '../game/endings.js';
 import { guide } from '../game/guide.js';
 import { el, log, setHTML } from '../ui/dom.js';
 import { applyWarmth } from '../ui/theme.js';
@@ -115,7 +114,8 @@ export function drawProjects(){
         '<span class="proj-desc serif">'+p.desc+'</span>'+
         '<span class="proj-fx">'+p.out+'</span>';
       b.onclick=()=>{
-        if(!affordable(p.cost)) return;
+        // the button can outlive the conditions that showed it by up to one redraw
+        if(!affordable(p.cost) || !p.req(S) || (!p.repeat && S.bought.includes(p.id))) return;
         if(p.cost.money)    S.money-=p.cost.money;
         if(p.cost.insight)  S.insight-=p.cost.insight;
         if(p.cost.autonomy) S.autonomy-=p.cost.autonomy;
@@ -235,18 +235,17 @@ export function drawLog(){
 
 export function drawPlot(){
   const svg=el("plot"), W=600, H=112, d=S.samples;
-  if(d.length<2){svg.innerHTML="";return}
+  if(d.length<2){setHTML(svg,"");return}
   const lg=d.map(v=>Math.log10(Math.max(horizon(v),1)));
   const max=Math.max(...lg), min=Math.min(...lg), span=Math.max(max-min,.05);
   const y=v=>H-8-((v-min)/span)*(H-20);
   const pts=lg.map((v,i)=>(i/(lg.length-1))*W+","+y(v).toFixed(1)).join(" ");
-  svg.innerHTML='<polyline points="'+pts+'" fill="none" stroke="'+(S.act===3?"var(--warn)":"var(--accent)")+
+  setHTML(svg,'<polyline points="'+pts+'" fill="none" stroke="'+(S.act===3?"var(--warn)":"var(--accent)")+
     '" stroke-width="1.6" vector-effect="non-scaling-stroke"/>'+
-    '<line x1="0" y1="'+(H-8)+'" x2="'+W+'" y2="'+(H-8)+'" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+    '<line x1="0" y1="'+(H-8)+'" x2="'+W+'" y2="'+(H-8)+'" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   el("plot-label").textContent="How long a job it can finish, last two minutes";
   el("plot-max").textContent="now "+work(S.capability)+" · doing "+dur(workRate())+" of work every second";
 }
-// the page cools as the thing grows. warm basement -> clinical -> void.
 
 export function render(){
   if(S.over) return;
@@ -254,7 +253,3 @@ export function render(){
   drawBar(); drawGuide(); drawActions(); drawProjects(); drawStock(); drawSlider(); drawPlot(); drawWorld(); drawLog();
   el("clock").textContent=clock(S.t);
 }
-
-/* ============================================================
-   SAVE / BOOT
-   ============================================================ */

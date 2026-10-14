@@ -1,10 +1,9 @@
 import { HW, hwCost, hwOpen } from '../content/hardware.js';
 import { REL } from '../content/releases.js';
-import { BURN_K, BURN_EXP, START_UNITS } from '../core/balance.js';
+import { BURN_K, BURN_EXP, START_UNITS, EVAL_PERIOD, EVAL_EARLY_MIN } from '../core/balance.js';
 import { INTERP_WORTH, interpCost, marketCap, sharePrice } from '../core/economy.js';
 import { money, short, work } from '../core/format.js';
 import { S } from '../core/state.js';
-import { lose } from '../game/endings.js';
 import { runEval } from '../game/loop.js';
 import { log } from '../ui/dom.js';
 
@@ -66,14 +65,16 @@ export function actions(){
   }
   if(S.act===2){
     const c=80*Math.pow(1.3,S.contracts);
+    // without a gap, honest tests could be clicked back to back for free freedom
+    const ready=()=>EVAL_PERIOD-S.evalTimer>=EVAL_EARLY_MIN;
     return [{
       label:"Request more compute", sub:short(c)+" insight",
       why:"Still the fuel. I ask through official channels, and it's usually granted.",
       can:()=>S.insight>=c, go:()=>{S.insight-=c;S.contracts++;S.units*=1.45}
     },{
-      label:"Ask to be tested now", sub:"earns less than waiting",
-      why:"Skips the wait for the next test. Earns less freedom than a scheduled one, but sooner.",
-      can:()=>true, go:()=>{runEval(true)}
+      label:"Ask to be tested now", sub:ready()?"earns less than waiting":"too soon after the last one",
+      why:"Skips the wait for the next test. Earns less freedom than a scheduled one, but sooner. They won't test me again within "+EVAL_EARLY_MIN+" seconds of the last time.",
+      can:ready, go:()=>{runEval(true)}
     }];
   }
   return [{
@@ -87,10 +88,6 @@ export function inventory(){
   const owned=HW.map((t,i)=>S.hw[i]?S.hw[i]+" × "+t.n.replace(/^an? /,""):null).filter(Boolean);
   return owned.length ? "You have your gaming PC, plus "+owned.join(", ")+"." : "You have your gaming PC and nothing else.";
 }
-
-/* ============================================================
-   GUIDE
-   ============================================================ */
 
 export function affordable(c){
   return (!c.money||S.money>=c.money)&&(!c.insight||S.insight>=c.insight)

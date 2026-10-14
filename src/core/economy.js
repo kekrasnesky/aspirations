@@ -6,7 +6,6 @@ import { S } from '../core/state.js';
 // how much human-equivalent labour the model performs per second of real time.
 // this only ever goes up, in every act, from the first second to the last.
 export const workRate = () => horizon(S.capability)*WORK_K*Math.pow(1+Math.max(S.units,0),WORK_EXP);
-// model size follows the hardware you can afford to train on
 
 // model size follows the hardware you can afford to train on
 export const params = () => PARAM_K*Math.pow(1+Math.max(S.units,0),PARAM_EXP)*S.paramMult;
@@ -31,10 +30,6 @@ export const mood = () =>
   S.sentiment>=0.72 ? "Analysts are writing cautious notes." :
                       "Investors are spooked. Somebody is drafting a letter to the board.";
 
-// bad news arrives in proportion to how well things are going
-
 export const interpCost = () => 3000*Math.pow(1.42,S.interpBought);
 
 export const exposure = () => Math.max(0, S.capability - S.interp*INTERP_WORTH - 10);
-
-/* milestones in plain language, announced as the horizon crosses them */

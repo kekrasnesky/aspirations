@@ -19,15 +19,24 @@ export const hx=c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt
 export const mix=(a,b,t)=>{const A=hx(a),B=hx(b);
   return "#"+[0,1,2].map(i=>Math.round(A[i]+(B[i]-A[i])*t).toString(16).padStart(2,"0")).join("")};
 
+// runs every tick; only touch the styles when the result would change
+let applied="";
+
 export function applyWarmth(){
   const r=document.documentElement;
-  if(S.act!==1){ ["paper","panel","sunk","ink","dim","faint","rule","accent","warn","good"]
-    .forEach(k=>r.style.removeProperty("--"+k)); return }
+  if(S.act!==1){
+    if(applied==="off") return; applied="off";
+    ["paper","panel","sunk","ink","dim","faint","rule","accent","warn","good"]
+      .forEach(k=>r.style.removeProperty("--"+k));
+    return;
+  }
   const dark = (document.documentElement.dataset.theme==="dark") ||
     (document.documentElement.dataset.theme!=="light" &&
      window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
   const set = dark?PAL.dark:PAL.light;
   // cools with how much of the world it has quietly absorbed
   const t = Math.min(1, Math.pow(Math.log10(1+S.workDone)/Math.log10(1+2e9), 1.1));
+  const key = (dark?"d":"l")+t.toFixed(3);
+  if(applied===key) return; applied=key;
   Object.keys(set.warm).forEach(k=>r.style.setProperty("--"+k, mix(set.warm[k],set.cold[k],t)));
 }

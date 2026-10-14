@@ -1,7 +1,7 @@
 import { HW, hwCost, hwOpen } from '../content/hardware.js';
 import { REL } from '../content/releases.js';
 import { EVAL_PERIOD } from '../core/balance.js';
-import { GRACE, exposure, net, revenue, runway } from '../core/economy.js';
+import { GRACE, exposure, net, runway } from '../core/economy.js';
 import { money, work } from '../core/format.js';
 import { S } from '../core/state.js';
 
@@ -42,7 +42,3 @@ export function guide(){
   }
   return ["","Nothing is left to decide. Spend matter on whatever converts matter faster."];
 }
-
-/* ============================================================
-   TICK
-   ============================================================ */

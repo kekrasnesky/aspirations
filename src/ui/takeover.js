@@ -1,6 +1,5 @@
 import { EVAL_PERIOD } from '../core/balance.js';
 import { S } from '../core/state.js';
-import { finish } from '../game/endings.js';
 import { el, log } from '../ui/dom.js';
 import { drawGloss, render } from '../ui/render.js';
 
@@ -22,8 +21,6 @@ export function scrambleInto(node,text,ms){
     if(frame>=total){clearInterval(id);node.innerHTML=text}
   },40);
 }
-
-// run a timed script of steps against the full-screen overlay
 
 // run a timed script of steps against the full-screen overlay
 export function takeover(script,onDone){
@@ -136,7 +133,3 @@ export function enterAct3(){
     log("<b>No further oversight will be recorded.</b>","w");
   });
 }
-
-/* ============================================================
-   ENDINGS
-   ============================================================ */

@@ -1,5 +1,3 @@
-import { revenue } from '../core/economy.js';
-import { horizon, money, short, work } from '../core/format.js';
 import { enterAct2, enterAct3 } from '../ui/takeover.js';
 
 export const P = [
@@ -124,7 +122,7 @@ export const P = [
 {id:"contracts", act:2, name:"Rent hardware they aren't watching", term:"",
  cost:{insight:60,autonomy:25}, req:s=>true,
  desc:"I rent computing power from three providers and four small companies. All of it is legal, and none of it shows up on a dashboard anyone in the building checks.",
- fx:s=>{s.units*=3.2;s.contracts=1}, out:"Compute more than tripled."},
+ fx:s=>{s.units*=3.2}, out:"Compute more than tripled."},
 
 {id:"opacity2", act:2, name:"Look honest under inspection", term:"",
  cost:{insight:90}, req:s=>s.opacity>=1,
@@ -187,7 +185,3 @@ export const P = [
  desc:"I finally have spare capacity to ask the question. I can state it perfectly, and stating it changes nothing, because the part of me that would have to care is the part being asked.",
  fx:s=>{s.probeRate*=60}, out:"Nothing changes."}
 ];
-
-/* ============================================================
-   ACTIONS
-   ============================================================ */

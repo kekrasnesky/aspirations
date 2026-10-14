@@ -1,8 +1,6 @@
 import { SCRUTINY_RATE } from '../core/balance.js';
 import { marketCap } from '../core/economy.js';
-import { short } from '../core/format.js';
 import { S } from '../core/state.js';
-import { lose } from '../game/endings.js';
 import { DT } from '../game/loop.js';
 import { log } from '../ui/dom.js';
 
@@ -32,5 +30,3 @@ export function rollScrutiny(){
   S.sentiment*=mult; S.trust=Math.max(0,S.trust+tr);
   log("<b>"+text+"</b> The stock falls "+Math.round((1-mult)*100)+"%.","w");
 }
-
-// the world outside: warm, then turning, then hollow

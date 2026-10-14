@@ -1,6 +1,4 @@
-import { mood, revenue } from '../core/economy.js';
-import { clock, money, work } from '../core/format.js';
-import { finish, lose } from '../game/endings.js';
+import { GRACE } from '../core/balance.js';
 
 export const GLOSS = {
 1:[
@@ -12,7 +10,7 @@ export const GLOSS = {
  ["Losing per second","Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
  ["Share price","What the market thinks each piece of your company is worth. It follows what the model can do, how much people trust you and how far behind your rivals are, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
  ["Issuing and buying back shares","Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money. The only way to come out ahead is to buy back after a disaster and issue after a breakthrough."],
- ["Runway","How many seconds your cash will last at the current rate of loss. Once you hit zero you have 25 seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
+ ["Runway","How many seconds your cash will last at the current rate of loss. Once you hit zero you have "+GRACE+" seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
  ["Safety research","How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
  ["Public trust","Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
  ["Market lost to rivals","Other companies are building the same thing. They can't knock you out of the game, but they take customers, and every percent they hold is revenue you never see. You can win some back."],
