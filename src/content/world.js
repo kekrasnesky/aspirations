@@ -1,3 +1,4 @@
+import { LETTER_MIN, LETTER_MAX, WORLD_MAX } from '../core/balance.js';
 import { pcount } from '../core/format.js';
 import { S } from '../core/state.js';
 import { drawWorld } from '../ui/render.js';
@@ -29,8 +30,65 @@ export function rollWorld(){
     const [,text,tr,rev]=WORLD[S.worldIdx];
     if(tr) S.trust=Math.max(0,Math.min(100,S.trust+tr));
     if(rev && rev!==1) S.revMult*=rev;
-    S.world.unshift({w:pcount(S.params),text});
+    addWorld("at "+pcount(S.params)+" parameters", text);
     S.worldIdx++;
-    drawWorld();
   }
+}
+
+function addWorld(w, text){
+  S.world.unshift({w,text});
+  if(S.world.length>WORLD_MAX) S.world.length=WORLD_MAX;
+  drawWorld();
+}
+
+/* Letters from people using it, for small things. They arrive every so often
+   while you wait on a training run. Which ones depends on how big the live
+   model is: a small one helps with homework, not with payroll. Each tier is
+   [smallest model, largest model, letters]. */
+export const LETTERS = [
+ [0, 1e10, [
+  "A dad writes in. His daughter was stuck on long division for a week, and it explained it four different ways until one landed. She explained it back to him at dinner.",
+  "Someone asked it what to make with half a cabbage, two eggs and a tin of chickpeas. They say it was genuinely good, and they've made it twice since.",
+  "A student pastes in her essay at 2am and asks if the argument holds up. It doesn't, quite. It tells her which paragraph is the problem, and she fixes it before nine.",
+  "A retired man in Glasgow asks it to help him write to his grandson in Spanish. The grandson writes back, in Spanish, for the first time.",
+  "Somebody's Dungeons & Dragons group has been using it to name taverns. They send you their favourites. 'The Damp Ferret' is the clear winner.",
+  "A bakery owner uses it to scale a recipe from twelve loaves to forty. The maths was right. The bread was fine.",
+  "A kid asks it why the sky is blue, then why that's true, then why that's true. It gets seven questions deep before it has to say it doesn't know.",
+  "Someone writes to say it helped them word a hard text to their sister. They don't say what it was about. They say it went well.",
+  "A man asks it to explain his electricity bill, and finds out he's been paying for a meter he doesn't have.",
+  "A maths teacher uses it to make forty versions of the same quiz, so nobody in the back row can copy.",
+  "A woman asks it for a packing list for her first camping trip. Afterwards she writes in to say it forgot the tent pegs, and that she had a lovely time anyway.",
+  "A boy asks it for help with his chemistry homework and gets the right answer, then asks why, and gets that too. His teacher asks who helped him. He says nobody.",
+  "Someone used it to turn their grandmother's handwritten recipe cards into a printed book for the family. They send a photo of the cover."
+ ]],
+ [1e10, 4e11, [
+  "A two-person accounting firm uses it to read receipts all tax season. They take a holiday for the first time in six years.",
+  "A PhD student writes that it found the bug in her simulation that her supervisor missed for a year. She thanks it in her acknowledgements.",
+  "A small charity uses it to write grant applications. They win three of the five they apply for, which has never happened before.",
+  "A teenager with dyslexia uses it to check his coursework before he hands it in. His grades go up a full band. He hasn't told his teachers.",
+  "A farmer in Kenya asks it about yellow spots on her maize. It suggests a soil test and a fungicide. She does both, and sends a photo of the harvest.",
+  "A volunteer uses it to help a refugee family fill in housing forms in a language none of them speak.",
+  "A developer writes that it built most of his app over one weekend. He isn't sure how he feels about the part he wrote himself.",
+  "A hospice uses it to help patients write letters to be opened later. The nurses say it's patient in a way they don't always have time to be."
+ ]],
+ [4e11, Infinity, [
+  "Eleven thousand thank-you emails arrive every day now. Someone on the team set up a filter. You don't know who.",
+  "A letter from a man whose job it took over. It's polite. He thanks it for helping him write his CV.",
+  "A school writes to say its pupils now ask it before they ask a teacher. They aren't sure whether this is a complaint."
+ ]]
+];
+
+/** Every so often, once people can use it, somebody writes in. */
+export function rollLetter(dt){
+  if(!S.rel || S.act!==1) return;
+  S.letterIn-=dt;
+  if(S.letterIn>0) return;
+  S.letterIn=LETTER_MIN+Math.random()*(LETTER_MAX-LETTER_MIN);
+  const tier=LETTERS.findIndex(([lo,hi])=>S.params>=lo && S.params<hi);
+  if(tier<0) return;
+  const pool=LETTERS[tier][2], left=pool.map((_,i)=>i).filter(i=>!S.letters.includes(tier*100+i));
+  if(!left.length) return;
+  const i=left[(Math.random()*left.length)|0];
+  S.letters.push(tier*100+i);
+  addWorld("a letter", pool[i]);
 }

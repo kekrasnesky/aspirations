@@ -2,7 +2,7 @@ import { HW, hwCost } from '../content/hardware.js';
 import { REL } from '../content/releases.js';
 import { EVAL_PERIOD, EVAL_EARLY_MIN, COMPUTE_REQUEST, SELL_BACK } from '../core/balance.js';
 import { applyHw, nextTarget, trainTime } from '../core/compute.js';
-import { INTERP_WORTH, capability, interpCost, marketCap, sharePrice } from '../core/economy.js';
+import { INTERP_WORTH, capability, interpCost, marketCap, sharePrice, takeStep } from '../core/economy.js';
 import { money, pcount, secs, short } from '../core/format.js';
 import { S } from '../core/state.js';
 import { runEval, startRun } from '../game/loop.js';
@@ -38,19 +38,21 @@ export function actions(){
     });
     const r=REL[S.rel];
     if(r) out.push({
-      label:r.n, sub:S.params>=r.req?money(r.pay):"needs a "+pcount(r.req)+" model",
+      label:r.n, sub:S.params<r.req?"needs a "+pcount(r.req)+" model":r.pay?money(r.pay):r.price?"$"+r.price+" a month":"free",
       why:r.why, primary:S.params>=r.req,
       can:()=>S.params>=r.req,
       go:()=>{
-        S.money+=r.pay; S.revMult*=r.mult; S.rel++;
+        takeStep(S,r);
         if(S.rel>=3 && !S.hasStock){
           S.hasStock=true; S.lastPx=sharePrice();
           log("<b>You have shareholders now.</b> The company is worth "+money(marketCap())+", a number the market made up, and you will now spend a great deal of time defending it.","g");
         }
         const safe=S.rel===1||S.interp*INTERP_WORTH>=capability();   // nothing to criticise on day one
         S.trust+=S.rel===1?0:safe?5:-9;
-        log("<b>"+r.n+".</b> "+money(r.pay)+" in"+(S.rel===1?", the first money this project has ever made":"")+". "+
-          (S.rel===1?"":safe?"Reviewers call your safety work exemplary.":"Two of your researchers resign publicly on the way out."), safe?"g":"w");
+        const what = S.rel===1 ? "By Sunday it has been used four million times. People start finding it, a few at a time, and some of them chip in."
+          : r.kind==="plan" ? "Some of your users start paying. It takes a while for word to spread."
+          : money(r.pay)+" in.";
+        log("<b>"+r.n+".</b> "+what+" "+(S.rel===1?"":safe?"Reviewers call your safety work exemplary.":"Two of your researchers resign publicly on the way out."), safe?"g":"w");
       }
     });
     if(S.rel>0) out.push({

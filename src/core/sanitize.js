@@ -27,7 +27,7 @@ export function sanitize(raw, fresh){
       if(k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
       else if(k === "bought" || k === "breaks") out[k] = v.filter(x => typeof x === "string");
       else if(k === "committee") out.committee = f.map((_, i) => [0,1,2].includes(v[i]) ? v[i] : 0);
-      else if(k === "scrutiny" || k === "buried") out[k] = v.filter(x => Number.isInteger(x) && x >= 0);
+      else if(k === "scrutiny" || k === "buried" || k === "letters") out[k] = v.filter(x => Number.isInteger(x) && x >= 0);
       else if(k === "log") out.log = v.filter(x => x && typeof x.text === "string").slice(0, LOG_MAX)
         .map(x => ({t:Number(x.t)||0, text:safeText(x.text), cls:x.cls === "g" || x.cls === "w" ? x.cls : ""}));
       else if(k === "world") out.world = v.filter(x => x && typeof x.text === "string" && typeof x.w === "string")
@@ -48,12 +48,12 @@ export function sanitize(raw, fresh){
   out.need = clamp(out.need, 0, 100);
   if(!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
   out.progress = clamp(out.progress, 0, 1);
-  for(const k of ["deployed","debt","params","target","peak","runs","interp","rel","insight","autonomy","suspicion","matter","probes","milestone","buriedTotal"])
+  for(const k of ["deployed","debt","params","target","peak","runs","interp","rel","insight","autonomy","suspicion","matter","probes","milestone","buriedTotal","users","planPrice","planConv","letterIn"])
     out[k] = Math.max(0, out[k]);
   // you never own less than the PC you started with
   for(const [k,min] of [["gpus",START_GPUS],["vram",START_VRAM],["tflops",START_TFLOPS],["ram",START_RAM],["cores",START_CORES]])
     out[k] = Math.max(min, out[k]);
-  for(const k of ["speedMult","coreMult","vramMult","memMult"])
+  for(const k of ["speedMult","coreMult","vramMult","memMult","reach"])
     if(out[k] <= 0) out[k] = 1;
   return out;
 }

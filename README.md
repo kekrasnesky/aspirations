@@ -42,9 +42,16 @@ The model is a parameter count, and it scales with your compute:
   cores feeding it data. Too few cores and the GPUs sit partly idle.
 - **Training runs** take the model up to 4x per run, as big as fits. Run time
   grows as `size^TRAIN_EXP / TFLOPS`, so bigger models need more GPUs.
-- **Money** comes from the live model: bigger model, more revenue. Hardware
-  is bought on three ladders (GPUs, RAM, CPU), and every purchase adds to the
-  running costs.
+- **Money** comes from people paying for it. Users drift toward a target set
+  by the model's size, the product's quality, public trust and how many people
+  the GPUs can serve; they arrive slowly and leave faster, and incidents and
+  cover-ups drive them away. A share of them pay the current plan: a $3 tip
+  jar on the free site, a paid plan once the model reaches 13B, business seats
+  at 90B. One second of play is about a day. Grants and investment rounds are
+  the only lump sums. Hardware is bought on three ladders (GPUs, RAM, CPU), and
+  every purchase adds to the running costs.
+- **Projects** show the decision, not the result. You find out what it did in
+  the log after you choose.
 
 The control panel shows each resource as a meter, names the bottleneck, and
 the guide line tells you which of the three to buy. Four free "training
@@ -87,10 +94,10 @@ src/
     economy.js           burn, revenue, valuation
   content/               all the prose and the data it hangs on
     hardware.js          three ladders: GPUs, RAM, CPU
-    releases.js          the funding ladder
+    releases.js          the business ladder: plans (subscribers) and funding (lump sums)
     projects.js          everything buildable, across all three acts
     breakthroughs.js     what the model discovers (warm pool, then cold pool)
-    world.js             the world outside, warm to hollow
+    world.js             the world outside, warm to hollow, plus letters from users
     scrutiny.js          bad news, arriving in proportion to success
     incidents.js         safety failures: what burying each looks like, and how it leaks
     committee.js         the eleven people who oversee it in act II

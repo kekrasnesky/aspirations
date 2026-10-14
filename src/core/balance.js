@@ -49,13 +49,32 @@ export const LEVEL_EXP = 0.6;
 // Burn scales with deployed capital; revenue scales with the model. Each
 // size step needs more hardware than the last earns back, so the company is
 // never durably profitable. That is the point, not an oversight.
-export const BURN_K      = 0.018;   // tuned with `npm run simulate`: careful play survives, reckless play goes bankrupt
+export const BURN_K      = 0.03;    // tuned with `npm run simulate`: careful play survives, reckless play goes bankrupt
 export const BURN_EXP    = 0.88;
 export const STAFF_BASE  = 40;
 export const STAFF_EXP   = 2.4;
-export const REV_K       = 3.6;
-export const REV_EXP     = 0.95;
+export const STAFF_FROM  = 2;       // nobody is on the payroll until you quit your job and raise money (step 3)
 export const REV_TRUST_REF = 62;
+
+// ---- users and subscribers -------------------------------------------------
+// One second of play is about a day. Revenue is people paying for a plan:
+// users × the share who pay × the plan's monthly price / 30. Users drift
+// toward a target set by how good the model is, how much people trust you, and
+// how many of them your GPUs can serve; they arrive slowly and leave faster.
+export const DAYS_PER_MONTH = 30;
+export const USERS_K     = 4500;     // users per unit of level^USERS_EXP
+export const USERS_EXP   = 0.95;
+export const USERS_GROW  = 0.04;     // per second, toward the target
+export const USERS_CHURN = 0.08;     // per second, when above it
+export const SERVE_K     = 5000;     // users one TFLOPS can serve, for a 1B model
+export const SERVE_EXP   = 0.5;      // bigger models cost more to serve per user
+export const DISCLOSE_USERS = 0.96;  // share of users who stay after you own up
+export const LEAK_USERS     = 0.85;  // and after a cover-up comes out
+
+// letters from people using it, while you wait on training runs
+export const LETTER_MIN  = 18;       // seconds between letters, at least
+export const LETTER_MAX  = 40;
+export const WORLD_MAX   = 40;       // entries kept in the feed
 export const START_MONEY = 0;       // no money until the first thing goes online
 export const SELL_BACK   = 0.35;    // second-hand hardware fetches about a third
 export const GRACE       = 25;      // seconds in the red before the company folds

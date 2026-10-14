@@ -27,8 +27,13 @@ test('three hardware ladders, GPU, RAM and CPU, each bigger and dearer than the 
   for (const h of HW) for (const f of ['n', 'label', 'why']) assert.equal(typeof h[f], 'string', `${h.label}.${f}`);
 });
 
-test('funding ladder rises in requirement and payout', () => {
-  for (let i = 1; i < REL.length; i++) assert.ok(REL[i].req > REL[i - 1].req && REL[i].pay > REL[i - 1].pay);
+test('business ladder rises in requirement; plans get dearer and funding rounds bigger', () => {
+  for (let i = 1; i < REL.length; i++) assert.ok(REL[i].req > REL[i - 1].req, `step ${i}`);
+  const plans = REL.filter(r => r.kind === 'plan'), rounds = REL.filter(r => r.kind === 'funding');
+  for (let i = 1; i < plans.length; i++) assert.ok(plans[i].price > plans[i - 1].price && plans[i].conv >= plans[i - 1].conv);
+  for (let i = 1; i < rounds.length; i++) assert.ok(rounds[i].pay > rounds[i - 1].pay);
+  assert.ok(plans.every(p => !p.pay), 'a plan brings subscribers, not a lump sum');
+  assert.ok(plans[0].price <= 5, 'the first plan is a tip jar, not a subscription');
 });
 
 test('milestones are in ascending order', () => {

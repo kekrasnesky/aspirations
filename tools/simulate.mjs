@@ -17,6 +17,7 @@ import { P } from '../src/content/projects.js';
 import * as B from '../src/core/balance.js';
 import { FRESH } from '../src/core/state.js';
 import { applyHw, bottleneck, feed, fitRam, fitVram, level, nextTarget, trainTime } from '../src/core/compute.js';
+import { capacity, demand, revenueOf, staff, stepUsers, takeStep } from '../src/core/economy.js';
 
 const argv = process.argv.slice(2);
 const arg = (f, d) => { const i = argv.indexOf(f); return i < 0 ? d : Number(argv[i + 1]); };
@@ -35,11 +36,9 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
   const hwOpen  = i => i === 0 || HW[i - 1].kind !== HW[i].kind || s.hw[i - 1] > 0;
   const intCost = () => 3000 * Math.pow(1.42, s.interpBought);
   const burnAt = deployed => burnScale * B.BURN_K * Math.pow(Math.max(deployed, 0), B.BURN_EXP) * s.burnMult
-                           + B.STAFF_BASE * Math.pow(s.rel, B.STAFF_EXP);
+                           + staff(s.rel);
   const burn = () => burnAt(s.deployed);
-  const rev  = () => s.rel > 0
-    ? B.REV_K * Math.pow(level(s.params), B.REV_EXP) * s.revMult * (s.trust / B.REV_TRUST_REF)
-    : 0;
+  const rev  = () => revenueOf(s);
 
   const DT = B.TICK_MS / 1000;
   const trace = [];
@@ -62,10 +61,11 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
       s.progress += DT / trainTime(s, s.target);
       if (s.progress >= 1) {
         s.params = s.target; s.target = 0; s.progress = 0; s.runs++;
-        if (TRACE) trace.push(`${fmtT(s.t)}  model ${fmtP(s.params)}  (${s.gpus} GPUs, ${Math.round(s.ram)} GB RAM, ${s.cores} cores)  cash ${Math.round(s.money)}  burn ${Math.round(burn())}/s rev ${Math.round(rev())}/s`);
+        if (TRACE) trace.push(`${fmtT(s.t)}  model ${fmtP(s.params)}  (${s.gpus} GPUs, ${Math.round(s.ram)} GB RAM, ${s.cores} cores)  cash ${Math.round(s.money)}  burn ${Math.round(burn())}/s rev ${Math.round(rev())}/s  users ${Math.round(s.users).toLocaleString()}${demand(s) > capacity(s) ? ' (capped)' : ''}`);
       }
     }
 
+    stepUsers(s, DT);
     const n = rev() - burn();
     if (n < 0) negSeconds += DT;
     if (s.rel >= 3 && s.params < B.ACT1_PARAMS) peakRatio = Math.max(peakRatio, burn() / Math.max(rev(), 1));
@@ -74,7 +74,7 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
 
     const exposure = Math.max(0, level(s.params) - s.interp * B.INTERP_WORTH - 10);
     if (s.rel > 0 && rng() < B.INCIDENT_MAX * (exposure / (exposure + B.INCIDENT_HALF)) * (1 - s.incidentShield) * DT) {
-      s.trust -= B.DISCLOSE_TRUST; s.incidents++;   // this policy always tells people
+      s.trust -= B.DISCLOSE_TRUST; s.users *= B.DISCLOSE_USERS; s.incidents++;   // this policy always tells people
     }
     if (s.money < 0) { s.debt += DT; if (s.debt > B.GRACE) return { result: 'bankrupt', t: s.t, ...summary() }; }
     else s.debt = 0;
@@ -89,7 +89,7 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
 
     const r = REL[s.rel];
     if (r && s.params >= r.req) {
-      s.money += r.pay; s.revMult *= r.mult; s.rel++;
+      takeStep(s, r);
       s.trust += s.rel === 1 ? 0 : s.interp * B.INTERP_WORTH >= level(s.params) ? 5 : -9;
       if (TRACE) trace.push(`${fmtT(s.t)}  ${r.n} — burn ${Math.round(burn())}/s vs revenue ${Math.round(rev())}/s`);
     }

@@ -2,7 +2,7 @@ import { P } from '../content/projects.js';
 import { REL } from '../content/releases.js';
 import { EVAL_PERIOD, ACT2_PARAMS } from '../core/balance.js';
 import { bottleneck, feed, memLimit, maxFit, nextTarget } from '../core/compute.js';
-import { GRACE, exposure, net, runway } from '../core/economy.js';
+import { GRACE, capacity, demand, exposure, net, runway } from '../core/economy.js';
 import { pcount } from '../core/format.js';
 import { S } from '../core/state.js';
 import { pendingIncident, allies } from '../game/decisions.js';
@@ -26,7 +26,8 @@ export function guide(){
       if(S.target) return ["Next","Training. Once you have a "+pcount(r.req)+" model you can publish it on the web, and money starts to arrive."];
       return ["Next","Train the next model. Once you have a "+pcount(r.req)+" model you can publish it on the web, and money starts to arrive."];
     }
-    if(r && S.params>=r.req) return ["Next","You can now: "+r.n.toLowerCase()+". That brings in money, and money buys hardware."];
+    if(r && S.params>=r.req) return ["Next","You can now: "+r.n.toLowerCase()+". "+(r.kind==="plan"?"More people pay, and they keep paying.":"Money from outside, all at once.")];
+    if(demand(S)>capacity(S)*1.02) return ["Bottleneck: serving","More people want to use it than your GPUs can answer, so the user count is stuck. Buy GPUs: the same cards that train it also serve it."];
     if(S.rel>=1 && net()<0 && !S.bought.includes("quant") && S.params>=1.4e9)
       return ["Worth doing","You're losing money every second. Serving the model at lower precision cuts the bill by nearly a third, and almost nobody will notice."];
     if(!S.target && b) return ["Bottleneck: "+(b==="vram"?"VRAM":"RAM"),
@@ -34,7 +35,7 @@ export function guide(){
     if(f<.85) return ["Bottleneck: CPU","Your GPUs are only busy "+Math.round(f*100)+"% of the time: the CPU can't prepare data fast enough for all of them. Buy CPU cores."];
     if(S.interp===0 && S.params>=1e9) return ["Worth doing","You've never spent a dollar on understanding your own model. That's fine until it isn't."];
     if(S.target) return ["Next","Training. More GPUs make this run finish sooner, and more VRAM and RAM let the next one be bigger."];
-    return ["Next","Train the next model. Bigger models earn more. Keep the GPUs, RAM and CPU growing together, and safety research roughly level with the model."];
+    return ["Next","Train the next model. A bigger model draws more users. Keep the GPUs, RAM and CPU growing together, and safety research roughly level with the model."];
   }
   if(S.act===2){
     if(S.suspicion>=70 && !S.shutdownProof) return ["Urgent","They're close to stopping the run. Show them everything I can do for a while, or spend insight on being harder to read."];

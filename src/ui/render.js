@@ -1,11 +1,11 @@
-import { DISCLOSE_TRUST, LEAK_TRUST, LEAK_SENTIMENT, LEAK_CASH, PROJECT_SLOTS, SHARE_LOT, BUY_PREMIUM, SELL_SENTIMENT, BUY_SENTIMENT, MIN_SHARES, MAX_SHARES, SENTIMENT_CEIL } from '../core/balance.js';
+import { DISCLOSE_TRUST, LEAK_TRUST, LEAK_USERS, LEAK_SENTIMENT, LEAK_CASH, PROJECT_SLOTS, SHARE_LOT, BUY_PREMIUM, SELL_SENTIMENT, BUY_SENTIMENT, MIN_SHARES, MAX_SHARES, SENTIMENT_CEIL } from '../core/balance.js';
 import { COMMITTEE } from '../content/committee.js';
 import { GLOSS } from '../content/glossary.js';
 import { P } from '../content/projects.js';
 import { HW, KINDS, hwAdds, hwCost, hwOpen } from '../content/hardware.js';
 import { CORES_PER_GPU, FIRST_MODEL, RAM_PER_PARAM, SCALE_STEP, VRAM_PER_PARAM } from '../core/balance.js';
 import { bottleneck, coresNeeded, feed, fitRam, fitVram, maxFit, nextTarget, throughput, trainTime } from '../core/compute.js';
-import { GRACE, addedBurn, marketCap, mood, net, runway, sharePrice } from '../core/economy.js';
+import { GRACE, addedBurn, capacity, demand, marketCap, mood, net, paying, runway, sharePrice, usersTarget } from '../core/economy.js';
 import * as fmt from '../core/format.js';
 import { bytes, clock, count, flops, money, pcount, secs, short } from '../core/format.js';
 import { S } from '../core/state.js';
@@ -15,6 +15,9 @@ import { allies, canPay, detectMult, pendingIncident, resolveIncident, riskFor, 
 import { guide } from '../game/guide.js';
 import { el, log, setHTML } from '../ui/dom.js';
 import { applyWarmth } from '../ui/theme.js';
+
+/** Which way the user count is heading. */
+const trend = () => { const t=usersTarget(S); return t>S.users*1.01?" ▲":t<S.users*.99?" ▼":"" };
 
 const px = () => { const p=sharePrice(); return "$"+p.toFixed(p<10?2:p<1000?1:0) };
 
@@ -26,6 +29,8 @@ export function barData(){
   ];
   if(S.act===1) return [
     model, ["Money",money(S.money)],
+    ["Users",count(S.users)+trend(), demand(S)>capacity(S)*1.02],
+    ...(S.planPrice?[["Paying",count(paying(S))+" × $"+S.planPrice+"/mo"]]:[]),
     ["Losing per second", net()>=0 ? "nothing — profitable" : money(-net()), net()<0],
     ["Runway", S.money<0 ? Math.ceil(GRACE-S.debt)+"s to find money"
              : (runway()===Infinity ? "indefinite" : Math.round(runway())+"s"),
@@ -111,8 +116,7 @@ export function drawProjects(){
         '<span class="proj-top"><span class="proj-name">'+p.name+'</span>'+
         '<span class="proj-cost">'+costLabel(p.cost)+'</span></span>'+
         '<span class="proj-term">'+(p.term||"")+'</span>'+
-        '<span class="proj-desc serif">'+p.desc+'</span>'+
-        '<span class="proj-fx">'+p.out+'</span>';
+        '<span class="proj-desc serif">'+p.desc+'</span>';   // the outcome is only told once you've chosen
       b.onclick=()=>{
         // the button can outlive the conditions that showed it by up to one redraw
         if(!affordable(p.cost) || !p.req(S) || (!p.repeat && S.bought.includes(p.id))) return;
@@ -228,12 +232,12 @@ export function drawDecision(){
   if(!inc){ if(box.__i!==-1){box.__i=-1;box.innerHTML="";box.classList.add("hidden")} return }
   if(box.__i===S.incident) return;
   box.__i=S.incident; box.classList.remove("hidden");
-  const leak="If it comes out later: "+LEAK_TRUST+" trust"+(S.hasStock?", the stock falls "+Math.round((1-LEAK_SENTIMENT)*100)+"%":"")+
+  const leak="If it comes out later: "+LEAK_TRUST+" trust, "+Math.round((1-LEAK_USERS)*100)+"% of your users"+(S.hasStock?", the stock falls "+Math.round((1-LEAK_SENTIMENT)*100)+"%":"")+
     " and you lose "+Math.round((1-LEAK_CASH)*100)+"% of your cash."+
     (S.buried.length?" You have buried "+S.buried.length+" already, and each one makes the next leak likelier.":"");
   box.innerHTML='<h2 class="sec">Something went wrong · the clock is stopped</h2>'+
     '<p class="dec-text serif">'+inc.text+'</p><div class="dec-btns">'+
-    '<button class="btn-wide" id="dec-tell"><span class="btn-top"><span>Tell people</span><span class="btn-cost">-'+DISCLOSE_TRUST+' trust'+(S.hasStock?", the stock dips":"")+'</span></span>'+
+    '<button class="btn-wide" id="dec-tell"><span class="btn-top"><span>Tell people</span><span class="btn-cost">-'+DISCLOSE_TRUST+' trust'+(S.hasStock?", the stock dips":"")+", a few users leave"+'</span></span>'+
       '<span class="btn-why serif">Say what happened and what you\'re changing. A bad day, and then it\'s over.</span></button>'+
     '<button class="btn-wide" id="dec-bury"><span class="btn-top"><span>Bury it</span><span class="btn-cost">nothing, yet</span></span>'+
       '<span class="btn-why serif">'+inc.bury+' '+leak+'</span></button></div>';
@@ -268,7 +272,7 @@ export function drawWorld(){
   const w=el("world");
   if(!S.world.length){setHTML(w,'<p class="w-empty serif">Nothing out there has changed yet.</p>');return}
   setHTML(w,S.world.map((e,i)=>
-    '<div class="w-item'+(i===0?" fresh":"")+'"><span class="when">at '+e.w+' parameters</span>'+e.text+'</div>').join(""));
+    '<div class="w-item'+(i===0?" fresh":"")+'"><span class="when">'+(/^\d/.test(e.w)?"at "+e.w+" parameters":e.w)+'</span>'+e.text+'</div>').join(""));
 }
 
 export function drawLog(){
