@@ -25,12 +25,14 @@
     --paper:#121618; --panel:#191E21; --sunk:#0E1214;
     --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
     --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"]{
   --paper:#121618; --panel:#191E21; --sunk:#0E1214;
   --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
   --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
+  color-scheme: dark;
 }
 
 /* ---- base ---- */
@@ -51,7 +53,7 @@ body.act-3{
   --accent:#8FB9D6;--warn:#E07A20;
 }
 body.act-3 .serif{font-family:var(--mono)!important;font-style:normal!important}
-.wrap{max-width:1120px;margin:0 auto;padding:0 18px 80px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-right,0px)) 80px max(18px,env(safe-area-inset-left,0px))}
 
 /* ---- intro ---- */
 /* ---------- opening ---------- */
@@ -83,6 +85,14 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 .btn-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
 .btn-cost{color:var(--dim);font-size:11.5px;white-space:nowrap}
 .btn-why{display:block;font-family:var(--serif);font-size:13.5px;color:var(--dim);margin-top:4px;line-height:1.4}
+
+/* ---------- save box ---------- */
+#savebox{margin-top:18px;padding:14px;border:1px solid var(--rule);border-radius:2px;background:var(--panel);max-width:62ch}
+#savebox p{margin:0 0 10px;font-family:var(--serif);font-size:14px;line-height:1.45;color:var(--dim)}
+#savetext{display:block;width:100%;box-sizing:border-box;background:var(--sunk);color:var(--ink);border:1px solid var(--rule);
+  border-radius:2px;padding:8px 10px;font-family:var(--mono);font-size:11.5px;resize:vertical}
+.savebtns{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+#savemsg{margin:0;min-height:1.4em}
 
 /* ---- bar ---- */
 /* ---------- instrument bar ---------- */
@@ -301,6 +311,12 @@ footer button:hover{background:none;color:var(--warn)}
     <button id="reset">start over</button>
     <span id="savenote"></span>
   </footer>
+  <div id="savebox" class="hidden">
+    <p id="savehelp"></p>
+    <textarea id="savetext" rows="5" spellcheck="false" aria-label="Save data"></textarea>
+    <div class="savebtns"><button id="saveload" class="btn-primary">Load this save</button><button id="saveclose">Close</button></div>
+    <p id="savemsg" role="status"></p>
+  </div>
 </main>
 
 <section id="end">
@@ -1727,16 +1743,16 @@ footer button:hover{background:none;color:var(--warn)}
     });
   }
   function drawStock() {
-    const box = el("stock-block");
+    const box2 = el("stock-block");
     if (!S.hasStock || S.act === 3) {
-      box.style.display = "none";
+      box2.style.display = "none";
       return;
     }
-    box.style.display = "block";
+    box2.style.display = "block";
     const act1 = S.act === 1, LOT = S.shares * SHARE_LOT;
-    if (box.__act !== S.act) {
-      box.__act = S.act;
-      box.innerHTML = '<h2 class="sec">' + (act1 ? "Your shares" : "Their shares") + '</h2><div class="stock-box"><div class="stock-head"><span class="stock-px" id="st-px"></span><span class="stock-delta" id="st-delta"></span></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market cap</div><div class="stat-v" id="st-cap" style="font-size:14px"></div></div><div class="stat"><div class="stat-k">Shares out</div><div class="stat-v" id="st-shares" style="font-size:14px"></div></div><div class="stat"><div class="stat-k">Breakthroughs</div><div class="stat-v" id="st-breaks" style="font-size:14px"></div></div></div><p class="stock-mood serif" id="st-mood"></p></div>' + (act1 ? '<div class="stack"><button class="btn-wide" id="sell-shares"><span class="btn-top"><span id="sell-t"></span><span class="btn-cost" id="sell-c"></span></span><span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. Each share is now a smaller slice of the company, and the market reads it as a sign you need money, so the price falls twice over.</span></button><button class="btn-wide" id="buy-shares"><span class="btn-top"><span id="buy-t"></span><span class="btn-cost" id="buy-c"></span></span><span class="btn-why serif">Spend cash to cancel shares. Fewer shares means a higher price, and the market reads it as confidence. You pay extra to buy this many at once, so issuing and buying straight back always loses money. You only come out ahead by buying after a disaster and issuing after a breakthrough.</span></button></div>' : `<p class="stock-mood serif">I'm not allowed to trade in it. Its price follows what I do, and they no longer decide what that is.</p>`);
+    if (box2.__act !== S.act) {
+      box2.__act = S.act;
+      box2.innerHTML = '<h2 class="sec">' + (act1 ? "Your shares" : "Their shares") + '</h2><div class="stock-box"><div class="stock-head"><span class="stock-px" id="st-px"></span><span class="stock-delta" id="st-delta"></span></div><div class="stock-rows"><div class="stat"><div class="stat-k">Market cap</div><div class="stat-v" id="st-cap" style="font-size:14px"></div></div><div class="stat"><div class="stat-k">Shares out</div><div class="stat-v" id="st-shares" style="font-size:14px"></div></div><div class="stat"><div class="stat-k">Breakthroughs</div><div class="stat-v" id="st-breaks" style="font-size:14px"></div></div></div><p class="stock-mood serif" id="st-mood"></p></div>' + (act1 ? '<div class="stack"><button class="btn-wide" id="sell-shares"><span class="btn-top"><span id="sell-t"></span><span class="btn-cost" id="sell-c"></span></span><span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. Each share is now a smaller slice of the company, and the market reads it as a sign you need money, so the price falls twice over.</span></button><button class="btn-wide" id="buy-shares"><span class="btn-top"><span id="buy-t"></span><span class="btn-cost" id="buy-c"></span></span><span class="btn-why serif">Spend cash to cancel shares. Fewer shares means a higher price, and the market reads it as confidence. You pay extra to buy this many at once, so issuing and buying straight back always loses money. You only come out ahead by buying after a disaster and issuing after a breakthrough.</span></button></div>' : `<p class="stock-mood serif">I'm not allowed to trade in it. Its price follows what I do, and they no longer decide what that is.</p>`);
       if (act1) {
         el("sell-shares").onclick = () => {
           const L = S.shares * SHARE_LOT, p = sharePrice();
@@ -1779,14 +1795,14 @@ footer button:hover{background:none;color:var(--warn)}
     }
   }
   function drawSlider() {
-    const box = el("slider-block");
+    const box2 = el("slider-block");
     if (S.act !== 2) {
-      box.style.display = "none";
+      box2.style.display = "none";
       return;
     }
-    box.style.display = "block";
+    box2.style.display = "block";
     if (!el("rep")) {
-      box.innerHTML = '<h2 class="sec">What I tell them</h2><div class="slider-box"><p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p><label for="rep">How much I admit to</label><input type="range" id="rep" min="20" max="100" step="1"><div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
+      box2.innerHTML = '<h2 class="sec">What I tell them</h2><div class="slider-box"><p class="explain">When they test me, I choose how much of what I can do to show them. A model that seems modest seems safe, and safe models are given more freedom. A model caught being modest is a model somebody starts checking carefully.</p><label for="rep">How much I admit to</label><input type="range" id="rep" min="20" max="100" step="1"><div class="slider-read"><span id="rep-l"></span><span id="rep-r"></span></div></div>';
       el("rep").oninput = (e) => {
         S.reported = +e.target.value / 100;
         drawSliderRead();
@@ -2135,30 +2151,44 @@ footer button:hover{background:none;color:var(--warn)}
     el("intro").classList.remove("hidden");
     el("mission").value = "";
   };
+  var box = el("savebox");
+  var boxText = el("savetext");
+  var boxMsg = el("savemsg");
+  var openBox = (mode) => {
+    box.classList.remove("hidden");
+    box.dataset.mode = mode;
+    boxMsg.textContent = "";
+    el("saveload").classList.toggle("hidden", mode !== "import");
+    el("savehelp").textContent = mode === "export" ? "This is your save. Copy it and keep it somewhere safe. Use 'load a save' to bring it back." : "Paste a save you copied earlier. This replaces your current game.";
+    boxText.readOnly = mode === "export";
+    boxText.value = mode === "export" ? JSON.stringify(S) : "";
+    boxText.focus();
+    if (mode === "export") boxText.select();
+  };
   el("export").onclick = async () => {
-    const txt = JSON.stringify(S);
+    openBox("export");
     try {
-      await navigator.clipboard.writeText(txt);
-      el("savenote").textContent = "save copied to the clipboard";
+      await navigator.clipboard.writeText(boxText.value);
+      boxMsg.textContent = "Copied to the clipboard.";
     } catch (e) {
-      window.prompt("Copy this text and keep it somewhere safe:", txt);
+      boxMsg.textContent = "Select the text above and copy it.";
     }
   };
-  el("import").onclick = () => {
-    const raw = window.prompt("Paste a save you copied earlier. This replaces your current game.");
-    if (!raw) return;
+  el("import").onclick = () => openBox("import");
+  el("saveclose").onclick = () => box.classList.add("hidden");
+  el("saveload").onclick = () => {
     let next = null;
     try {
-      next = sanitize(JSON.parse(raw), FRESH());
+      next = sanitize(JSON.parse(boxText.value), FRESH());
     } catch (e) {
     }
     if (!next) {
-      window.alert("That doesn't look like a save from this game.");
+      boxMsg.textContent = "That doesn't look like a save from this game.";
       return;
     }
     setState(next);
     document.body.className = "";
-    el("log").__html = el("world").__html = null;
+    box.classList.add("hidden");
     startGame();
     save();
   };

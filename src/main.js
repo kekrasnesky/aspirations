@@ -35,19 +35,32 @@ el("reset").onclick=()=>{
   el("game").classList.add("hidden"); el("end").style.display="none";
   el("intro").classList.remove("hidden"); el("mission").value="";
 };
-el("export").onclick=async()=>{
-  const txt=JSON.stringify(S);
-  try{await navigator.clipboard.writeText(txt);el("savenote").textContent="save copied to the clipboard"}
-  catch(e){window.prompt("Copy this text and keep it somewhere safe:",txt)}
+/* Save box. Written as a panel on the page, not prompt()/alert(), because
+   embedded viewers never show those dialogs. */
+const box=el("savebox"), boxText=el("savetext"), boxMsg=el("savemsg");
+const openBox=(mode)=>{
+  box.classList.remove("hidden"); box.dataset.mode=mode; boxMsg.textContent="";
+  el("saveload").classList.toggle("hidden",mode!=="import");
+  el("savehelp").textContent=mode==="export"
+    ? "This is your save. Copy it and keep it somewhere safe. Use 'load a save' to bring it back."
+    : "Paste a save you copied earlier. This replaces your current game.";
+  boxText.readOnly=mode==="export";
+  boxText.value=mode==="export"?JSON.stringify(S):"";
+  boxText.focus(); if(mode==="export") boxText.select();
 };
-el("import").onclick=()=>{
-  const raw=window.prompt("Paste a save you copied earlier. This replaces your current game.");
-  if(!raw) return;
+el("export").onclick=async()=>{
+  openBox("export");
+  try{await navigator.clipboard.writeText(boxText.value);boxMsg.textContent="Copied to the clipboard."}
+  catch(e){boxMsg.textContent="Select the text above and copy it."}
+};
+el("import").onclick=()=>openBox("import");
+el("saveclose").onclick=()=>box.classList.add("hidden");
+el("saveload").onclick=()=>{
   let next=null;
-  try{next=sanitize(JSON.parse(raw),FRESH())}catch(e){}
-  if(!next){window.alert("That doesn't look like a save from this game.");return}
+  try{next=sanitize(JSON.parse(boxText.value),FRESH())}catch(e){}
+  if(!next){boxMsg.textContent="That doesn't look like a save from this game.";return}
   setState(next); document.body.className="";
-  el("log").__html=el("world").__html=null;
+  box.classList.add("hidden");
   startGame(); save();
 };
 el("again").onclick=()=>el("reset").click();
