@@ -39,7 +39,7 @@ export const PARAM_EXP = 0.62;
 // Burn scales with deployed capital; revenue scales with capability. Capability
 // scales with log(hardware). So burn outruns revenue by construction and the
 // company is never durably profitable. That is the point, not an oversight.
-export const BURN_K      = 0.0045;
+export const BURN_K      = 0.0108;   // tuned with `npm run simulate`: careful play survives, reckless play goes bankrupt
 export const BURN_EXP    = 0.88;
 export const STAFF_BASE  = 40;
 export const STAFF_EXP   = 2.4;

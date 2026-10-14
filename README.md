@@ -99,11 +99,6 @@ The build enforces these, and `test/build.test.mjs` re-checks them:
 
 ## Known issues
 
-- **Bankruptcy is close to unreachable at the shipped `BURN_K`.** Slowing the
-  game down meant scaling burn down with it, and reckless spending now survives
-  0 times out of 12 in simulation. The ending, the runway warnings and the
-  "shut down hardware" action are all wired up and currently almost dead. There
-  is a test pinned to this so it gets noticed if it changes.
 - Act III is mostly watching numbers climb. It needs a decision with teeth.
 - No audio.
 - The simulation models Act I only.

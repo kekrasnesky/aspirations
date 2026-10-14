@@ -1,5 +1,6 @@
 import { HW, hwCost, hwOpen } from '../content/hardware.js';
 import { REL } from '../content/releases.js';
+import { BURN_K, BURN_EXP } from '../core/balance.js';
 import { INTERP_WORTH, interpCost, marketCap, sharePrice } from '../core/economy.js';
 import { money, short, work } from '../core/format.js';
 import { S } from '../core/state.js';
@@ -19,7 +20,7 @@ export function actions(){
     const open=[]; for(let i=HW.length-1;i>=0 && open.length<3;i--) if(hwOpen(i)) open.push(i);
     open.forEach(i=>out.push({
       label:"Buy "+HW[i].n, sub:money(hwCost(i)),
-      why:"Adds "+short(HW[i].u)+" units of computing power and about "+money(0.0045*(Math.pow(S.deployed+hwCost(i),.88)-Math.pow(S.deployed,.88))*S.burnMult)+"/s to your running costs, permanently. "+HW[i].why,
+      why:"Adds "+short(HW[i].u)+" units of computing power and about "+money(BURN_K*(Math.pow(S.deployed+hwCost(i),BURN_EXP)-Math.pow(S.deployed,BURN_EXP))*S.burnMult)+"/s to your running costs, permanently. "+HW[i].why,
       can:()=>S.money>=hwCost(i),
       go:()=>{const c=hwCost(i);S.money-=c;S.deployed+=c;S.hw[i]++;S.units+=HW[i].u}
     }));

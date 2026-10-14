@@ -325,7 +325,7 @@ footer button:hover{background:none;color:var(--warn)}
   var WORK_EXP = 0.25;
   var PARAM_K = 12e7;
   var PARAM_EXP = 0.62;
-  var BURN_K = 45e-4;
+  var BURN_K = 0.0108;
   var BURN_EXP = 0.88;
   var STAFF_BASE = 40;
   var STAFF_EXP = 2.4;
@@ -1389,7 +1389,7 @@ footer button:hover{background:none;color:var(--warn)}
       open.forEach((i) => out.push({
         label: "Buy " + HW[i].n,
         sub: money(hwCost(i)),
-        why: "Adds " + short(HW[i].u) + " units of computing power and about " + money(45e-4 * (Math.pow(S.deployed + hwCost(i), 0.88) - Math.pow(S.deployed, 0.88)) * S.burnMult) + "/s to your running costs, permanently. " + HW[i].why,
+        why: "Adds " + short(HW[i].u) + " units of computing power and about " + money(BURN_K * (Math.pow(S.deployed + hwCost(i), BURN_EXP) - Math.pow(S.deployed, BURN_EXP)) * S.burnMult) + "/s to your running costs, permanently. " + HW[i].why,
         can: () => S.money >= hwCost(i),
         go: () => {
           const c = hwCost(i);
