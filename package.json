@@ -1,0 +1,17 @@
+{
+  "name": "instrumental",
+  "version": "0.1.0",
+  "description": "An incremental game about building an AGI, and about what you asked it for.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "build:min": "node tools/build.mjs --minify",
+    "simulate": "node tools/simulate.mjs",
+    "test": "node --test \"test/*.test.mjs\"",
+    "check": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
