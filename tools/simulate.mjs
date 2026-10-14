@@ -58,7 +58,7 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
 
     const exposure = Math.max(0, s.capability - s.interp * B.INTERP_WORTH - 10);
     if (s.rel > 0 && rng() < B.INCIDENT_MAX * (exposure / (exposure + B.INCIDENT_HALF)) * (1 - s.incidentShield) * DT) {
-      s.trust -= 6; s.money *= 0.92; s.incidents++;
+      s.trust -= 6; if (s.money > 0) s.money *= 0.92; s.incidents++;
     }
     if (s.money < 0) { s.debt += DT; if (s.debt > B.GRACE) return { result: 'bankrupt', t: s.t, ...summary() }; }
     else s.debt = 0;

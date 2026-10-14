@@ -1,5 +1,5 @@
 import { sharePrice } from './core/economy.js';
-import { TICK_MS } from './core/balance.js';
+import { TICK_MS, PLOT_SAMPLES } from './core/balance.js';
 import { clock } from './core/format.js';
 import { sanitize } from './core/sanitize.js';
 import { FRESH, S, setState } from './core/state.js';
@@ -8,6 +8,7 @@ import { SAVE_KEY, load, save } from './game/persist.js';
 import { el, esc, log } from './ui/dom.js';
 import { drawActions, drawBar, drawGloss, drawGuide, drawPlot, drawProjects, drawSliderRead, drawStock, render } from './ui/render.js';
 import { applyWarmth } from './ui/theme.js';
+import { REDUCED, enterAct2, enterAct3 } from './ui/takeover.js';
 
 export function startGame(){
   el("intro").classList.add("hidden");
@@ -22,10 +23,16 @@ export function startGame(){
     log("Nobody in the world is more than two years ahead of you. Nobody in the world knows your name.");
   }
   render();
+  /* The project that ends an act is marked bought before its cutscene starts,
+     but the act only changes when the cutscene's button is pressed. A save
+     taken in between (autosave, closing the tab) would otherwise strand the
+     player in the old act with the way forward already spent. Replay it. */
+  if(S.act===1 && S.bought.includes("automate")) enterAct2();
+  else if(S.act===2 && S.bought.includes("replicate")) enterAct3();
 }
+
 /* The intro is a command prompt. Submitting it prints a few boot lines, the
    window dissolves, and the control panel fades in. */
-const REDUCED=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const DEFAULT_MISSION="to ensure that artificial general intelligence benefits all of humanity";
 let launching=false;
 function launch(){
@@ -79,6 +86,7 @@ el("saveload").onclick=()=>{
   let next=null;
   try{next=sanitize(JSON.parse(boxText.value),FRESH())}catch(e){}
   if(!next){boxMsg.textContent="That doesn't look like a save from this game.";return}
+  if(!next.mission) next.mission=DEFAULT_MISSION;
   setState(next); document.body.className="";
   box.classList.add("hidden");
   startGame(); save();
@@ -102,7 +110,7 @@ setInterval(()=>{
   if(!S.over){applyWarmth();drawBar();drawGuide();drawPlot();el("clock").textContent=clock(S.t)}
 },TICK_MS);
 setInterval(()=>{if(!S.over&&!paused()){drawActions();drawProjects();drawStock();drawSliderRead()}},400);
-setInterval(()=>{if(!S.over&&!paused()){S.samples.push(S.capability);if(S.samples.length>120)S.samples.shift()}},1000);
+setInterval(()=>{if(!S.over&&!paused()){S.samples.push(S.capability);if(S.samples.length>PLOT_SAMPLES)S.samples.shift()}},1000);
 setInterval(()=>{if(!S.over&&!paused()&&S.hasStock)S.lastPx=sharePrice()},60000);
 setInterval(()=>{if(!S.over)save()},5000);
 // phones kill backgrounded tabs without warning; save on the way out

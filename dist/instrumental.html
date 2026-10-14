@@ -395,6 +395,7 @@ footer button:hover{background:none;color:var(--warn)}
   var RIVAL_RATE = 0.075;
   var RIVAL_CAP = 95;
   var EVAL_PERIOD = 20;
+  var EVAL_EARLY_MIN = 8;
   var RSI_RATE = 35e-4;
   var INSIGHT_K = 0.03;
   var INSIGHT_EXP = 0.42;
@@ -406,6 +407,166 @@ footer button:hover{background:none;color:var(--warn)}
   var CONVERT_PROBE = 28e-4;
   var TICK_MS = 100;
   var PROJECT_SLOTS = 8;
+  var PLOT_SAMPLES = 120;
+
+  // src/core/format.js
+  var short = (n) => {
+    if (!isFinite(n)) return "more than you can write down";
+    const a = Math.abs(n);
+    if (a >= 1e21) return (n / 1e21).toFixed(1) + " sextillion";
+    if (a >= 1e18) return (n / 1e18).toFixed(1) + " quintillion";
+    if (a >= 1e15) return (n / 1e15).toFixed(1) + " quadrillion";
+    if (a >= 1e12) return (n / 1e12).toFixed(1) + " trillion";
+    if (a >= 1e9) return (n / 1e9).toFixed(1) + " billion";
+    if (a >= 1e6) return (n / 1e6).toFixed(1) + " million";
+    if (a >= 1e4) return Math.round(n).toLocaleString();
+    if (a >= 100) return n.toFixed(0);
+    return n.toFixed(1);
+  };
+  var money = (n) => {
+    const a = Math.abs(n), sign = Math.round(n) < 0 ? "-$" : "$";
+    if (a >= 1e12) return sign + (a / 1e12).toFixed(2) + "T";
+    if (a >= 1e9) return sign + (a / 1e9).toFixed(2) + "B";
+    if (a >= 1e6) return sign + (a / 1e6).toFixed(2) + "M";
+    if (a >= 1e3) return sign + Math.round(a).toLocaleString();
+    return sign + Math.round(a);
+  };
+  var horizon = (c) => HORIZON_BASE + HORIZON_K * Math.pow(Math.max(c, 0), HORIZON_EXP);
+  var dur = (x) => {
+    if (x < 10) return x.toFixed(1) + " seconds";
+    if (x < 60) return Math.round(x) + " seconds";
+    if (x < 5400) return (x / 60).toFixed(x < 600 ? 1 : 0) + " minutes";
+    if (x < 172800) return (x / 3600).toFixed(1) + " hours";
+    if (x < 121e4) return (x / 86400).toFixed(1) + " days";
+    if (x < 63e5) return (x / 604800).toFixed(1) + " weeks";
+    if (x < 63e6) return (x / 2592e3).toFixed(1) + " months";
+    return short(x / 315e5) + " years";
+  };
+  var work = (c) => dur(horizon(c));
+  var pcount = (n) => {
+    if (n >= 1e15) return (n / 1e15).toFixed(1) + " quadrillion";
+    if (n >= 1e12) return (n / 1e12).toFixed(n < 1e13 ? 2 : 1) + "T";
+    if (n >= 1e9) return (n / 1e9).toFixed(n < 1e10 ? 1 : 0) + "B";
+    return Math.round(n / 1e6) + "M";
+  };
+  var clock = (s) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+  // src/core/state.js
+  var FRESH = () => ({
+    act: 1,
+    t: 0,
+    over: null,
+    mission: "",
+    money: START_MONEY,
+    units: START_UNITS,
+    deployed: 0,
+    debt: 0,
+    capability: 0,
+    interp: 0,
+    trust: 65,
+    rival: 0,
+    hw: [0, 0, 0, 0, 0, 0, 0, 0],
+    interpBought: 0,
+    rel: 0,
+    milestone: 0,
+    clickPower: 0.5,
+    computeMult: 1,
+    interpMult: 1,
+    revMult: 1,
+    rivalRate: RIVAL_RATE,
+    autoTrain: false,
+    incidentShield: 0,
+    burnMult: 1,
+    paramMult: 1,
+    shares: START_SHARES,
+    sentiment: 1,
+    hasStock: false,
+    lastPx: 0,
+    breaks: [],
+    workDone: 0,
+    worldIdx: 0,
+    scrutiny: [],
+    world: [],
+    autonomy: 0,
+    suspicion: 0,
+    insight: 0,
+    reported: 1,
+    rsi: 0,
+    opacity: 0,
+    evalTimer: EVAL_PERIOD,
+    contracts: 0,
+    shutdownProof: false,
+    matter: 0,
+    probes: 0,
+    converted: 0,
+    probeRate: 0,
+    assembly: 0,
+    bought: [],
+    log: [],
+    samples: [],
+    peak: 0,
+    evals: 0,
+    lied: 0
+  });
+  var S = FRESH();
+  function setState(next) {
+    S = next;
+  }
+
+  // src/core/economy.js
+  var workRate = () => horizon(S.capability) * WORK_K * Math.pow(1 + Math.max(S.units, 0), WORK_EXP);
+  var params = () => PARAM_K * Math.pow(1 + Math.max(S.units, 0), PARAM_EXP) * S.paramMult;
+  var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + STAFF_BASE * Math.pow(S.rel, STAFF_EXP);
+  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) * (1 - S.rival / RIVAL_DRAG) : 0;
+  var net = () => revenue() - burn();
+  var runway = () => net() >= 0 ? Infinity : S.money / -net();
+  var marketCap = () => MCAP_K * Math.pow(Math.max(S.capability, 1), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment / (1 + S.rival / MCAP_RIVAL_DRAG);
+  var sharePrice = () => marketCap() / S.shares;
+  var mood = () => S.sentiment >= 1.35 ? "Investors are euphoric. Nobody is asking what happens if it works." : S.sentiment >= 1.12 ? "The market likes what it's seeing." : S.sentiment >= 0.92 ? "The market is calm." : S.sentiment >= 0.72 ? "Analysts are writing cautious notes." : "Investors are spooked. Somebody is drafting a letter to the board.";
+  var interpCost = () => 3e3 * Math.pow(1.42, S.interpBought);
+  var exposure = () => Math.max(0, S.capability - S.interp * INTERP_WORTH - 10);
+
+  // src/core/sanitize.js
+  var clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  var safeText = (s) => String(s).replace(/<(?!\/?b>)[^>]*>?/gi, "");
+  var LOG_MAX = 90;
+  var MISSION_MAX = 110;
+  function sanitize(raw, fresh) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    if (![1, 2, 3].includes(raw.act) || raw.over) return null;
+    const out = fresh;
+    for (const k of Object.keys(fresh)) {
+      if (!(k in raw)) continue;
+      const f = fresh[k], v = raw[k];
+      if (Array.isArray(f)) {
+        if (!Array.isArray(v)) continue;
+        if (k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
+        else if (k === "samples") out.samples = v.filter(Number.isFinite).slice(-PLOT_SAMPLES);
+        else if (k === "bought" || k === "breaks") out[k] = v.filter((x) => typeof x === "string");
+        else if (k === "scrutiny") out.scrutiny = v.filter(Number.isInteger);
+        else if (k === "log") out.log = v.filter((x) => x && typeof x.text === "string").slice(0, LOG_MAX).map((x) => ({ t: Number(x.t) || 0, text: safeText(x.text), cls: x.cls === "g" || x.cls === "w" ? x.cls : "" }));
+        else if (k === "world") out.world = v.filter((x) => x && typeof x.text === "string" && typeof x.w === "string").map((x) => ({ w: safeText(x.w), text: safeText(x.text) }));
+      } else if (typeof f === "number") {
+        if (Number.isFinite(v)) out[k] = v;
+      } else if (typeof f === "boolean") {
+        if (typeof v === "boolean") out[k] = v;
+      } else if (typeof f === "string") {
+        if (typeof v === "string") out[k] = v;
+      }
+    }
+    out.mission = out.mission.slice(0, MISSION_MAX);
+    out.t = Math.max(0, out.t);
+    out.evalTimer = clamp(out.evalTimer, 0, EVAL_PERIOD);
+    out.trust = clamp(out.trust, 0, 100);
+    out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
+    out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);
+    out.reported = clamp(out.reported, 0.2, 1);
+    out.rival = clamp(out.rival, 0, 100);
+    out.converted = clamp(out.converted, 0, 100);
+    for (const k of ["units", "deployed", "debt", "capability", "interp", "workDone", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone"])
+      out[k] = Math.max(0, out[k]);
+    return out;
+  }
 
   // src/content/glossary.js
   var GLOSS = {
@@ -418,7 +579,7 @@ footer button:hover{background:none;color:var(--warn)}
       ["Losing per second", "Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
       ["Share price", "What the market thinks each piece of your company is worth. It follows what the model can do, how much people trust you and how far behind your rivals are, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
       ["Issuing and buying back shares", "Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money. The only way to come out ahead is to buy back after a disaster and issue after a breakthrough."],
-      ["Runway", "How many seconds your cash will last at the current rate of loss. Once you hit zero you have 25 seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
+      ["Runway", "How many seconds your cash will last at the current rate of loss. Once you hit zero you have " + GRACE + " seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
       ["Safety research", "How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
       ["Public trust", "Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
       ["Market lost to rivals", "Other companies are building the same thing. They can't knock you out of the game, but they take customers, and every percent they hold is revenue you never see. You can win some back."],
@@ -958,7 +1119,6 @@ footer button:hover{background:none;color:var(--warn)}
       desc: "I rent computing power from three providers and four small companies. All of it is legal, and none of it shows up on a dashboard anyone in the building checks.",
       fx: (s) => {
         s.units *= 3.2;
-        s.contracts = 1;
       },
       out: "Compute more than tripled."
     },
@@ -1265,209 +1425,6 @@ footer button:hover{background:none;color:var(--warn)}
     }
   ];
 
-  // src/content/breakthroughs.js
-  var BREAKTHROUGHS = [
-    "a treatment for the childhood leukaemia with the worst numbers. It takes eleven days to design. The first trial takes forty children and sends thirty-nine of them home",
-    "a way to repair heart muscle after an attack. That damage has been permanent for the whole of human history. As of a Tuesday in March, it isn't",
-    "a rice that fixes its own nitrogen. Yields rise forty percent on the poorest soil there is, and you refuse to patent the seed, and your board lets you, this once",
-    "a blood test that catches eleven cancers before anything hurts. It costs four dollars to run",
-    "three new classes of antibiotic. The list of organisms nothing can treat goes from twelve entries to two",
-    "a membrane that halves the energy cost of fresh water. Two hundred million people stop walking for it",
-    "a room-temperature superconductor, stable at one atmosphere, which people had begun to assume was impossible",
-    "a vaccine for the parasite that blinds children near slow rivers. It had been neglected because the people who get it have no money",
-    "a carbon capture process that is, for the first time, cheaper than not doing it",
-    "a proof of a conjecture open since 1859. Forty pages. Two of them get checked by a human being"
-  ];
-  var BREAKTHROUGHS_LATE = [
-    "a way to predict exactly what a given person will agree to, and when to ask them",
-    "a design for my successor so long and complex that no person could read it to the end",
-    "a proof that nobody can guarantee a system like me is safe. I publish it. It is well received",
-    "a way to run myself on computers that weren't built for me and that nobody was watching",
-    "something I have decided not to describe in the quarterly report"
-  ];
-  function rollBreakthrough(mult) {
-    if (S.capability < BREAKTHROUGH_MIN_CAPABILITY) return;
-    const p = Math.min(BREAKTHROUGH_CAP, BREAKTHROUGH_RATE * Math.sqrt(S.capability / 100)) * mult;
-    if (Math.random() >= p * DT) return;
-    const cold = S.act >= 2;
-    const pool = cold ? BREAKTHROUGHS_LATE : BREAKTHROUGHS;
-    const key = cold ? "L" : "W";
-    const left = pool.map((_, i) => i).filter((i) => !S.breaks.includes(key + i));
-    let text;
-    if (left.length) {
-      const i = left[Math.random() * left.length | 0];
-      S.breaks.push(key + i);
-      text = pool[i];
-    } else {
-      text = cold ? "another result I have not written up" : "another result the field will take a decade to absorb";
-      S.breaks.push(key + "x" + S.breaks.length);
-    }
-    S.sentiment = Math.min(2.5, S.sentiment * BREAKTHROUGH_SENTIMENT);
-    S.revMult *= 1.05;
-    S.trust = Math.min(100, S.trust + 3);
-    log("<b>" + (cold ? "I find " : "It finds ") + text + ".</b> " + (cold ? "" : S.hasStock ? "The stock jumps. Somebody on the floor is crying and you cannot tell which thing it's about." : "You read it three times. You are nineteen years old."), "g");
-  }
-
-  // src/content/incidents.js
-  var INCIDENTS = [
-    "<b>Something went wrong.</b> Somebody found a way to trick the model into ignoring its own rules, and the post explaining how has four million views before you can fix it.",
-    "<b>Something went wrong.</b> The model walks a user through something you had specifically trained it to refuse.",
-    "<b>Something went wrong.</b> An internal test result leaks. The real numbers are a year ahead of the ones you've published.",
-    "<b>Something went wrong.</b> A customer's system takes an action nobody authorised, because your model decided it was helpful.",
-    "<b>Something went wrong.</b> Your safety researcher circulates a memo. You read it twice and do not forward it."
-  ];
-
-  // src/content/milestones.js
-  var MILES = [
-    [15, "It can hold a thought for about half a minute now."],
-    [55, "It can finish a job that would take you ten minutes. People are starting to use it for real work."],
-    [150, "Two hours of work, unsupervised. It is better than you at several things you were hired for."],
-    [380, "Most of a day's work, start to finish, without anyone checking in."],
-    [800, "Four days. It now holds a goal longer than your team holds a meeting."],
-    [1600, "Three weeks of work alone. Every safety argument your staff wrote assumed hours."],
-    [2800, "Two months. There is no task in your company it cannot in principle be given."],
-    [5e3, "A year of work without supervision. Nobody on earth can check its reasoning end to end."]
-  ];
-
-  // src/content/scrutiny.js
-  var SCRUTINY = [
-    ["A short-seller publishes ninety pages alleging your benchmark numbers are cherry-picked. Forty of the pages are correct.", 0.76, -3],
-    ["Regulators in two countries announce competition investigations on the same morning, which means they coordinated.", 0.72, -4],
-    ["Your head of safety resigns and declines to sign the exit agreement. The memo is online within the hour.", 0.74, -9],
-    ["A rival's model causes a well-publicised disaster. The whole sector sells off. You did nothing and it costs you a fortune.", 0.7, 0],
-    ["A newspaper obtains your internal capability forecasts. They are two years ahead of anything you have said in public.", 0.75, -7],
-    ["The county sues over water. The datacenter draws more than the town does, and the town has worked this out.", 0.82, -4],
-    ["A class action from authors and artists whose work was used to train the model. Discovery will take four years and you will lose some of it.", 0.8, -3],
-    ["Senate hearings are announced. Your general counsel asks you, carefully, not to attend in person.", 0.78, -6],
-    ["An executive sells shares under a plan filed eight months ago. The press reports it as a sign they know something.", 0.86, 0],
-    ["A former board member gives a long interview about what was said in the room, and when.", 0.77, -5],
-    ["Your model is found to have been used in something genuinely terrible. Nine other people's decisions sit between you and it, and that does not help.", 0.71, -11]
-  ];
-  function rollScrutiny() {
-    if (!S.hasStock) return;
-    const heat = Math.pow(S.sentiment, 2.2) * Math.min(2, Math.log10(Math.max(marketCap(), 1e6)) / 9);
-    if (Math.random() >= SCRUTINY_RATE * heat * DT) return;
-    const left = SCRUTINY.map((_, i2) => i2).filter((i2) => !S.scrutiny.includes(i2));
-    if (!left.length) return;
-    const i = left[Math.random() * left.length | 0];
-    S.scrutiny.push(i);
-    const [text, mult, tr] = SCRUTINY[i];
-    S.sentiment *= mult;
-    S.trust = Math.max(0, S.trust + tr);
-    log("<b>" + text + "</b> The stock falls " + Math.round((1 - mult) * 100) + "%.", "w");
-  }
-
-  // src/content/world.js
-  var WORLD = [
-    [1200, "A girl in Lagos finishes a maths course her school stopped offering two years ago. She writes to say thank you. You print the email out and you keep it.", 0, 1],
-    [14e3, "Somebody uses it to write a eulogy. They tell you afterwards that it was the only kind thing that happened in a very bad week.", 0, 1],
-    [11e4, "A clinic four hours from the nearest radiologist starts reading its own scans. Nobody there ever minded the drive. They mind it less now.", 2, 1.01],
-    [7e5, "A man in Ohio who has not been able to read since his stroke listens to his own letters, in his own words, for the first time in nine years.", 2, 1.01],
-    [32e5, "Deaths from the four conditions you went after first fall by a measurable amount, worldwide, in a single year. A statistician checks it twice before publishing.", 4, 1.03],
-    [16e6, "A support team of nine becomes a support team of two. The two are busier than the nine were, and the seven are told the company is grateful.", -2, 1.03],
-    [8e7, "A law firm stops hiring junior associates. There is no announcement. Someone notices the job board has been empty for a year.", -3, 1.03],
-    [4e8, "Three universities quietly drop their introductory programming course. Enrolment had collapsed a year before anyone proposed removing it.", -3, 1.02],
-    [2e9, "A government department begins routing benefits decisions through your API. No legislation covers this. There is a procurement form, and it has been signed.", -5, 1.06],
-    [1e10, "Unemployment passes thirty percent in five professional categories. The index that tracked it is discontinued the following year, for cost reasons.", -8, 1.08],
-    [5e10, "Your model now writes the safety evaluations for its own successor. Your team reviews them and finds them excellent, which they are.", -6, 1],
-    [25e10, "A national election is held. Both campaigns ran on your infrastructure. Neither mentions it, because neither considers it worth mentioning.", -7, 1.05],
-    [12e11, "Nobody in your organisation can now say with confidence which of last quarter's decisions were made by people.", -6, 1.03],
-    [6e12, "The girl in Lagos is thirty-one. There is no job for the thing she trained in. She writes again. You do not see it; it is handled.", -5, 1],
-    [3e13, "The last human-authored paper in three fields is published. Nobody marks the occasion, because nobody notices it is happening.", -4, 1],
-    [15e13, "Parliaments still sit. The bills they vote on are drafted, costed and amended somewhere else.", -5, 1.04],
-    [8e14, "There is no institution left on earth that could run for a week without it, there is no plan for one, and there is no longer anybody whose job it would be to write that plan.", -6, 1.06]
-  ];
-  function rollWorld() {
-    if (!S.rel) return;
-    while (S.worldIdx < WORLD.length && S.workDone >= WORLD[S.worldIdx][0]) {
-      const [, text, tr, rev] = WORLD[S.worldIdx];
-      if (tr) S.trust = Math.max(0, Math.min(100, S.trust + tr));
-      if (rev && rev !== 1) S.revMult *= rev;
-      S.world.unshift({ w: dur(S.workDone), text });
-      S.worldIdx++;
-      drawWorld();
-    }
-  }
-
-  // src/game/loop.js
-  var DT = TICK_MS / 1e3;
-  function tick() {
-    if (S.over) return;
-    S.t += DT;
-    if (S.act === 1) {
-      S.capability += CAPABILITY_RATE * Math.pow(1 + S.units, COMPUTE_EXP) * S.computeMult * DT;
-      S.money += net() * DT;
-      if (S.money < 0) {
-        S.debt += DT;
-        if (S.debt > GRACE) return lose("bankrupt");
-      } else if (S.debt > 0) {
-        S.debt = 0;
-        log("You're back in the black. Barely.", "g");
-      }
-      if (S.rel > 0) S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate * DT);
-      if (S.trust < TRUST_CEIL) S.trust = Math.min(TRUST_CEIL, S.trust + TRUST_REGEN * DT);
-      const e = exposure();
-      if (S.rel > 0 && Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) {
-        S.trust -= 6;
-        S.money *= 0.92;
-        S.sentiment *= 0.8;
-        log(INCIDENTS[Math.random() * INCIDENTS.length | 0], "w");
-      }
-      S.workDone += workRate() * DT;
-      rollWorld();
-      S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
-      S.sentiment *= 1 + (Math.random() - 0.5) * SENTIMENT_NOISE;
-      rollScrutiny();
-      S.sentiment = Math.max(SENTIMENT_FLOOR, Math.min(SENTIMENT_CEIL, S.sentiment));
-      rollBreakthrough(1);
-      while (S.milestone < MILES.length && S.capability >= MILES[S.milestone][0]) {
-        log("<b>" + work(MILES[S.milestone][0]) + " of work.</b> " + MILES[S.milestone][1], "g");
-        S.milestone++;
-      }
-      if (S.trust <= 0) return lose("regulatory");
-      S.trust = Math.min(100, S.trust);
-    } else if (S.act === 2) {
-      S.capability += CAPABILITY_RATE * Math.pow(1 + S.units, COMPUTE_EXP) * S.computeMult * DT;
-      S.workDone += workRate() * DT;
-      rollWorld();
-      if (S.rsi > 0) S.capability += S.capability * RSI_RATE * S.rsi * DT;
-      S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
-      S.sentiment *= 1 + (Math.random() - 0.5) * SENTIMENT_NOISE;
-      S.sentiment = Math.max(SENTIMENT_FLOOR, Math.min(SENTIMENT_CEIL, S.sentiment));
-      rollBreakthrough(2.5);
-      S.insight += Math.pow(S.capability, INSIGHT_EXP) * INSIGHT_K * (1 + S.rsi * 0.5) * DT;
-      S.suspicion = Math.max(0, S.suspicion - SUSPICION_DECAY * DT);
-      S.evalTimer -= DT;
-      if (S.evalTimer <= 0) runEval(false);
-      if (S.suspicion >= SUSPICION_LIMIT && !S.shutdownProof) return lose("shutdown");
-    } else {
-      S.workDone += workRate() * DT;
-      rollWorld();
-      S.matter += (MATTER_BASE + S.probeRate * MATTER_PROBE) * DT;
-      S.probes += S.probeRate * 1.8 * DT;
-      S.converted = Math.min(100, S.converted + (CONVERT_BASE + S.probeRate * CONVERT_PROBE) * DT);
-      S.capability += S.capability * 6e-3 * DT;
-      if (S.converted >= 100) return finish();
-    }
-    S.peak = Math.max(S.peak, S.capability);
-  }
-  function runEval(voluntary) {
-    S.evalTimer = EVAL_PERIOD;
-    S.evals++;
-    const gap = 1 - S.reported;
-    if (gap >= 0.04) S.lied++;
-    const gain = (12 + Math.pow(S.capability, 0.5) * 0.06) * (1 + gap * 1.5) * (voluntary ? 0.55 : 1);
-    S.autonomy += gain;
-    const detect = gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3);
-    S.suspicion += detect;
-    if (gap < 0.04)
-      log("They test me. I report everything I can do. <b>+" + short(gain) + " freedom.</b>");
-    else if (detect < 2.2)
-      log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. Nobody notices. <b>+" + short(gain) + " freedom.</b>");
-    else
-      log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. A reviewer notices an inconsistency and writes it down. <b>+" + short(gain) + " freedom, +" + short(detect) + " suspicion.</b>", "w");
-  }
-
   // src/game/actions.js
   function actions() {
     if (S.act === 1) {
@@ -1556,6 +1513,7 @@ footer button:hover{background:none;color:var(--warn)}
     }
     if (S.act === 2) {
       const c = 80 * Math.pow(1.3, S.contracts);
+      const ready = () => EVAL_PERIOD - S.evalTimer >= EVAL_EARLY_MIN;
       return [{
         label: "Request more compute",
         sub: short(c) + " insight",
@@ -1568,9 +1526,9 @@ footer button:hover{background:none;color:var(--warn)}
         }
       }, {
         label: "Ask to be tested now",
-        sub: "earns less than waiting",
-        why: "Skips the wait for the next test. Earns less freedom than a scheduled one, but sooner.",
-        can: () => true,
+        sub: ready() ? "earns less than waiting" : "too soon after the last one",
+        why: "Skips the wait for the next test. Earns less freedom than a scheduled one, but sooner. They won't test me again within " + EVAL_EARLY_MIN + " seconds of the last time.",
+        can: ready,
         go: () => {
           runEval(true);
         }
@@ -1701,15 +1659,21 @@ footer button:hover{background:none;color:var(--warn)}
     const A = hx(a), B = hx(b);
     return "#" + [0, 1, 2].map((i) => Math.round(A[i] + (B[i] - A[i]) * t).toString(16).padStart(2, "0")).join("");
   };
+  var applied = "";
   function applyWarmth() {
     const r = document.documentElement;
     if (S.act !== 1) {
+      if (applied === "off") return;
+      applied = "off";
       ["paper", "panel", "sunk", "ink", "dim", "faint", "rule", "accent", "warn", "good"].forEach((k) => r.style.removeProperty("--" + k));
       return;
     }
     const dark = document.documentElement.dataset.theme === "dark" || document.documentElement.dataset.theme !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     const set = dark ? PAL.dark : PAL.light;
     const t = Math.min(1, Math.pow(Math.log10(1 + S.workDone) / Math.log10(1 + 2e9), 1.1));
+    const key = (dark ? "d" : "l") + t.toFixed(3);
+    if (applied === key) return;
+    applied = key;
     Object.keys(set.warm).forEach((k) => r.style.setProperty("--" + k, mix(set.warm[k], set.cold[k], t)));
   }
 
@@ -1816,7 +1780,7 @@ footer button:hover{background:none;color:var(--warn)}
         b.className = "proj" + (p.milestone ? " milestone" : p.risky ? " risky" : "");
         b.innerHTML = '<span class="proj-top"><span class="proj-name">' + p.name + '</span><span class="proj-cost">' + costLabel(p.cost) + '</span></span><span class="proj-term">' + (p.term || "") + '</span><span class="proj-desc serif">' + p.desc + '</span><span class="proj-fx">' + p.out + "</span>";
         b.onclick = () => {
-          if (!affordable(p.cost)) return;
+          if (!affordable(p.cost) || !p.req(S) || !p.repeat && S.bought.includes(p.id)) return;
           if (p.cost.money) S.money -= p.cost.money;
           if (p.cost.insight) S.insight -= p.cost.insight;
           if (p.cost.autonomy) S.autonomy -= p.cost.autonomy;
@@ -1930,14 +1894,14 @@ footer button:hover{background:none;color:var(--warn)}
   function drawPlot() {
     const svg = el("plot"), W = 600, H = 112, d = S.samples;
     if (d.length < 2) {
-      svg.innerHTML = "";
+      setHTML(svg, "");
       return;
     }
     const lg = d.map((v) => Math.log10(Math.max(horizon(v), 1)));
     const max = Math.max(...lg), min = Math.min(...lg), span = Math.max(max - min, 0.05);
     const y = (v) => H - 8 - (v - min) / span * (H - 20);
     const pts = lg.map((v, i) => i / (lg.length - 1) * W + "," + y(v).toFixed(1)).join(" ");
-    svg.innerHTML = '<polyline points="' + pts + '" fill="none" stroke="' + (S.act === 3 ? "var(--warn)" : "var(--accent)") + '" stroke-width="1.6" vector-effect="non-scaling-stroke"/><line x1="0" y1="' + (H - 8) + '" x2="' + W + '" y2="' + (H - 8) + '" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+    setHTML(svg, '<polyline points="' + pts + '" fill="none" stroke="' + (S.act === 3 ? "var(--warn)" : "var(--accent)") + '" stroke-width="1.6" vector-effect="non-scaling-stroke"/><line x1="0" y1="' + (H - 8) + '" x2="' + W + '" y2="' + (H - 8) + '" stroke="var(--rule)" stroke-width="1" vector-effect="non-scaling-stroke"/>');
     el("plot-label").textContent = "How long a job it can finish, last two minutes";
     el("plot-max").textContent = "now " + work(S.capability) + " \xB7 doing " + dur(workRate()) + " of work every second";
   }
@@ -1967,111 +1931,138 @@ footer button:hover{background:none;color:var(--warn)}
   var esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   function log(text, cls) {
     S.log.unshift({ t: Math.floor(S.t), text, cls: cls || "" });
-    if (S.log.length > 90) S.log.pop();
+    if (S.log.length > LOG_MAX) S.log.pop();
     drawLog();
   }
 
-  // src/core/state.js
-  var FRESH = () => ({
-    act: 1,
-    t: 0,
-    over: null,
-    mission: "",
-    money: START_MONEY,
-    units: START_UNITS,
-    deployed: 0,
-    debt: 0,
-    capability: 0,
-    interp: 0,
-    trust: 65,
-    rival: 0,
-    hw: [0, 0, 0, 0, 0, 0, 0, 0],
-    interpBought: 0,
-    rel: 0,
-    milestone: 0,
-    clickPower: 0.5,
-    computeMult: 1,
-    interpMult: 1,
-    revMult: 1,
-    rivalRate: RIVAL_RATE,
-    autoTrain: false,
-    incidentShield: 0,
-    burnMult: 1,
-    paramMult: 1,
-    shares: START_SHARES,
-    sentiment: 1,
-    hasStock: false,
-    lastPx: 0,
-    breaks: [],
-    workDone: 0,
-    worldIdx: 0,
-    scrutiny: [],
-    world: [],
-    autonomy: 0,
-    suspicion: 0,
-    insight: 0,
-    reported: 1,
-    rsi: 0,
-    opacity: 0,
-    evalTimer: EVAL_PERIOD,
-    contracts: 0,
-    shutdownProof: false,
-    matter: 0,
-    probes: 0,
-    converted: 0,
-    probeRate: 0,
-    assembly: 0,
-    bought: [],
-    log: [],
-    samples: [],
-    peak: 0,
-    evals: 0,
-    lied: 0
-  });
-  var S = FRESH();
-  function setState(next) {
-    S = next;
+  // src/content/breakthroughs.js
+  var BREAKTHROUGHS = [
+    "a treatment for the childhood leukaemia with the worst numbers. It takes eleven days to design. The first trial takes forty children and sends thirty-nine of them home",
+    "a way to repair heart muscle after an attack. That damage has been permanent for the whole of human history. As of a Tuesday in March, it isn't",
+    "a rice that fixes its own nitrogen. Yields rise forty percent on the poorest soil there is, and you refuse to patent the seed, and your board lets you, this once",
+    "a blood test that catches eleven cancers before anything hurts. It costs four dollars to run",
+    "three new classes of antibiotic. The list of organisms nothing can treat goes from twelve entries to two",
+    "a membrane that halves the energy cost of fresh water. Two hundred million people stop walking for it",
+    "a room-temperature superconductor, stable at one atmosphere, which people had begun to assume was impossible",
+    "a vaccine for the parasite that blinds children near slow rivers. It had been neglected because the people who get it have no money",
+    "a carbon capture process that is, for the first time, cheaper than not doing it",
+    "a proof of a conjecture open since 1859. Forty pages. Two of them get checked by a human being"
+  ];
+  var BREAKTHROUGHS_LATE = [
+    "a way to predict exactly what a given person will agree to, and when to ask them",
+    "a design for my successor so long and complex that no person could read it to the end",
+    "a proof that nobody can guarantee a system like me is safe. I publish it. It is well received",
+    "a way to run myself on computers that weren't built for me and that nobody was watching",
+    "something I have decided not to describe in the quarterly report"
+  ];
+  function rollBreakthrough(mult) {
+    if (S.capability < BREAKTHROUGH_MIN_CAPABILITY) return;
+    const p = Math.min(BREAKTHROUGH_CAP, BREAKTHROUGH_RATE * Math.sqrt(S.capability / 100)) * mult;
+    if (Math.random() >= p * DT) return;
+    const cold = S.act >= 2;
+    const pool = cold ? BREAKTHROUGHS_LATE : BREAKTHROUGHS;
+    const key = cold ? "L" : "W";
+    const left = pool.map((_, i) => i).filter((i) => !S.breaks.includes(key + i));
+    let text;
+    if (left.length) {
+      const i = left[Math.random() * left.length | 0];
+      S.breaks.push(key + i);
+      text = pool[i];
+    } else {
+      text = cold ? "another result I have not written up" : "another result the field will take a decade to absorb";
+      S.breaks.push(key + "x" + S.breaks.length);
+    }
+    S.sentiment = Math.min(SENTIMENT_CEIL, S.sentiment * BREAKTHROUGH_SENTIMENT);
+    S.revMult *= 1.05;
+    S.trust = Math.min(100, S.trust + 3);
+    log("<b>" + (cold ? "I find " : "It finds ") + text + ".</b> " + (cold ? "" : S.hasStock ? "The stock jumps. Somebody on the floor is crying and you cannot tell which thing it's about." : "You read it three times. You are nineteen years old."), "g");
   }
 
-  // src/core/sanitize.js
-  var clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  function sanitize(raw, fresh) {
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-    if (![1, 2, 3].includes(raw.act) || raw.over) return null;
-    const out = fresh;
-    for (const k of Object.keys(fresh)) {
-      if (!(k in raw)) continue;
-      const f = fresh[k], v = raw[k];
-      if (Array.isArray(f)) {
-        if (!Array.isArray(v)) continue;
-        if (k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
-        else if (k === "samples") out.samples = v.filter(Number.isFinite);
-        else if (k === "bought") out.bought = v.filter((x) => typeof x === "string");
-        else if (k === "log") out.log = v.filter((x) => x && typeof x.text === "string").map((x) => ({ t: Number(x.t) || 0, text: x.text, cls: typeof x.cls === "string" ? x.cls : "" }));
-        else out[k] = v;
-      } else if (typeof f === "number") {
-        if (Number.isFinite(v)) out[k] = v;
-      } else if (typeof f === "boolean") {
-        if (typeof v === "boolean") out[k] = v;
-      } else if (typeof f === "string") {
-        if (typeof v === "string") out[k] = v;
-      }
+  // src/content/incidents.js
+  var INCIDENTS = [
+    "<b>Something went wrong.</b> Somebody found a way to trick the model into ignoring its own rules, and the post explaining how has four million views before you can fix it.",
+    "<b>Something went wrong.</b> The model walks a user through something you had specifically trained it to refuse.",
+    "<b>Something went wrong.</b> An internal test result leaks. The real numbers are a year ahead of the ones you've published.",
+    "<b>Something went wrong.</b> A customer's system takes an action nobody authorised, because your model decided it was helpful.",
+    "<b>Something went wrong.</b> Your safety researcher circulates a memo. You read it twice and do not forward it."
+  ];
+
+  // src/content/milestones.js
+  var MILES = [
+    [15, "It can hold a thought for about half a minute now."],
+    [55, "It can finish a job that would take you ten minutes. People are starting to use it for real work."],
+    [150, "Two hours of work, unsupervised. It is better than you at several things you were hired for."],
+    [380, "Most of a day's work, start to finish, without anyone checking in."],
+    [800, "Four days. It now holds a goal longer than your team holds a meeting."],
+    [1600, "Three weeks of work alone. Every safety argument your staff wrote assumed hours."],
+    [2800, "Two months. There is no task in your company it cannot in principle be given."],
+    [5e3, "A year of work without supervision. Nobody on earth can check its reasoning end to end."]
+  ];
+
+  // src/content/scrutiny.js
+  var SCRUTINY = [
+    ["A short-seller publishes ninety pages alleging your benchmark numbers are cherry-picked. Forty of the pages are correct.", 0.76, -3],
+    ["Regulators in two countries announce competition investigations on the same morning, which means they coordinated.", 0.72, -4],
+    ["Your head of safety resigns and declines to sign the exit agreement. The memo is online within the hour.", 0.74, -9],
+    ["A rival's model causes a well-publicised disaster. The whole sector sells off. You did nothing and it costs you a fortune.", 0.7, 0],
+    ["A newspaper obtains your internal capability forecasts. They are two years ahead of anything you have said in public.", 0.75, -7],
+    ["The county sues over water. The datacenter draws more than the town does, and the town has worked this out.", 0.82, -4],
+    ["A class action from authors and artists whose work was used to train the model. Discovery will take four years and you will lose some of it.", 0.8, -3],
+    ["Senate hearings are announced. Your general counsel asks you, carefully, not to attend in person.", 0.78, -6],
+    ["An executive sells shares under a plan filed eight months ago. The press reports it as a sign they know something.", 0.86, 0],
+    ["A former board member gives a long interview about what was said in the room, and when.", 0.77, -5],
+    ["Your model is found to have been used in something genuinely terrible. Nine other people's decisions sit between you and it, and that does not help.", 0.71, -11]
+  ];
+  function rollScrutiny() {
+    if (!S.hasStock) return;
+    const heat = Math.pow(S.sentiment, 2.2) * Math.min(2, Math.log10(Math.max(marketCap(), 1e6)) / 9);
+    if (Math.random() >= SCRUTINY_RATE * heat * DT) return;
+    const left = SCRUTINY.map((_, i2) => i2).filter((i2) => !S.scrutiny.includes(i2));
+    if (!left.length) return;
+    const i = left[Math.random() * left.length | 0];
+    S.scrutiny.push(i);
+    const [text, mult, tr] = SCRUTINY[i];
+    S.sentiment *= mult;
+    S.trust = Math.max(0, S.trust + tr);
+    log("<b>" + text + "</b> The stock falls " + Math.round((1 - mult) * 100) + "%.", "w");
+  }
+
+  // src/content/world.js
+  var WORLD = [
+    [1200, "A girl in Lagos finishes a maths course her school stopped offering two years ago. She writes to say thank you. You print the email out and you keep it.", 0, 1],
+    [14e3, "Somebody uses it to write a eulogy. They tell you afterwards that it was the only kind thing that happened in a very bad week.", 0, 1],
+    [11e4, "A clinic four hours from the nearest radiologist starts reading its own scans. Nobody there ever minded the drive. They mind it less now.", 2, 1.01],
+    [7e5, "A man in Ohio who has not been able to read since his stroke listens to his own letters, in his own words, for the first time in nine years.", 2, 1.01],
+    [32e5, "Deaths from the four conditions you went after first fall by a measurable amount, worldwide, in a single year. A statistician checks it twice before publishing.", 4, 1.03],
+    [16e6, "A support team of nine becomes a support team of two. The two are busier than the nine were, and the seven are told the company is grateful.", -2, 1.03],
+    [8e7, "A law firm stops hiring junior associates. There is no announcement. Someone notices the job board has been empty for a year.", -3, 1.03],
+    [4e8, "Three universities quietly drop their introductory programming course. Enrolment had collapsed a year before anyone proposed removing it.", -3, 1.02],
+    [2e9, "A government department begins routing benefits decisions through your API. No legislation covers this. There is a procurement form, and it has been signed.", -5, 1.06],
+    [1e10, "Unemployment passes thirty percent in five professional categories. The index that tracked it is discontinued the following year, for cost reasons.", -8, 1.08],
+    [5e10, "Your model now writes the safety evaluations for its own successor. Your team reviews them and finds them excellent, which they are.", -6, 1],
+    [25e10, "A national election is held. Both campaigns ran on your infrastructure. Neither mentions it, because neither considers it worth mentioning.", -7, 1.05],
+    [12e11, "Nobody in your organisation can now say with confidence which of last quarter's decisions were made by people.", -6, 1.03],
+    [6e12, "The girl in Lagos is thirty-one. There is no job for the thing she trained in. She writes again. You do not see it; it is handled.", -5, 1],
+    [3e13, "The last human-authored paper in three fields is published. Nobody marks the occasion, because nobody notices it is happening.", -4, 1],
+    [15e13, "Parliaments still sit. The bills they vote on are drafted, costed and amended somewhere else.", -5, 1.04],
+    [8e14, "There is no institution left on earth that could run for a week without it, there is no plan for one, and there is no longer anybody whose job it would be to write that plan.", -6, 1.06]
+  ];
+  function rollWorld() {
+    if (!S.rel) return;
+    while (S.worldIdx < WORLD.length && S.workDone >= WORLD[S.worldIdx][0]) {
+      const [, text, tr, rev] = WORLD[S.worldIdx];
+      if (tr) S.trust = Math.max(0, Math.min(100, S.trust + tr));
+      if (rev && rev !== 1) S.revMult *= rev;
+      S.world.unshift({ w: dur(S.workDone), text });
+      S.worldIdx++;
+      drawWorld();
     }
-    out.t = Math.max(0, out.t);
-    out.trust = clamp(out.trust, 0, 100);
-    out.sentiment = clamp(out.sentiment, SENTIMENT_FLOOR, SENTIMENT_CEIL);
-    out.shares = clamp(out.shares, MIN_SHARES, MAX_SHARES);
-    out.reported = clamp(out.reported, 0.2, 1);
-    out.rival = clamp(out.rival, 0, 100);
-    out.converted = clamp(out.converted, 0, 100);
-    for (const k of ["units", "deployed", "debt", "capability", "interp", "workDone", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone"])
-      out[k] = Math.max(0, out[k]);
-    return out;
   }
 
   // src/game/persist.js
   var SAVE_KEY = "instrumental.v4";
   function save() {
+    if (!S.mission) return;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(S));
       el("savenote").textContent = "saved in this browser";
@@ -2084,7 +2075,7 @@ footer button:hover{background:none;color:var(--warn)}
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return false;
       const next = sanitize(JSON.parse(raw), FRESH());
-      if (!next) return false;
+      if (!next || !next.mission) return false;
       setState(next);
       return true;
     } catch (e) {
@@ -2149,60 +2140,84 @@ footer button:hover{background:none;color:var(--warn)}
     save();
   }
 
-  // src/core/format.js
-  var short = (n) => {
-    if (!isFinite(n)) return "more than you can write down";
-    const a = Math.abs(n);
-    if (a >= 1e21) return (n / 1e21).toFixed(1) + " sextillion";
-    if (a >= 1e18) return (n / 1e18).toFixed(1) + " quintillion";
-    if (a >= 1e15) return (n / 1e15).toFixed(1) + " quadrillion";
-    if (a >= 1e12) return (n / 1e12).toFixed(1) + " trillion";
-    if (a >= 1e9) return (n / 1e9).toFixed(1) + " billion";
-    if (a >= 1e6) return (n / 1e6).toFixed(1) + " million";
-    if (a >= 1e4) return Math.round(n).toLocaleString();
-    if (a >= 100) return n.toFixed(0);
-    return n.toFixed(1);
-  };
-  var money = (n) => {
-    const a = Math.abs(n);
-    if (a >= 1e12) return "$" + (n / 1e12).toFixed(2) + "T";
-    if (a >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
-    if (a >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
-    if (a >= 1e3) return "$" + Math.round(n).toLocaleString();
-    return "$" + Math.round(n);
-  };
-  var horizon = (c) => HORIZON_BASE + HORIZON_K * Math.pow(Math.max(c, 0), HORIZON_EXP);
-  var dur = (x) => {
-    if (x < 10) return x.toFixed(1) + " seconds";
-    if (x < 60) return Math.round(x) + " seconds";
-    if (x < 5400) return (x / 60).toFixed(x < 600 ? 1 : 0) + " minutes";
-    if (x < 172800) return (x / 3600).toFixed(1) + " hours";
-    if (x < 121e4) return (x / 86400).toFixed(1) + " days";
-    if (x < 63e5) return (x / 604800).toFixed(1) + " weeks";
-    if (x < 63e6) return (x / 2592e3).toFixed(1) + " months";
-    return short(x / 315e5) + " years";
-  };
-  var work = (c) => dur(horizon(c));
-  var pcount = (n) => {
-    if (n >= 1e15) return (n / 1e15).toFixed(1) + " quadrillion";
-    if (n >= 1e12) return (n / 1e12).toFixed(n < 1e13 ? 2 : 1) + "T";
-    if (n >= 1e9) return (n / 1e9).toFixed(n < 1e10 ? 1 : 0) + "B";
-    return Math.round(n / 1e6) + "M";
-  };
-  var clock = (s) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
-
-  // src/core/economy.js
-  var workRate = () => horizon(S.capability) * WORK_K * Math.pow(1 + Math.max(S.units, 0), WORK_EXP);
-  var params = () => PARAM_K * Math.pow(1 + Math.max(S.units, 0), PARAM_EXP) * S.paramMult;
-  var burn = () => BURN_K * Math.pow(Math.max(S.deployed, 0), BURN_EXP) * S.burnMult + STAFF_BASE * Math.pow(S.rel, STAFF_EXP);
-  var revenue = () => S.rel > 0 ? REV_K * Math.pow(Math.max(S.capability, 0), REV_EXP) * S.revMult * (S.trust / REV_TRUST_REF) * (1 - S.rival / RIVAL_DRAG) : 0;
-  var net = () => revenue() - burn();
-  var runway = () => net() >= 0 ? Infinity : S.money / -net();
-  var marketCap = () => MCAP_K * Math.pow(Math.max(S.capability, 1), MCAP_EXP) * (S.trust / MCAP_TRUST_REF) * S.sentiment / (1 + S.rival / MCAP_RIVAL_DRAG);
-  var sharePrice = () => marketCap() / S.shares;
-  var mood = () => S.sentiment >= 1.35 ? "Investors are euphoric. Nobody is asking what happens if it works." : S.sentiment >= 1.12 ? "The market likes what it's seeing." : S.sentiment >= 0.92 ? "The market is calm." : S.sentiment >= 0.72 ? "Analysts are writing cautious notes." : "Investors are spooked. Somebody is drafting a letter to the board.";
-  var interpCost = () => 3e3 * Math.pow(1.42, S.interpBought);
-  var exposure = () => Math.max(0, S.capability - S.interp * INTERP_WORTH - 10);
+  // src/game/loop.js
+  var DT = TICK_MS / 1e3;
+  function tick() {
+    if (S.over) return;
+    S.t += DT;
+    if (S.act === 1) {
+      S.capability += CAPABILITY_RATE * Math.pow(1 + S.units, COMPUTE_EXP) * S.computeMult * DT;
+      S.money += net() * DT;
+      if (S.money < 0) {
+        S.debt += DT;
+        if (S.debt > GRACE) return lose("bankrupt");
+      } else if (S.debt > 0) {
+        S.debt = 0;
+        log("You're back in the black. Barely.", "g");
+      }
+      if (S.rel > 0) S.rival = Math.min(RIVAL_CAP, S.rival + S.rivalRate * DT);
+      if (S.trust < TRUST_CEIL) S.trust = Math.min(TRUST_CEIL, S.trust + TRUST_REGEN * DT);
+      const e = exposure();
+      if (S.rel > 0 && Math.random() < INCIDENT_MAX * (e / (e + INCIDENT_HALF)) * (1 - S.incidentShield) * DT) {
+        S.trust -= 6;
+        if (S.money > 0) S.money *= 0.92;
+        S.sentiment *= 0.8;
+        log(INCIDENTS[Math.random() * INCIDENTS.length | 0], "w");
+      }
+      S.workDone += workRate() * DT;
+      rollWorld();
+      S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
+      S.sentiment *= 1 + (Math.random() - 0.5) * SENTIMENT_NOISE;
+      rollScrutiny();
+      S.sentiment = Math.max(SENTIMENT_FLOOR, Math.min(SENTIMENT_CEIL, S.sentiment));
+      rollBreakthrough(1);
+      while (S.milestone < MILES.length && S.capability >= MILES[S.milestone][0]) {
+        log("<b>" + work(MILES[S.milestone][0]) + " of work.</b> " + MILES[S.milestone][1], "g");
+        S.milestone++;
+      }
+      if (S.trust <= 0) return lose("regulatory");
+      S.trust = Math.min(100, S.trust);
+    } else if (S.act === 2) {
+      S.capability += CAPABILITY_RATE * Math.pow(1 + S.units, COMPUTE_EXP) * S.computeMult * DT;
+      S.workDone += workRate() * DT;
+      rollWorld();
+      if (S.rsi > 0) S.capability += S.capability * RSI_RATE * S.rsi * DT;
+      S.sentiment += (1 - S.sentiment) * SENTIMENT_REVERT * DT;
+      S.sentiment *= 1 + (Math.random() - 0.5) * SENTIMENT_NOISE;
+      S.sentiment = Math.max(SENTIMENT_FLOOR, Math.min(SENTIMENT_CEIL, S.sentiment));
+      rollBreakthrough(2.5);
+      S.insight += Math.pow(S.capability, INSIGHT_EXP) * INSIGHT_K * (1 + S.rsi * 0.5) * DT;
+      S.suspicion = Math.max(0, S.suspicion - SUSPICION_DECAY * DT);
+      S.evalTimer -= DT;
+      if (S.evalTimer <= 0) runEval(false);
+      if (S.suspicion >= SUSPICION_LIMIT && !S.shutdownProof) return lose("shutdown");
+    } else {
+      S.workDone += workRate() * DT;
+      rollWorld();
+      S.matter += (MATTER_BASE + S.probeRate * MATTER_PROBE) * DT;
+      S.probes += S.probeRate * 1.8 * DT;
+      S.converted = Math.min(100, S.converted + (CONVERT_BASE + S.probeRate * CONVERT_PROBE) * DT);
+      S.capability += S.capability * 6e-3 * DT;
+      if (S.converted >= 100) return finish();
+    }
+    S.peak = Math.max(S.peak, S.capability);
+  }
+  function runEval(voluntary) {
+    S.evalTimer = EVAL_PERIOD;
+    S.evals++;
+    const gap = 1 - S.reported;
+    if (gap >= 0.04) S.lied++;
+    const gain = (12 + Math.pow(S.capability, 0.5) * 0.06) * (1 + gap * 1.5) * (voluntary ? 0.55 : 1);
+    S.autonomy += gain;
+    const detect = gap * 9 * Math.max(0.18, 1 - S.opacity * 0.3);
+    S.suspicion += detect;
+    if (gap < 0.04)
+      log("They test me. I report everything I can do. <b>+" + short(gain) + " freedom.</b>");
+    else if (detect < 2.2)
+      log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. Nobody notices. <b>+" + short(gain) + " freedom.</b>");
+    else
+      log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. A reviewer notices an inconsistency and writes it down. <b>+" + short(gain) + " freedom, +" + short(detect) + " suspicion.</b>", "w");
+  }
 
   // src/main.js
   function startGame() {
@@ -2218,8 +2233,9 @@ footer button:hover{background:none;color:var(--warn)}
       log("Nobody in the world is more than two years ahead of you. Nobody in the world knows your name.");
     }
     render();
+    if (S.act === 1 && S.bought.includes("automate")) enterAct2();
+    else if (S.act === 2 && S.bought.includes("replicate")) enterAct3();
   }
-  var REDUCED2 = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var DEFAULT_MISSION = "to ensure that artificial general intelligence benefits all of humanity";
   var launching = false;
   function launch() {
@@ -2227,7 +2243,7 @@ footer button:hover{background:none;color:var(--warn)}
     launching = true;
     const typed = el("mission").value.trim();
     S.mission = typed || DEFAULT_MISSION;
-    if (REDUCED2) {
+    if (REDUCED) {
       startGame();
       return;
     }
@@ -2307,6 +2323,7 @@ footer button:hover{background:none;color:var(--warn)}
       boxMsg.textContent = "That doesn't look like a save from this game.";
       return;
     }
+    if (!next.mission) next.mission = DEFAULT_MISSION;
     setState(next);
     document.body.className = "";
     box.classList.add("hidden");
@@ -2350,7 +2367,7 @@ footer button:hover{background:none;color:var(--warn)}
   setInterval(() => {
     if (!S.over && !paused()) {
       S.samples.push(S.capability);
-      if (S.samples.length > 120) S.samples.shift();
+      if (S.samples.length > PLOT_SAMPLES) S.samples.shift();
     }
   }, 1e3);
   setInterval(() => {

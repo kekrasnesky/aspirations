@@ -1,6 +1,3 @@
-import { horizon, work } from '../core/format.js';
-import { finish } from '../game/endings.js';
-
 /* milestones in plain language, announced as the horizon crosses them */
 export const MILES = [
  [15,   "It can hold a thought for about half a minute now."],
@@ -12,7 +9,3 @@ export const MILES = [
  [2800, "Two months. There is no task in your company it cannot in principle be given."],
  [5000, "A year of work without supervision. Nobody on earth can check its reasoning end to end."]
 ];
-
-/* ============================================================
-   GLOSSARY
-   ============================================================ */

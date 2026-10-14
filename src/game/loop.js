@@ -27,7 +27,7 @@ export function tick(){
     if(S.trust<TRUST_CEIL) S.trust=Math.min(TRUST_CEIL,S.trust+TRUST_REGEN*DT);
     const e=exposure();
     if(S.rel>0 && Math.random() < INCIDENT_MAX*(e/(e+INCIDENT_HALF))*(1-S.incidentShield)*DT){
-      S.trust-=6; S.money*=.92; S.sentiment*=.80;
+      S.trust-=6; if(S.money>0) S.money*=.92; S.sentiment*=.80;
       log(INCIDENTS[(Math.random()*INCIDENTS.length)|0],"w");
     }
     S.workDone += workRate()*DT; rollWorld();
@@ -83,7 +83,3 @@ export function runEval(voluntary){
   else
     log("They test me. I show them "+Math.round(S.reported*100)+"% of what I can do. A reviewer notices an inconsistency and writes it down. <b>+"+short(gain)+" freedom, +"+short(detect)+" suspicion.</b>","w");
 }
-
-/* ============================================================
-   TRANSITIONS
-   ============================================================ */

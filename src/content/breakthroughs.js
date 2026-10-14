@@ -1,7 +1,5 @@
-import { BREAKTHROUGH_MIN_CAPABILITY, BREAKTHROUGH_CAP, BREAKTHROUGH_RATE, BREAKTHROUGH_SENTIMENT } from '../core/balance.js';
-import { money } from '../core/format.js';
+import { BREAKTHROUGH_MIN_CAPABILITY, BREAKTHROUGH_CAP, BREAKTHROUGH_RATE, BREAKTHROUGH_SENTIMENT, SENTIMENT_CEIL } from '../core/balance.js';
 import { S } from '../core/state.js';
-import { finish } from '../game/endings.js';
 import { DT } from '../game/loop.js';
 import { log } from '../ui/dom.js';
 
@@ -37,7 +35,7 @@ export function rollBreakthrough(mult){
   let text;
   if(left.length){const i=left[(Math.random()*left.length)|0];S.breaks.push(key+i);text=pool[i]}
   else { text = cold ? "another result I have not written up" : "another result the field will take a decade to absorb"; S.breaks.push(key+"x"+S.breaks.length) }
-  S.sentiment=Math.min(2.5,S.sentiment*BREAKTHROUGH_SENTIMENT);
+  S.sentiment=Math.min(SENTIMENT_CEIL,S.sentiment*BREAKTHROUGH_SENTIMENT);
   S.revMult*=1.05; S.trust=Math.min(100,S.trust+3);
   log("<b>"+(cold?"I find ":"It finds ")+text+".</b> "+
     (cold?"" : S.hasStock?"The stock jumps. Somebody on the floor is crying and you cannot tell which thing it's about."

@@ -1,6 +1,4 @@
 import { START_MONEY, START_UNITS, RIVAL_RATE, START_SHARES, EVAL_PERIOD } from './balance.js';
-import { money } from '../core/format.js';
-import { log } from '../ui/dom.js';
 
 export const FRESH = () => ({
   act:1, t:0, over:null, mission:"",

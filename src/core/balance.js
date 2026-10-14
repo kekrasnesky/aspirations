@@ -87,6 +87,7 @@ export const RIVAL_CAP  = 95;          // they take share, they never end the ru
 
 // ---- act II ---------------------------------------------------------------
 export const EVAL_PERIOD      = 20;
+export const EVAL_EARLY_MIN   = 8;     // seconds after a test before I can ask for another
 export const RSI_RATE         = 0.0035;
 export const INSIGHT_K        = 0.03;
 export const INSIGHT_EXP      = 0.42;

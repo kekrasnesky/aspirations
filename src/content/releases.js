@@ -1,5 +1,3 @@
-import { money } from '../core/format.js';
-
 export const REL = [
  {req:20,  pay:8e4,  mult:1.5, n:"Publish it on the web for free",
   why:"Until now it has only talked to you. You put it on a free website, and by Sunday it has been used four million times. Donations arrive, and a foundation offers a grant. The email says 'Dear Dr', because nobody imagines a teenager built this."},
