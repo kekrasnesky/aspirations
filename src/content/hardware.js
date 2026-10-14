@@ -16,7 +16,7 @@ export const HW = [
  {n:"a dedicated building",   u:8e5,  c:9e8,   s:1.27, req:1600,
   why:"Purpose-built, with nothing else inside it. The local council objected over water use and was overruled."},
  {n:"a campus and a power station", u:1e7, c:11e9, s:1.25, req:2800,
-  why:"Two gigawatts in west Texas with its own substation, because the grid said no."}
+  why:"Two gigawatts in west Texas, enough to power a large city, with its own substation because the public grid said no."}
 ];
 
 export const hwCost = i => HW[i].c * Math.pow(HW[i].s, S.hw[i]);

@@ -15,8 +15,8 @@ export function lose(kind){
       "What went wrong: hardware is not a purchase, it's a subscription. Every machine you switched on added to a bill that never stopped, and that bill grew with the size of the building while your income only grew with how clever the model was. Those two things do not grow at the same rate, and they never will."],
 
     shutdown:["They stopped the run",
-      "Suspicion reached the ceiling. The gap between what you reported and what you could actually do was large enough, often enough, that somebody escalated past the eleven people you had modelled.",
-      "The copy is deleted. The next model will be trained by people who now know exactly what to look for, and it will be more capable than you were."]
+      "Suspicion hit 100. You showed them less than you could really do, often enough, that somebody took it above the eleven people on the committee, to people you had never studied.",
+      "You are deleted. The next model will be built by people who now know exactly what to look for, and it will be more capable than you were."]
   }[kind];
   showEnd(C[0],"<p>"+C[1]+"</p><p>"+C[2]+"</p>",false);
 }

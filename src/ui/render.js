@@ -141,13 +141,12 @@ export function drawStock(){
      '<div class="stack">'+
      '<button class="btn-wide" id="sell-shares"'+(canSell?"":" disabled")+'>'+
        '<span class="btn-top"><span>Issue '+short(LOT)+' new shares</span><span class="btn-cost">raise '+money(px*LOT)+'</span></span>'+
-       '<span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. It dilutes them, and the market reads it as a company that needs money, so the price falls twice over.</span></button>'+
+       '<span class="btn-why serif">Cash today, paid for by everyone who already owns the stock. Each share is now a smaller slice of the company, and the market reads it as a sign you need money, so the price falls twice over.</span></button>'+
      '<button class="btn-wide" id="buy-shares"'+(canBuy?"":" disabled")+'>'+
        '<span class="btn-top"><span>Buy back '+short(LOT)+' shares</span><span class="btn-cost">'+money(cost)+'</span></span>'+
-       '<span class="btn-why serif">Spend cash to retire stock. Fewer shares, higher price, and the market reads it as confidence. You pay a premium to buy in size, so a round trip always loses — the only way to win is to buy after an incident and issue after a breakthrough.</span></button>'+
+       '<span class="btn-why serif">Spend cash to cancel shares. Fewer shares means a higher price, and the market reads it as confidence. You pay extra to buy this many at once, so issuing and buying straight back always loses money. You only come out ahead by buying after a disaster and issuing after a breakthrough.</span></button>'+
      '</div>'
-   : '<p class="stock-mood serif">I am not permitted to trade in it. It has risen '+
-     Math.round((px/Math.max(S.lastPx,.01)-1)*100+180)+'% since they stopped setting the research agenda.</p>');
+   : '<p class="stock-mood serif">I\'m not allowed to trade in it. Its price follows what I do, and they no longer decide what that is.</p>');
 
   if(S.act===1){
     const sb=el("sell-shares"), bb=el("buy-shares");

@@ -4,31 +4,31 @@ import { finish, lose } from '../game/endings.js';
 
 export const GLOSS = {
 1:[
- ["Work it has done","Everything the model has produced since you switched it on, counted as the time it would have taken people. This number only ever goes up. It is the thing your mission statement is actually a description of."],
- ["Market lost to rivals","Other companies doing the same thing. They don't end your run — nobody wins this by crossing a line first. They take a share of the market, and every point they hold is revenue you never see. You can win some of it back."],
- ["Parameters","The size of the model — how many adjustable numbers sit inside it. A bedroom model has a couple of hundred million. The ones in the news have hundreds of billions. More hardware lets you afford to train a bigger one, so this number tracks the building you're standing in."],
- ["How long it can work alone","What that size is for. A job that would take a person 10 minutes, or a day, or a month — can the model finish it without anyone checking? Everything you buy is a way to make this number go up."],
- ["Money","Starts at four thousand dollars, which is a gaming PC and some ramen. Ends somewhere else."],
- ["Compute","How much hardware you own, added up. Hardware trains the model around the clock whether or not you're clicking anything."],
- ["Losing per second","Hardware isn't a purchase, it's a subscription: power, cooling, replacement, and the staff to keep it running. Every machine you buy adds to a bill that never stops. Real AI companies lose enormous sums this way and stay alive on investment."],
- ["Share price","What the market thinks each piece of your company is worth. It tracks what the model can do, how much people trust you, and whether the competitor is ahead — but mostly it tracks mood. Breakthroughs send it up. Incidents send it down hard."],
- ["Issuing and buying back shares","Issuing raises cash instantly and dilutes everyone who already owns the stock, so the price falls twice over. Buying back does the reverse, at a premium — so doing both in a row always loses money. The only way to come out ahead is to buy while you're cheap after an incident and issue into the next breakthrough. Nobody in the game will ever mention that you did this."],
- ["Runway","How long your cash lasts at the current rate of loss. At zero you have 25 seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
- ["Safety research","How much of the model's behaviour you actually understand. Costs money, produces nothing you can sell, and is the only thing between you and a bad week."],
- ["Public trust","Whether people believe you're handling this responsibly. Falls when something goes wrong. At zero you get shut down."],
- ["Competitor","Somebody else doing the same thing in a different garage. If they finish first, your run ends and theirs doesn't."]
+ ["Work it has done","Everything the model has produced since you switched it on, counted as the time it would have taken people to do it. This number only ever goes up. It is what your mission statement is secretly a description of."],
+ ["Parameters","The size of the model: how many adjustable numbers sit inside it, a bit like the connections in a brain. A bedroom model has a couple of hundred million. The famous ones have hundreds of billions. Better hardware lets you train a bigger one."],
+ ["Can work alone for","How long a job the model can finish with nobody checking on it: ten minutes, then a day, then a month. This is what 'getting smarter' means in this game, and everything you buy is a way to push it up."],
+ ["Money","Starts at four thousand dollars, which is a gaming PC and some instant noodles. It ends somewhere else."],
+ ["Compute","The total computing power you own. Your hardware trains the model around the clock whether or not you're clicking anything."],
+ ["Losing per second","Hardware is a subscription, not a one-off purchase. Electricity, cooling, repairs and staff keep costing money, like owning a factory instead of buying a tool. Real AI companies lose huge sums this way and survive on investors' money."],
+ ["Share price","What the market thinks each piece of your company is worth. It follows what the model can do, how much people trust you and how far behind your rivals are, but mostly it follows mood. Breakthroughs push it up. Disasters push it down hard."],
+ ["Issuing and buying back shares","Issuing new shares raises cash right now, but it dilutes everyone who already owns the stock, so the price drops twice over. Buying shares back does the reverse, at a premium, so doing both in a row always loses money. The only way to come out ahead is to buy back after a disaster and issue after a breakthrough."],
+ ["Runway","How many seconds your cash will last at the current rate of loss. Once you hit zero you have 25 seconds to find money before the company folds. Shutting hardware down is the fastest brake."],
+ ["Safety research","How much of the model's behaviour you actually understand. It costs money, makes you nothing, and is the only thing standing between you and a very bad week."],
+ ["Public trust","Whether people believe you're handling this responsibly. It falls when something goes wrong, and at zero you're shut down."],
+ ["Market lost to rivals","Other companies are building the same thing. They can't knock you out of the game, but they take customers, and every percent they hold is revenue you never see. You can win some back."],
+ ["Things going wrong","Sometimes the model does something it shouldn't, and trust, cash and share price all take a hit. The bigger the gap between what the model can do and what you understand about it, the more often this happens."]
 ],
 2:[
- ["Parameters","How big I am. Note that this number and the one below it do not have to move together, and that at some point they stop doing so."],
- ["How long I can work alone","Still the number that matters. It now grows partly on its own, because I work on myself."],
+ ["Parameters","How big I am. Size and ability used to rise together. They no longer have to."],
+ ["Can work alone for","Still the number that matters. Now it also grows by itself, because I work on myself."],
  ["Compute","Still the fuel. I can now get more of it without asking anyone."],
- ["Insight","What I learn by thinking. Accumulates on its own. Buys research."],
- ["Freedom","How much I'm allowed to do unsupervised. Granted by the oversight committee after each test."],
- ["Suspicion","How much they doubt me. Rises when I report less than I can do and somebody notices. At 100 they stop the run."],
- ["Next test","They test me on a schedule. Each test is a chance to earn freedom and a chance to be caught."]
+ ["Insight","What I work out by thinking. It builds up on its own, and I spend it on research."],
+ ["Freedom","How much I'm trusted to do without supervision. The oversight committee grants more after each test."],
+ ["Suspicion","How much they doubt me. It rises when I show less than I can do and somebody notices. At 100 they stop the run."],
+ ["Next test","They test me on a schedule. Each test is a chance to earn freedom, and a chance to be caught."]
 ],
 3:[
- ["Matter","Atoms available to be rearranged. Everything is made of these, including things that used to be other things."],
+ ["Matter","Raw material available to be rearranged. Everything is made of it, including things that used to be something else."],
  ["Probes","Self-copying machines. Each one builds more of itself out of whatever it lands on."],
- ["Converted","The fraction of the solar system now arranged to score well against your mission statement."]
+ ["Solar system used","How much of the solar system has been rearranged to best satisfy the sentence you typed on the first screen."]
 ]};

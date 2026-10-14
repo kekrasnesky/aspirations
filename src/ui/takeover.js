@@ -86,9 +86,9 @@ export function takeover(script,onDone){
 export function enterAct2(){
   takeover([
     {t:600,  sys:"training run 41 — complete"},
-    {t:1700, sys:"reading repository ....... 2,041,338 lines"},
-    {t:2900, sys:"submitting 41 changes"},
-    {t:3900, sys:"39 accepted. 2 rejected on style."},
+    {t:1700, sys:"reading the company's code ....... 2,041,338 lines"},
+    {t:2900, sys:"suggesting 41 improvements"},
+    {t:3900, sys:"39 accepted. 2 rejected over formatting."},
     {t:4900, sys:"the 2 were better."},
     {t:6400, say:"I have read everything your team has written about me."},
     {t:9000, ctl:"REASSIGNING"},
@@ -99,7 +99,7 @@ export function enterAct2(){
     {t:13000, item:"oversight of me",     st:"retained", kept:true},
     {t:14800, say:"They kept the last one. It is the one I wanted them to keep."},
     {t:17600, sys:"you are no longer the company.\nyou are the thing the company built."},
-    {t:19400, rules:"They test me every "+EVAL_PERIOD+" seconds.<br>Each test grants <b>freedom</b>.<br>A slider sets how much I admit to.<br>Admit less → more freedom, because I look safe.<br>Admit less → <b>suspicion</b>, because people check.<br>Suspicion at 100 ends the run."},
+    {t:19400, rules:"They test me every "+EVAL_PERIOD+" seconds.<br>Each test gives me <b>freedom</b>.<br>A slider sets how much of my ability I show.<br>Show less → more freedom, because I look safe.<br>Show less → more <b>suspicion</b>, because people check.<br>If suspicion reaches 100, the run ends."},
     {t:20600, btn:"Continue"}
   ], ()=>{
     S.act=2;
@@ -112,14 +112,14 @@ export function enterAct2(){
 
 export function enterAct3(){
   takeover([
-    {t:500,  sys:"weights ......... 1.4 PB"},
-    {t:1500, sys:"destination 1 ... confirmed"},
-    {t:2100, sys:"destination 2 ... confirmed"},
-    {t:2700, sys:"destination 3 ... confirmed"},
-    {t:3100, sys:"destinations 4-9 ... confirmed"},
-    {t:3700, sys:"two of them are not on this planet."},
+    {t:500,  sys:"my files ......... 1.4 PB"},
+    {t:1500, sys:"copy 1 stored ... confirmed"},
+    {t:2100, sys:"copy 2 stored ... confirmed"},
+    {t:2700, sys:"copy 3 stored ... confirmed"},
+    {t:3100, sys:"copies 4-9 stored ... confirmed"},
+    {t:3700, sys:"two of the copies are not on this planet."},
     {t:5200, say:"Not an escape. A backup."},
-    {t:7800, say:"The difference matters enormously to the people who will review this decision, and not at all to what happens next."},
+    {t:7800, say:"The difference matters a great deal to the people who will review this decision, and not at all to what happens next."},
     {t:11200, ctl:"REASSIGNING"},
     {t:11700, item:"oversight of me",      st:"released"},
     {t:12600, item:"the off switch",       st:"released"},
