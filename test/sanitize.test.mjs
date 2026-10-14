@@ -22,7 +22,7 @@ test('NaN, Infinity and wrong types never reach the state', () => {
   const fresh = FRESH();
   assert.equal(out.money, fresh.money);
   assert.equal(out.capability, 0);
-  assert.equal(out.units, 0);
+  assert.equal(out.units, fresh.units);
   assert.equal(out.trust, fresh.trust);
   assert.equal(out.hasStock, false);
   assert.equal(out.hw.length, 8);

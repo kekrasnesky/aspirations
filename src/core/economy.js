@@ -13,7 +13,7 @@ export const params = () => PARAM_K*Math.pow(1+Math.max(S.units,0),PARAM_EXP)*S.
 
 export const burn    = () => BURN_K*Math.pow(Math.max(S.deployed,0),BURN_EXP)*S.burnMult + STAFF_BASE*Math.pow(S.rel,STAFF_EXP);
 
-export const revenue = () => S.rel>0 ? REV_K*Math.pow(Math.max(S.capability,0),REV_EXP)*S.revMult*(S.trust/REV_TRUST_REF)*(1-S.rival/RIVAL_DRAG) : 25;
+export const revenue = () => S.rel>0 ? REV_K*Math.pow(Math.max(S.capability,0),REV_EXP)*S.revMult*(S.trust/REV_TRUST_REF)*(1-S.rival/RIVAL_DRAG) : 0;   // nobody pays for a model nobody can use
 
 export const net     = () => revenue()-burn();
 

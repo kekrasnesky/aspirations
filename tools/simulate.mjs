@@ -26,7 +26,7 @@ const act1Projects = P.filter(p => p.act === 1 && p.id !== 'automate');
 /** One playthrough of Act I under a given policy. */
 export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random, burnScale = 1 } = {}) {
   const s = {
-    money: B.START_MONEY, units: 0, deployed: 0, capability: 0, interp: 0, interpBought: 0,
+    money: B.START_MONEY, units: B.START_UNITS, deployed: 0, capability: 0, interp: 0, interpBought: 0,
     trust: 65, rival: 0, rel: 0, hw: HW.map(() => 0), debt: 0, workDone: 0,
     computeMult: 1, interpMult: 1, revMult: 1, burnMult: 1, incidentShield: 0,
     rivalRate: B.RIVAL_RATE, bought: new Set(), t: 0, incidents: 0, cooldown: 0,
@@ -37,7 +37,7 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
                    + B.STAFF_BASE * Math.pow(s.rel, B.STAFF_EXP);
   const rev  = () => s.rel > 0
     ? B.REV_K * Math.pow(s.capability, B.REV_EXP) * s.revMult * (s.trust / B.REV_TRUST_REF) * (1 - s.rival / B.RIVAL_DRAG)
-    : 25;
+    : 0;
   const workRate = () => horizon(s.capability) * B.WORK_K * Math.pow(1 + s.units, B.WORK_EXP);
 
   const DT = B.TICK_MS / 1000;
@@ -53,11 +53,11 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
     minNet = Math.min(minNet, n);
     if (n < 0) negSeconds += DT;
     s.money += n * DT;
-    s.rival = Math.min(B.RIVAL_CAP, s.rival + s.rivalRate * DT);
+    if (s.rel > 0) s.rival = Math.min(B.RIVAL_CAP, s.rival + s.rivalRate * DT);
     if (s.trust < B.TRUST_CEIL) s.trust = Math.min(B.TRUST_CEIL, s.trust + B.TRUST_REGEN * DT);
 
     const exposure = Math.max(0, s.capability - s.interp * B.INTERP_WORTH - 10);
-    if (rng() < B.INCIDENT_MAX * (exposure / (exposure + B.INCIDENT_HALF)) * (1 - s.incidentShield) * DT) {
+    if (s.rel > 0 && rng() < B.INCIDENT_MAX * (exposure / (exposure + B.INCIDENT_HALF)) * (1 - s.incidentShield) * DT) {
       s.trust -= 6; s.money *= 0.92; s.incidents++;
     }
     if (s.money < 0) { s.debt += DT; if (s.debt > B.GRACE) return { result: 'bankrupt', t: s.t, ...summary() }; }
@@ -74,7 +74,7 @@ export function playAct1({ runwayFloor = 18, buyEveryMs = 800, rng = Math.random
     const r = REL[s.rel];
     if (r && s.capability >= r.req) {
       s.money += r.pay; s.revMult *= r.mult; s.rel++;
-      s.trust += s.interp * B.INTERP_WORTH >= s.capability ? 5 : -9;
+      s.trust += s.rel === 1 ? 0 : s.interp * B.INTERP_WORTH >= s.capability ? 5 : -9;
       if (TRACE) trace.push(`${fmtT(s.t)}  ${r.n} — burn ${Math.round(burn())}/s vs revenue ${Math.round(rev())}/s`);
     }
     if (s.trust <= 40 && s.money >= 5e6) { s.money -= 2e6; s.trust = Math.min(100, s.trust + 26); }

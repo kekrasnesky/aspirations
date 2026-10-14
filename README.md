@@ -3,9 +3,9 @@
 An incremental game about building an artificial general intelligence, and
 about what you asked it for.
 
-You start at fourteen, in a basement, with four thousand dollars and a PC you
-built yourself. You write one sentence in a notebook saying what you want it to
-do. The game ends with that sentence satisfied.
+You start at fourteen, in a basement, with a PC you built yourself and no money.
+You type one sentence at a command prompt saying what you want it to do. The
+game ends with that sentence satisfied.
 
 ## Running it
 
@@ -24,6 +24,16 @@ npm run simulate     # headless Act I playthroughs
 npm run check        # build + test
 ```
 
+## The opening
+
+Nothing earns or costs money until the first release. You start with the gaming
+PC you already own (`START_UNITS`) and $0, and train the model by hand. Four
+free steps teach the three levers of scaling (data, training time, model size)
+and then the pattern behind them. Once the model is good enough you publish it
+on the web, which is when revenue, rivals, incidents and the hardware ladder
+begin. Hardware is a list of upgrades: graphics card, workstation, rackmount
+server, and so on up to a power station.
+
 ## How the game is built
 
 ```
@@ -35,7 +45,7 @@ src/
     format.js            money, durations, parameter counts
     economy.js           burn, revenue, valuation, work rate
   content/               all the prose and the data it hangs on
-    hardware.js          the eight-rung ladder, gaming PC to power station
+    hardware.js          the eight upgrades, graphics card to power station
     releases.js          the funding ladder
     projects.js          everything buildable, across all three acts
     breakthroughs.js     what the model discovers (warm pool, then cold pool)

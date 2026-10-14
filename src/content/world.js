@@ -24,6 +24,7 @@ export const WORLD=[
 ];
 
 export function rollWorld(){
+  if(!S.rel) return;   // the world only changes once people can use it
   while(S.worldIdx<WORLD.length && S.workDone>=WORLD[S.worldIdx][0]){
     const [,text,tr,rev]=WORLD[S.worldIdx];
     if(tr) S.trust=Math.max(0,Math.min(100,S.trust+tr));

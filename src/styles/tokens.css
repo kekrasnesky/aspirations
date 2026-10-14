@@ -3,6 +3,7 @@
   --paper:#E7E9E6; --panel:#DDE0DC; --sunk:#D2D6D1;
   --ink:#1A2124; --dim:#55605F; --faint:#7E8A8A;
   --rule:#C2C7C1; --accent:#1F6FA8; --warn:#B4500A; --good:#2F7D4F;
+  --term-bg:#0B0C0D; --term-bar:#2A2E32; --term-fg:#D9DDDF; --term-dim:#8E979B; --term-hot:#F0B34A;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
   --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
   box-sizing:border-box;
@@ -14,10 +15,12 @@
     --paper:#121618; --panel:#191E21; --sunk:#0E1214;
     --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
     --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"]{
   --paper:#121618; --panel:#191E21; --sunk:#0E1214;
   --ink:#DDE3E1; --dim:#9AA5A5; --faint:#6E797A;
   --rule:#2A3236; --accent:#5BA7DC; --warn:#E0812F; --good:#5FB183;
+  color-scheme: dark;
 }

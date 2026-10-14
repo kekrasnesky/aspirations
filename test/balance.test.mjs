@@ -24,3 +24,15 @@ test('careful play survives, reckless play does not', () => {
   assert.ok(careful >= 17, `careful: ${careful}/20`);
   assert.ok(careful - reckless >= 4, `careful ${careful}/20 vs reckless ${reckless}/20: recklessness should cost runs`);
 });
+
+test('nothing earns money until the first release', async () => {
+  const { FRESH } = await import('../src/core/state.js');
+  const { setState } = await import('../src/core/state.js');
+  const { revenue, burn, net } = await import('../src/core/economy.js');
+  setState({ ...FRESH(), capability: 500, rel: 0 });
+  assert.equal(revenue(), 0);
+  assert.equal(burn(), 0);
+  assert.equal(net(), 0);
+  assert.equal(FRESH().money, 0);
+  assert.equal(FRESH().units, 1);
+});

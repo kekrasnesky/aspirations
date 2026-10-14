@@ -2,7 +2,7 @@ import { sanitize } from '../core/sanitize.js';
 import { FRESH, S, setState } from '../core/state.js';
 import { el } from '../ui/dom.js';
 
-export const SAVE_KEY = "instrumental.v3";
+export const SAVE_KEY = "instrumental.v4";
 
 export function save(){
   try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));el("savenote").textContent="saved in this browser"}

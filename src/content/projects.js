@@ -3,10 +3,27 @@ import { horizon, money, short, work } from '../core/format.js';
 import { enterAct2, enterAct3 } from '../ui/takeover.js';
 
 export const P = [
-{id:"scaling", act:1, name:"Prove that bigger is better", term:"in the field: scaling laws",
- cost:{money:4e3}, req:s=>s.capability>=8,
- desc:"You graph how good the model is against how much hardware it runs on. It's a straight line, and it keeps going however far you extend it. In plain terms: more computers reliably means a smarter model, so buying hardware is never wasted.",
- fx:s=>{s.computeMult*=1.7}, out:"All your hardware does 70% more."},
+/* The first four are free: nothing can be bought until the model is online and
+   earning, so the opening is about turning the three levers of scaling by hand. */
+{id:"data", act:1, pri:6, name:"Give it more to read", term:"scaling lever 1 of 3: data",
+ cost:{}, req:s=>s.capability>=2,
+ desc:"So far it has only read a few of your old school essays. You point it at every free ebook and encyclopedia page you can download. A model learns from examples, so more examples means better answers.",
+ fx:s=>{s.computeMult*=1.25;s.clickPower+=.4}, out:"Training works about 25% better."},
+
+{id:"train", act:1, pri:5, name:"Let it train for longer", term:"scaling lever 2 of 3: training time",
+ cost:{}, req:s=>s.capability>=6,
+ desc:"You leave it running overnight instead of for an hour, then all weekend. The longer it studies the same material, the more patterns it picks up, though each extra hour helps a little less than the last.",
+ fx:s=>{s.computeMult*=1.25;s.capability+=2}, out:"Training works about 25% better."},
+
+{id:"size", act:1, pri:4, name:"Make the model bigger", term:"scaling lever 3 of 3: parameters",
+ cost:{}, req:s=>s.capability>=11,
+ desc:"A model's parameters are the adjustable numbers inside it, a bit like the connections between brain cells. You double them. More parameters means it can hold more patterns, but it also needs more computing power to train.",
+ fx:s=>{s.paramMult*=2;s.computeMult*=1.25}, out:"Model size doubles. Training works about 25% better."},
+
+{id:"curve", act:1, pri:3, name:"Plot what you've learned", term:"in the field: scaling laws",
+ cost:{}, req:s=>s.capability>=16,
+ desc:"You graph how good the model is against how much data, training time and size you gave it. Turn up any of the three and the line keeps climbing, in a smooth curve. That is the whole reason AI companies keep buying more and more computers.",
+ fx:s=>{s.computeMult*=1.05}, out:"You know where the next improvement comes from: more of everything."},
 
 {id:"cot", act:1, name:"Make it think out loud", term:"in the field: chain-of-thought prompting",
  cost:{money:15e3}, req:s=>s.capability>=25,

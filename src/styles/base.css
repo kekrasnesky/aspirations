@@ -15,4 +15,4 @@ body.act-3{
   --accent:#8FB9D6;--warn:#E07A20;
 }
 body.act-3 .serif{font-family:var(--mono)!important;font-style:normal!important}
-.wrap{max-width:1120px;margin:0 auto;padding:0 18px 80px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-right,0px)) 80px max(18px,env(safe-area-inset-left,0px))}

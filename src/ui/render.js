@@ -11,6 +11,11 @@ import { el, log, setHTML } from '../ui/dom.js';
 import { applyWarmth } from '../ui/theme.js';
 
 export function barData(){
+  if(S.act===1 && !S.rel) return [
+    ["Work it has done",dur(S.workDone)],
+    ["Parameters",pcount(params())],
+    ["Can work alone for",work(S.capability)]
+  ];
   if(S.act===1) return [
     ["Work it has done",dur(S.workDone)],
     ["Parameters",pcount(params())],
@@ -80,7 +85,7 @@ export function drawActions(){
   const btns=host.querySelectorAll("button");
   list.forEach((a,i)=>{btns[i].__a=a;btns[i].disabled=!a.can()});
   el("act-label").textContent=S.act===1?"What you can do":S.act===2?"What I can do":"What is left to do";
-  el("proj-label").textContent=S.act===1?"Things you could build":S.act===2?"Things I could become":"Things to build";
+  el("proj-label").textContent=S.act===1?(S.rel?"Things you could build":"Training steps"):S.act===2?"Things I could become":"Things to build";
 }
 
 export function drawGloss(){
@@ -93,7 +98,7 @@ export function drawGloss(){
 
 export function drawProjects(){
   const host=el("projects");
-  const avail=P.filter(p=>p.act===S.act&&(p.repeat||!S.bought.includes(p.id))&&p.req(S))
+  const avail=P.filter(p=>p.act===S.act&&(p.repeat||!S.bought.includes(p.id))&&p.req(S)&&(S.act!==1||S.rel>0||!p.cost.money))   // nothing costs money before launch
     .sort((a,b)=>(b.pri||0)-(a.pri||0)).slice(0,PROJECT_SLOTS);
   const key=avail.map(p=>p.id+"|"+costLabel(p.cost)).join(",");
   if(host.__key!==key){
