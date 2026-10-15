@@ -19,7 +19,7 @@
 .proj{border:1px solid var(--rule);border-left:2.5px solid var(--accent);border-radius:2px;
   background:var(--panel);padding:11px 13px;cursor:pointer;width:100%;text-align:left;
   font-family:var(--mono);display:block}
-.proj:hover:not(:disabled){background:var(--sunk)}
+.proj:hover:not(:disabled){background:#062a10}
 .proj.risky{border-left-color:var(--warn)}
 .proj.milestone{border-left-color:var(--warn);border-left-width:4px}
 .proj-top{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
@@ -42,7 +42,7 @@
   padding:11px 0;border-bottom:1px solid var(--rule)}
 .w-item:last-child{border-bottom:0}
 .w-item .when{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-bottom:4px}
-.w-item.fresh{border-left:2px solid var(--warn);padding-left:10px;margin-left:-12px}
+.w-item.fresh{border-left:2px solid var(--warn);padding-left:9px}
 .w-empty{font-family:var(--serif);font-size:14px;color:var(--faint);font-style:italic;margin:12px 0}
 .ln .t{color:var(--faint);margin-right:7px}
 
@@ -50,7 +50,8 @@
 .slider-box{border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:12px 13px}
 .slider-box .explain{font-family:var(--serif);font-size:14px;line-height:1.45;color:var(--dim);margin:0 0 12px}
 .slider-box label{display:block;font-size:11.5px;color:var(--faint);margin-bottom:9px}
-input[type=range]{width:100%;accent-color:var(--warn);margin:0}
+input[type=range]{width:100%;accent-color:var(--ink);margin:0}
+.slider-box input[type=range]{accent-color:var(--warn)}
 .slider-read{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;color:var(--dim);margin-top:9px;font-variant-numeric:tabular-nums}
 .slider-read .risk{color:var(--warn)}
 .stock-box{border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:12px 13px;margin-bottom:8px}
@@ -63,7 +64,8 @@ input[type=range]{width:100%;accent-color:var(--warn);margin:0}
 .stock-mood{font-family:var(--serif);font-size:13.5px;color:var(--dim);line-height:1.4;margin:0 0 2px}
 
 /* ---------- glossary ---------- */
-#gloss{display:none;border:1px solid var(--rule);border-radius:2px;background:var(--panel);padding:14px 16px;margin-bottom:26px}
+#gloss{display:none;position:fixed;z-index:60;top:44px;right:16px;bottom:16px;width:min(760px,calc(100% - 32px));overflow-y:auto;
+  border:1px solid var(--ink);border-radius:2px;background:var(--paper);padding:14px 16px;box-shadow:0 0 0 100vmax rgba(0,0,0,.6)}
 #gloss.on{display:block}
 #gloss dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:11px}
 @media (min-width:700px){#gloss dl{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 28px}}
@@ -71,3 +73,24 @@ input[type=range]{width:100%;accent-color:var(--warn);margin:0}
 #gloss dd{margin:0;font-family:var(--serif);font-size:14px;line-height:1.4;color:var(--dim)}
 
 /* ---------- curtain ---------- */
+
+/* ---------- cloud servers and pricing ---------- */
+.stat-v.sm{font-size:14px}
+.cl-note{font-family:var(--serif);font-size:13.5px;color:var(--dim);line-height:1.4;margin:0 0 10px}
+.cl-note.warn{color:var(--warn)}
+.cl-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
+.cl-grid button{padding:6px 4px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums}
+.cl-price{border-top:1px solid var(--rule);padding-top:10px;margin-bottom:10px}
+.cl-price label{display:block;font-size:11px;color:var(--faint);margin-bottom:6px}
+.cl-pr{display:flex;align-items:center;gap:6px}
+.cl-pr button{padding:5px 12px;text-align:center}
+.cl-dollar{font-size:16px;color:var(--dim)}
+.cl-pr input{width:7em;font-family:var(--mono);font-size:16px;color:var(--ink);background:var(--sunk);
+  border:1px solid var(--rule);border-radius:2px;padding:5px 8px;font-variant-numeric:tabular-nums}
+.cl-pr input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.proj-eff{display:block;font-size:11.5px;color:var(--accent);margin:0 0 2px}
+.rig-limit input{margin-top:6px}
+.rig-limit .rig-k{cursor:pointer}
+
+/* ---------- the rig, drawn ---------- */
+#viz{display:block;width:100%;height:170px;background:var(--sunk);border:1px solid var(--rule);border-radius:2px}

@@ -2,7 +2,7 @@
  * How the hardware turns into a model. Every function takes the state as an
  * argument so the headless simulation runs the same arithmetic as the game.
  */
-import { VRAM_PER_PARAM, RAM_PER_PARAM, CORES_PER_GPU, RUN_BASE, TRAIN_K, TRAIN_EXP, FIRST_MODEL, SCALE_STEP, MIN_STEP, LEVEL_K, LEVEL_EXP, ACT1_PARAMS } from './balance.js';
+import { VRAM_PER_PARAM, RAM_PER_PARAM, CORES_PER_GPU, RUN_BASE, TRAIN_K, TRAIN_EXP, FIRST_MODEL, SCALE_STEP, MIN_STEP, LEVEL_K, LEVEL_EXP, ACT1_PARAMS, LIMIT_PERF_EXP } from './balance.js';
 
 /** Internal index of how good a model of this size is. Never shown. */
 export const level = p => LEVEL_K*Math.pow(Math.max(p,0)/1e9,LEVEL_EXP);
@@ -17,7 +17,9 @@ export const memLimit = s => fitVram(s)<=fitRam(s) ? "vram" : "ram";
 export const coresNeeded = s => s.gpus*CORES_PER_GPU;
 export const feed = s => Math.min(1, s.cores*s.coreMult/Math.max(coresNeeded(s),1));
 
-export const throughput = s => s.tflops*feed(s)*s.speedMult;
+/** Share of full speed the GPU power limit leaves. Only you set a limit; in act II the model runs flat out. */
+export const limitPerf = s => s.act===1 ? Math.pow(s.gpuLimit,LIMIT_PERF_EXP) : 1;
+export const throughput = s => s.tflops*feed(s)*s.speedMult*limitPerf(s);
 
 export const trainTime = (s,n) => RUN_BASE + TRAIN_K*Math.pow(n/1e9,TRAIN_EXP)/Math.max(throughput(s),1e-9);
 
@@ -44,7 +46,7 @@ export function bottleneck(s){
 
 /** Add (n=1) or remove (n=-1) one purchase of hardware tier h. */
 export function applyHw(s,h,n){
-  if(h.kind==="gpu"){ s.gpus+=n*h.g; s.vram+=n*h.g*h.v; s.tflops+=n*h.g*h.tf }
+  if(h.kind==="gpu"){ s.gpus+=n*h.g; s.gpuW+=n*h.g*h.w; s.vram+=n*h.g*h.v; s.tflops+=n*h.g*h.tf }
   else if(h.kind==="ram") s.ram+=n*h.gb;
   else s.cores+=n*h.cores;
 }

@@ -2,25 +2,26 @@ import { S } from '../core/state.js';
 
 /* Three kinds of hardware, each its own ladder. You start with one PC
    (START_* in balance.js), so everything here is an addition to it.
-     gpu: g GPUs per purchase, each with v GB of memory and tf TFLOPS
+     gpu: g GPUs per purchase, each with v GB of memory, tf TFLOPS, drawing w watts
+          (including its share of the server, networking and cooling)
      ram: gb of system memory
      cpu: cores
    A tier unlocks once you own one of the tier below it. c is the first price,
    and each repeat purchase costs s times the last. */
 export const HW = [
- {kind:"gpu", n:"graphics card", label:"Add a graphics card", g:1, v:16, tf:40, c:1.6e3, s:1.35,
+ {kind:"gpu", n:"graphics card", w:300, label:"Add a graphics card", g:1, v:16, tf:40, c:1.6e3, s:1.35,
   why:"A second card in the spare slot. The model is split across both, so it can be twice as big, and they train it together."},
- {kind:"gpu", n:"workstation GPU", label:"Add a workstation GPU", g:1, v:48, tf:120, c:7e3, s:1.32,
+ {kind:"gpu", n:"workstation GPU", w:350, label:"Add a workstation GPU", g:1, v:48, tf:120, c:7e3, s:1.32,
   why:"A professional card with three times the memory of a gaming one. It needs its own power cable and makes the room noticeably warmer."},
- {kind:"gpu", n:"8-GPU server", label:"Buy an 8-GPU server", g:8, v:80, tf:400, c:2.6e5, s:1.3,
+ {kind:"gpu", n:"8-GPU server", w:2000, label:"Buy an 8-GPU server", g:8, v:80, tf:400, c:2.6e5, s:1.3,
   why:"Eight datacenter GPUs in a steel box built for a rack. It's loud, it needs its own power circuit, and it won't fit under a desk."},
- {kind:"gpu", n:"GPU rack", label:"Fill a rack with GPU servers", g:256, v:80, tf:400, c:7e6, s:1.28,
+ {kind:"gpu", n:"GPU rack", w:2500, label:"Fill a rack with GPU servers", g:256, v:80, tf:400, c:7e6, s:1.28,
   why:"Thirty-two of those servers in a cabinet taller than you are. You're renting space in someone else's building now."},
- {kind:"gpu", n:"GPU pod", label:"Lease a GPU pod", g:4096, v:141, tf:600, c:1.4e8, s:1.27,
+ {kind:"gpu", n:"GPU pod", w:3000, label:"Lease a GPU pod", g:4096, v:141, tf:600, c:1.4e8, s:1.27,
   why:"Four thousand newer GPUs wired together so they can act as one machine. Your cooling bill is now larger than your first funding round."},
- {kind:"gpu", n:"GPU datacenter", label:"Build a GPU datacenter", g:32768, v:192, tf:900, c:1.6e9, s:1.26,
+ {kind:"gpu", n:"GPU datacenter", w:3500, label:"Build a GPU datacenter", g:32768, v:192, tf:900, c:1.6e9, s:1.26,
   why:"Purpose-built, with nothing else inside it. The local council objected over water use and was overruled."},
- {kind:"gpu", n:"campus and power station", label:"Build a campus and a power station", g:262144, v:192, tf:1000, c:1.4e10, s:1.25,
+ {kind:"gpu", n:"campus and power station", w:4000, label:"Build a campus and a power station", g:262144, v:192, tf:1000, c:1.4e10, s:1.25,
   why:"Two gigawatts in west Texas, enough to power a large city, with its own substation because the public grid said no."},
 
  {kind:"ram", n:"32 GB of RAM", label:"Add 32 GB of RAM", gb:32, c:120, s:1.4,

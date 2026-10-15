@@ -1,8 +1,8 @@
 import { HW, hwCost } from '../content/hardware.js';
-import { REL } from '../content/releases.js';
-import { EVAL_PERIOD, EVAL_EARLY_MIN, COMPUTE_REQUEST, SELL_BACK } from '../core/balance.js';
+import { REL, relEffects } from '../content/releases.js';
+import { EVAL_PERIOD, EVAL_EARLY_MIN, COMPUTE_REQUEST, SELL_BACK, AD_BOOST, PRICE_MIN, PRICE_MAX } from '../core/balance.js';
 import { applyHw, nextTarget, trainTime } from '../core/compute.js';
-import { INTERP_WORTH, capability, interpCost, marketCap, sharePrice, takeStep } from '../core/economy.js';
+import { INTERP_WORTH, adCost, capability, interpCost, market, marketCap, sharePrice, takeStep } from '../core/economy.js';
 import { money, pcount, secs, short } from '../core/format.js';
 import { S } from '../core/state.js';
 import { runEval, startRun } from '../game/loop.js';
@@ -13,6 +13,17 @@ export function buyHw(i){
   const c=hwCost(i);
   if(S.money<c) return;
   S.money-=c; S.deployed+=c; S.hw[i]++; applyHw(S,HW[i],1);
+}
+
+/** Rent (n>0) or give back (n<0) cloud servers. You keep at least one once it's online. */
+export function rentCloud(n){
+  S.cloud=Math.max(S.rel>0?1:0, Math.round(S.cloud+n));
+}
+
+/** Set the monthly subscription price. */
+export function setPrice(p){
+  if(!Number.isFinite(p)) return;
+  S.planPrice=Math.min(PRICE_MAX,Math.max(PRICE_MIN,Math.round(p*100)/100));
 }
 
 /** The owned tier that was dearest to buy: the one selling saves most on. */
@@ -38,8 +49,8 @@ export function actions(){
     });
     const r=REL[S.rel];
     if(r) out.push({
-      label:r.n, sub:S.params<r.req?"needs a "+pcount(r.req)+" model":r.pay?money(r.pay):r.price?"$"+r.price+" a month":"free",
-      why:r.why, primary:S.params>=r.req,
+      label:r.n, sub:S.params<r.req?"needs a "+pcount(r.req)+" model":r.pay?money(r.pay):"free",
+      why:r.why, adds:relEffects(r), primary:S.params>=r.req,
       can:()=>S.params>=r.req,
       go:()=>{
         takeStep(S,r);
@@ -49,15 +60,23 @@ export function actions(){
         }
         const safe=S.rel===1||S.interp*INTERP_WORTH>=capability();   // nothing to criticise on day one
         S.trust+=S.rel===1?0:safe?5:-9;
-        const what = S.rel===1 ? "By Sunday it has been used four million times. People start finding it, a few at a time, and some of them chip in."
-          : r.kind==="plan" ? "Some of your users start paying. It takes a while for word to spread."
+        const what = S.rel===1 ? "People start finding it, a few at a time. One server can only answer so many of them: rent more under 'Cloud servers' as they arrive."
+          : r.kind==="product" ? "It's worth more to people now, so more of them will pay at any given price."
           : money(r.pay)+" in.";
         log("<b>"+r.n+".</b> "+what+" "+(S.rel===1?"":safe?"Reviewers call your safety work exemplary.":"Two of your researchers resign publicly on the way out."), safe?"g":"w");
       }
     });
     if(S.rel>0) out.push({
+      label:"Run an ad campaign", sub:money(adCost(S)),
+      why:"Puts it in front of people who haven't heard of it. Each campaign costs more than the last.",
+      adds:"Marketing rate +"+Math.round((AD_BOOST-1)*100)+"%",
+      can:()=>S.money>=adCost(S),
+      go:()=>{const c=adCost(S);S.money-=c;S.ads++;market(S,AD_BOOST);log("You run an ad campaign for "+money(c)+". New users find it faster.","g")}
+    });
+    if(S.rel>0) out.push({
       label:"Fund safety research", sub:money(interpCost()),
       why:"Pays people to work out what the model is actually doing. Produces nothing you can sell. Prevents disasters you'll never see, which is why it always feels like the wrong purchase.",
+      adds:"Safety research +"+(+S.interpMult.toFixed(1)),
       can:()=>S.money>=interpCost(),
       go:()=>{S.money-=interpCost();S.interpBought++;S.interp+=1*S.interpMult}
     });
@@ -66,12 +85,12 @@ export function actions(){
       const paid=hwCost(i)/HW[i].s, back=paid*SELL_BACK;
       out.push({
         label:"Sell the "+HW[i].n, sub:"recover "+money(back),
-        why:"Sell it second-hand for about a third of what you paid. You lose what it adds, but your running costs fall. This is the only brake you have.",
+        why:"Sell it second-hand for about a third of what you paid. You lose what it adds, but its upkeep and electricity stop. This is the only brake you have.",
         can:()=>true,
         go:()=>{
           S.hw[i]--; applyHw(S,HW[i],-1); S.deployed=Math.max(0,S.deployed-paid);
           S.money+=back;
-          log("You sell the "+HW[i].n+" and recover "+money(back)+". Running costs fall.","g");
+          log("You sell the "+HW[i].n+" and recover "+money(back)+". Upkeep and electricity fall.","g");
         }
       });
     }

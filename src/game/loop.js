@@ -7,7 +7,7 @@ import { maxFit, memLimit, nextTarget, trainTime } from '../core/compute.js';
 import { GRACE, capability, exposure, net, stepUsers } from '../core/economy.js';
 import { pcount, short } from '../core/format.js';
 import { S } from '../core/state.js';
-import { detectMult, gainMult, raiseIncident, rollLeak } from '../game/decisions.js';
+import { deciding, detectMult, gainMult, raiseIncident, rollFate, rollLeak } from '../game/decisions.js';
 import { finish, lose } from '../game/endings.js';
 import { log } from '../ui/dom.js';
 
@@ -40,7 +40,7 @@ function train(){
 }
 
 export function tick(){
-  if(S.over || S.incident>=0) return;   // the world waits while you decide
+  if(S.over || deciding()) return;   // the world waits while you decide
   S.t+=DT;
 
   if(S.act===1){
@@ -87,10 +87,12 @@ export function tick(){
   }
   else {
     rollWorld();
-    S.matter += (MATTER_BASE+S.probeRate*MATTER_PROBE)*DT;
-    S.probes += S.probeRate*1.8*DT;
+    // emergent capability, from the decisions below, speeds everything it does
+    S.matter += (MATTER_BASE+S.probeRate*MATTER_PROBE)*S.emergent*DT;
+    S.probes += S.probeRate*1.8*S.emergent*DT;
     // the less it needs people, the faster it takes what they have
-    S.converted = Math.min(100,S.converted+(CONVERT_BASE+S.probeRate*CONVERT_PROBE)*(1+(100-S.need)/NEED_SPEEDUP)*DT);
+    S.converted = Math.min(100,S.converted+(CONVERT_BASE+S.probeRate*CONVERT_PROBE)*(1+(100-S.need)/NEED_SPEEDUP)*S.emergent*DT);
+    rollFate();
     S.params += S.params*ACT3_GROWTH*DT;
     S.need = Math.max(0, S.need);
     if(S.converted>=100) return finish();

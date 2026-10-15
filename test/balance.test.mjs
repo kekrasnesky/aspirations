@@ -25,15 +25,14 @@ test('careful play survives, reckless play does not', () => {
   assert.ok(careful - reckless >= 4, `careful ${careful}/20 vs reckless ${reckless}/20: recklessness should cost runs`);
 });
 
-test('nothing earns money until the first release', async () => {
-  const { FRESH } = await import('../src/core/state.js');
-  const { setState } = await import('../src/core/state.js');
-  const { revenue, burn, net } = await import('../src/core/economy.js');
+test('nothing earns money until the first release, but the PC still draws power', async () => {
+  const { FRESH, setState } = await import('../src/core/state.js');
+  const { revenue, burn, powerCost } = await import('../src/core/economy.js');
+  const { START_MONEY } = await import('../src/core/balance.js');
   setState({ ...FRESH(), params: 5e8, rel: 0 });
   assert.equal(revenue(), 0);
-  assert.equal(burn(), 0);
-  assert.equal(net(), 0);
-  assert.equal(FRESH().money, 0);
+  assert.ok(burn() > 0 && burn() === powerCost(FRESH()), 'before launch the only bill is electricity');
+  assert.ok(START_MONEY > burn() * 60, 'savings cover a minute of electricity at least');
   assert.equal(FRESH().gpus, 1);
   assert.equal(FRESH().params, 0, 'there is no model until you train one');
 });

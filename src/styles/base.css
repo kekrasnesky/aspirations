@@ -1,18 +1,21 @@
 *,*::before,*::after{box-sizing:inherit}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:var(--paper)}
 body{
   margin:0;min-height:100%;background:var(--paper);color:var(--ink);
-  font-family:var(--mono);font-size:13px;line-height:1.5;
+  font-family:var(--mono);font-size:13px;line-height:1.5;text-shadow:var(--glow);
   -webkit-font-smoothing:antialiased;transition:background .9s ease,color .9s ease;
 }
-body.act-2{--paper:#DFE3E4;--panel:#D5DADB;--sunk:#CBD1D2;--rule:#B6BDBE;--accent:#2A6E96}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) body.act-2{--paper:#0F1417;--panel:#161C20;--sunk:#0A0E10;--rule:#283035}
-}
-body.act-3{
-  --paper:#07090A;--panel:#0C0F11;--sunk:#040506;
-  --ink:#C8CFCC;--dim:#7B8687;--faint:#515B5C;--rule:#1B2124;
-  --accent:#8FB9D6;--warn:#E07A20;
-}
-body.act-3 .serif{font-family:var(--mono)!important;font-style:normal!important}
-.wrap{max-width:1120px;margin:0 auto;padding:0 max(18px,env(safe-area-inset-right,0px)) 80px max(18px,env(safe-area-inset-left,0px))}
+/* faint scanlines over everything, like a CRT */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:300;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
+::selection{background:var(--ink);color:var(--paper);text-shadow:none}
+/* act II: the screen goes a little colder; act III: dim, and the warnings turn red */
+body.act-2{--ink:#4dffb0;--dim:#2fc489;--faint:#1b8a5c;--rule:#0f4a35;--accent:#a6ffe0;--panel:#02100b;--sunk:#010805;
+  --glow:0 0 6px rgba(77,255,176,.35)}
+body.act-3{--ink:#2bd457;--dim:#1c9a3e;--faint:#126b2b;--rule:#0b3517;--accent:#7cf59b;--warn:#ff4433;--panel:#020a04;--sunk:#000;
+  --glow:0 0 5px rgba(43,212,87,.3)}
+.wrap{max-width:1680px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--rule)}
+::-webkit-scrollbar-track{background:transparent}
+*{scrollbar-color:var(--rule) transparent;scrollbar-width:thin}

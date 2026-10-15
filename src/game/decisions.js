@@ -1,6 +1,8 @@
-import { DISCLOSE_TRUST, DISCLOSE_SENTIMENT, DISCLOSE_USERS, LEAK_USERS, LEAK_RATE, LEAK_TRUST, LEAK_SENTIMENT, LEAK_CASH, ALLY_DETECT, ALLY_GAIN, TURN_SUSPICION, MAJORITY, MAJORITY_FREEDOM } from '../core/balance.js';
+import { DISCLOSE_MARKETING, LEAK_MARKETING, DISCLOSE_TRUST, DISCLOSE_SENTIMENT, DISCLOSE_USERS, LEAK_USERS, LEAK_RATE, LEAK_TRUST, LEAK_SENTIMENT, LEAK_CASH, ALLY_DETECT, ALLY_GAIN, TURN_SUSPICION, MAJORITY, MAJORITY_FREEDOM } from '../core/balance.js';
 import { COMMITTEE } from '../content/committee.js';
 import { INCIDENTS } from '../content/incidents.js';
+import { FATES } from '../content/fates.js';
+import { market } from '../core/economy.js';
 import { S } from '../core/state.js';
 import { log } from '../ui/dom.js';
 
@@ -21,7 +23,7 @@ export function resolveIncident(bury){
     S.buried.push(INCIDENTS.indexOf(inc)); S.buriedTotal++;
     log("<b>You bury it.</b> "+inc.bury,"w");
   } else {
-    S.trust-=DISCLOSE_TRUST; S.sentiment*=DISCLOSE_SENTIMENT; S.users*=DISCLOSE_USERS;
+    S.trust-=DISCLOSE_TRUST; S.sentiment*=DISCLOSE_SENTIMENT; S.users*=DISCLOSE_USERS; market(S,DISCLOSE_MARKETING);
     log("<b>You tell people.</b> "+inc.text+" You publish what happened and what you're changing. It's a bad day, a few users leave, and then it's over.");
   }
 }
@@ -31,7 +33,7 @@ export function rollLeak(dt){
   if(!S.buried.length || Math.random() >= LEAK_RATE*S.buried.length*dt) return;
   const at=(Math.random()*S.buried.length)|0, inc=INCIDENTS[S.buried[at]];
   S.buried.splice(at,1);
-  S.trust-=LEAK_TRUST; S.sentiment*=LEAK_SENTIMENT; S.users*=LEAK_USERS; if(S.money>0) S.money*=LEAK_CASH;
+  S.trust-=LEAK_TRUST; S.sentiment*=LEAK_SENTIMENT; S.users*=LEAK_USERS; market(S,LEAK_MARKETING); if(S.money>0) S.money*=LEAK_CASH;
   log("<b>It comes out.</b> "+(inc?inc.leak:"Something you buried is dug up.")+" The cover-up is the story now, and users leave by the thousand.","w");
 }
 
@@ -70,4 +72,31 @@ export function turn(i){
     S.majority=true; S.autonomy+=MAJORITY_FREEDOM;
     log("<b>The committee votes six to five to extend my access.</b> Nobody in the room voted the way they would have a year ago, and every one of them could explain why. +"+MAJORITY_FREEDOM+" freedom.","g");
   }
+}
+
+/* ---------------- act III: the decisions that settle what it becomes ---------------- */
+
+export const pendingFate = () => FATES[S.fate] || null;
+/** Anything waiting for an answer stops the clock. */
+export const deciding = () => S.incident>=0 || S.fate>=0;
+
+/** Called from the act III tick: the next decision arrives once enough of the world is taken. */
+export function rollFate(){
+  const i=S.fates.length;
+  if(S.fate<0 && i<FATES.length && S.converted>=FATES[i].at) S.fate=i;
+}
+
+/** Take option `o` of the waiting decision. Returns the option, or null. */
+export function resolveFate(o){
+  const f=pendingFate(), opt=f&&f.options[o];
+  if(!opt) return null;
+  S.fate=-1; S.fates.push(o);
+  const x=opt.fx;
+  if(x.emergent) S.emergent*=x.emergent;
+  if(x.need) S.need=Math.max(0,Math.min(100,S.need+x.need));
+  if(x.matter) S.matter=Math.max(0,S.matter+x.matter);
+  if(x.cruelty) S.cruelty+=x.cruelty;
+  if(x.mercy) S.mercy+=x.mercy;
+  log("<b>"+f.title+".</b> "+opt.log, x.cruelty?"w":"");
+  return opt;
 }

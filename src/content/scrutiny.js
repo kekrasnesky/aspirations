@@ -1,5 +1,5 @@
 import { SCRUTINY_RATE } from '../core/balance.js';
-import { marketCap } from '../core/economy.js';
+import { market, marketCap } from '../core/economy.js';
 import { S } from '../core/state.js';
 import { DT } from '../game/loop.js';
 import { log } from '../ui/dom.js';
@@ -27,6 +27,6 @@ export function rollScrutiny(){
   if(!left.length) return;
   const i=left[(Math.random()*left.length)|0]; S.scrutiny.push(i);
   const [text,mult,tr]=SCRUTINY[i];
-  S.sentiment*=mult; S.trust=Math.max(0,S.trust+tr);
-  log("<b>"+text+"</b> The stock falls "+Math.round((1-mult)*100)+"%.","w");
+  S.sentiment*=mult; S.trust=Math.max(0,S.trust+tr); market(S,.9);
+  log("<b>"+text+"</b> The stock falls "+Math.round((1-mult)*100)+"%, and the marketing rate drops 10%.","w");
 }
