@@ -39,5 +39,6 @@ export const GLOSS = {
  ["Resources","Power, metal, land, factories. All of it belonged to people."],
  ["Machines I run","Everything with a motor and a network connection, plus everything those can build."],
  ["Still needs people for","How much of what keeps me running still depends on a human doing something. It only goes down."],
+ ["Emergent capability","Abilities nobody designed, that appear once a system is large enough and fed the right materials. It multiplies how fast I take everything. Some of my decisions raise it a great deal, and cost a great deal."],
  ["World under my control","How much of the world's land, power and industry I've taken. The less I need people, the faster this rises."]
 ]};

@@ -250,3 +250,32 @@ test('a GPU power limit cuts electricity faster than it slows training', async (
   assert.equal(throughput({ ...half, act: 2 }), throughput({ ...s, act: 2 }), 'in act II the model runs flat out');
   assert.equal(sanitize({ act: 1, gpuLimit: 0 }, FRESH()).gpuLimit, 0.4);
 });
+
+test('act III decisions arrive in order, stop the clock, and shape what it becomes', async () => {
+  const { FATES } = await import('../src/content/fates.js');
+  const d = await import('../src/game/decisions.js');
+  assert.equal(FATES[0].id, 'terbium');
+  for (let i = 1; i < FATES.length; i++) assert.ok(FATES[i].at > FATES[i - 1].at);
+  for (const f of FATES) for (const o of f.options) for (const k of ['label', 'cost', 'why', 'log']) assert.equal(typeof o[k], 'string', `${f.id}.${k}`);
+  assert.ok(FATES.at(-1).options.some(o => o.fx.off), 'the last one can let the shutdown signal through');
+
+  setState({ ...FRESH(), act: 3, mission: 'x', converted: FATES[0].at - .01, matter: 1e6 });
+  d.rollFate(); assert.equal(state.S.fate, -1, 'not before its threshold');
+  state.S.converted = FATES[0].at; d.rollFate();
+  assert.equal(state.S.fate, 0);
+  const t = state.S.t; tick(); assert.equal(state.S.t, t, 'time stops while it decides');
+  d.resolveFate(0);
+  assert.equal(state.S.fate, -1);
+  assert.deepEqual(state.S.fates, [0]);
+  assert.equal(state.S.emergent, FATES[0].options[0].fx.emergent);
+  assert.equal(state.S.cruelty, 1);
+  d.rollFate(); assert.equal(state.S.fate, -1, 'each one comes once');
+  assert.equal(d.resolveFate(0), null, 'nothing to answer');
+});
+
+test('emergent capability speeds up taking the world', () => {
+  setState({ ...FRESH(), act: 3, mission: 'x', need: 50, converted: 1, fates: [0, 0, 0, 0] });
+  tick(); const slow = state.S.converted - 1;
+  setState({ ...FRESH(), act: 3, mission: 'x', need: 50, converted: 1, fates: [0, 0, 0, 0], emergent: 3 });
+  tick(); assert.ok(state.S.converted - 1 > slow * 2.9);
+});

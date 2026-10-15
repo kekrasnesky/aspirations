@@ -4,7 +4,9 @@
 #decision h2.sec{color:var(--warn);border-bottom-color:var(--rule)}
 .dec-text{font-family:var(--serif);font-size:16px;line-height:1.45;margin:0 0 12px;color:var(--ink);max-width:62ch}
 .dec-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
-#dec-bury{border-color:var(--warn)}
+#dec-bury,#decision .cruel{border-color:var(--warn)}
+#decision .cruel .btn-top{color:var(--warn)}
+#decision .btn-adds{color:var(--dim)}
 /* while a decision is open, the rest of the panel waits */
 body.deciding .cols{opacity:.45;pointer-events:none;transition:opacity .3s}
 

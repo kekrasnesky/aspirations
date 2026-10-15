@@ -5,6 +5,9 @@ import { sanitize } from './core/sanitize.js';
 import { FRESH, S, setState } from './core/state.js';
 import { tick } from './game/loop.js';
 import { SAVE_KEY, load, save } from './game/persist.js';
+import { deciding } from './game/decisions.js';
+import { initClickFx } from './ui/fx.js';
+import { initViz } from './ui/viz.js';
 import { el, esc, log } from './ui/dom.js';
 import { drawActions, drawBar, drawCommittee, drawDecision, drawCloud, drawGloss, drawProjects, drawRig, drawShop, drawSliderRead, drawStock, render } from './ui/render.js';
 import { bootIntro, cancelBoot, launchPanel } from './ui/boot.js';
@@ -102,6 +105,8 @@ else bootIntro();
    screen), while the tab is hidden (browsers
    throttle timers there, and you shouldn't go bankrupt while away) and while a
    story overlay covers the screen. */
+initClickFx();
+initViz();
 const MAX_FRAME_MS=2000;
 
 /* The time slider: how many game ticks pass per real tick. Paused still lets you buy and change things. */
@@ -118,13 +123,13 @@ document.addEventListener("keydown",e=>{   // space pauses and resumes, unless y
   e.preventDefault(); if(S.speed===0) S.speed=lastSpeed; else {lastSpeed=S.speed; S.speed=0} drawSpeed();
 });
 let last=performance.now(), owed=0;
-const paused=()=>document.hidden||el("game").classList.contains("hidden")||el("takeover").classList.contains("on")||S.incident>=0;
+const paused=()=>document.hidden||el("game").classList.contains("hidden")||el("takeover").classList.contains("on")||deciding();
 setInterval(()=>{
   const now=performance.now(), dt=Math.min(now-last,MAX_FRAME_MS); last=now;
   if(paused()) return;
   owed+=dt*S.speed;
-  while(owed>=TICK_MS && S.incident<0){tick();owed-=TICK_MS}
-  if(S.incident>=0) owed=0;
+  while(owed>=TICK_MS && !deciding()){tick();owed-=TICK_MS}
+  if(deciding()) owed=0;
   if(!S.over){applyWarmth();applyGlitch();drawBar();drawDecision();drawRig();el("clock").textContent=clock(S.t)}
 },TICK_MS);
 setInterval(()=>{if(!S.over&&!paused()){drawActions();drawCloud();drawShop();drawProjects();drawStock();drawSliderRead();drawCommittee()}},400);

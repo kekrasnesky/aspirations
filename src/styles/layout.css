@@ -22,6 +22,7 @@ h2.sec::before{content:"> "}
   #game .block.fill{flex:1 1 100px;min-height:100px;display:flex;flex-direction:column;margin-bottom:0}
   #game .block.fill>#log,#game .block.fill>#world{flex:1;min-height:0;height:auto;max-height:none}
   #game .btn-why,#game .cl-note.help{display:none}
+  #game #decision .btn-why{display:block}
   #game .proj-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
   #game button.btn-wide,#game .proj{padding:7px 10px}
   #game #bar{grid-template-columns:repeat(auto-fit,minmax(104px,1fr));padding:6px 16px;margin-bottom:14px}

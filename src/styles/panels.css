@@ -91,3 +91,6 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:0}
 .proj-eff{display:block;font-size:11.5px;color:var(--accent);margin:0 0 2px}
 .rig-limit input{margin-top:6px}
 .rig-limit .rig-k{cursor:pointer}
+
+/* ---------- the rig, drawn ---------- */
+#viz{display:block;width:100%;height:170px;background:var(--sunk);border:1px solid var(--rule);border-radius:2px}

@@ -56,3 +56,14 @@ test('every project is well formed and ids are unique', () => {
 test('every act has a glossary', () => {
   for (const a of [1, 2, 3]) assert.ok(GLOSS[a].length > 0);
 });
+
+test('a click tag says what the button cost or gave', async () => {
+  const { tagFor } = await import('../src/ui/fx.js');
+  const btn = (cost, extra = {}) => ({ closest: s => s === '.cl-grid' ? extra.grid || null : null, textContent: extra.text || '', querySelector: () => cost == null ? null : { textContent: cost } });
+  assert.equal(tagFor(btn('$1,600')), '−$1,600');
+  assert.equal(tagFor(btn('recover $560')), '+$560');
+  assert.equal(tagFor(btn('free')), '[ OK ]');
+  assert.equal(tagFor(btn('40 insight')), '−40 insight');
+  assert.equal(tagFor(btn(null, { grid: true, text: '+10' })), '+10 servers');
+  assert.equal(tagFor(btn(null, { grid: true, text: '+1' })), '+1 server');
+});

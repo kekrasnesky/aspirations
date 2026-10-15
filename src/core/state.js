@@ -14,6 +14,8 @@ export const FRESH = () => ({
   autonomy:0, suspicion:0, insight:0, reported:1, rsi:0, opacity:0,
   evalTimer:EVAL_PERIOD, contracts:0, shutdownProof:false,
   matter:0, probes:0, converted:0, probeRate:0, assembly:0, need:100,
+  // act III's decisions: the one waiting (-1 = none), the option taken for each so far, and what they add up to
+  fate:-1, fates:[], emergent:1, cruelty:0, mercy:0,
   incident:-1, buried:[], buriedTotal:0, committee:[0,0,0,0,0,0,0,0,0,0,0], majority:false,
   // who uses it: users drift toward demand, capped by the cloud servers you rent;
   // the share who pay planPrice a month falls as the price rises above what it's worth

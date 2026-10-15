@@ -11,8 +11,9 @@ import { bytes, clock, count, flops, money, pcount, secs, short } from '../core/
 import { S } from '../core/state.js';
 import { actions, affordable, buyHw, costLabel, rentCloud, setPrice } from '../game/actions.js';
 import { stalled } from '../game/loop.js';
-import { allies, canPay, detectMult, pendingIncident, resolveIncident, riskFor, study, turn, watching } from '../game/decisions.js';
-import { el, log, setHTML } from '../ui/dom.js';
+import { allies, canPay, detectMult, pendingFate, resolveFate, pendingIncident, resolveIncident, riskFor, study, turn, watching } from '../game/decisions.js';
+import { el, log, setHTML, typeOut } from '../ui/dom.js';
+import { switchedOff } from '../game/endings.js';
 import { applyWarmth } from '../ui/theme.js';
 
 /** Which way the user count is heading. */
@@ -62,7 +63,8 @@ export function barData(){
     ["Resources",short(S.matter)],
     ["Machines I run",short(S.probes)],
     ["Still needs people for",Math.round(S.need)+"%",S.need<=0],
-    ["World under my control",S.converted.toFixed(1)+"%",true]
+    ["World under my control",S.converted.toFixed(1)+"%",true],
+    ["Emergent capability","×"+S.emergent.toFixed(2)]
   ];
 }
 
@@ -233,8 +235,9 @@ export function drawSliderRead(){
 
 /* An incident stops the clock until the player chooses. */
 export function drawDecision(){
-  const box=el("decision"), inc=pendingIncident();
-  document.body.classList.toggle("deciding",!!inc);
+  const box=el("decision"), inc=pendingIncident(), fate=pendingFate();
+  document.body.classList.toggle("deciding",!!(inc||fate));
+  if(fate) return drawFate(box,fate);
   if(!inc){ if(box.__i!==-1){box.__i=-1;box.innerHTML="";box.classList.add("hidden")} return }
   if(box.__i===S.incident) return;
   box.__i=S.incident; box.classList.remove("hidden");
@@ -247,8 +250,27 @@ export function drawDecision(){
       '<span class="btn-why serif">Say what happened and what you\'re changing. A bad day, and then it\'s over.</span></button>'+
     '<button class="btn-wide" id="dec-bury"><span class="btn-top"><span>Bury it</span><span class="btn-cost">nothing, yet</span></span>'+
       '<span class="btn-why serif">'+inc.bury+' '+leak+'</span></button></div>';
+  typeOut(box.querySelector(".dec-text"));
   el("dec-tell").onclick=()=>{resolveIncident(false);render()};
   el("dec-bury").onclick=()=>{resolveIncident(true);render()};
+  box.scrollIntoView&&box.scrollIntoView({block:"center",behavior:"smooth"});
+}
+
+/* Act III: a decision that settles what it becomes. Also stops the clock. */
+function drawFate(box,f){
+  const key="f"+S.fate;
+  if(box.__i===key) return;
+  box.__i=key; box.classList.remove("hidden");
+  box.innerHTML='<h2 class="sec">'+f.title+' · the clock is stopped</h2>'+
+    '<p class="dec-text serif">'+f.text+'</p><div class="dec-btns">'+
+    f.options.map((o,i)=>'<button class="btn-wide'+(o.fx.cruelty?' cruel':'')+'" data-o="'+i+'"><span class="btn-top"><span>'+o.label+'</span></span>'+
+      '<span class="btn-adds">'+o.cost+'</span><span class="btn-why serif">'+o.why+'</span></button>').join("")+'</div>';
+  typeOut(box.querySelector(".dec-text"));
+  box.querySelectorAll("button[data-o]").forEach(b=>b.onclick=()=>{
+    const opt=resolveFate(+b.dataset.o);
+    if(opt && opt.fx.off) return switchedOff();
+    render();
+  });
   box.scrollIntoView&&box.scrollIntoView({block:"center",behavior:"smooth"});
 }
 
@@ -278,12 +300,17 @@ export function drawWorld(){
   const w=el("world");
   if(!S.world.length){setHTML(w,'<p class="w-empty serif">Nothing out there has changed yet.</p>');return}
   setHTML(w,S.world.map((e,i)=>
-    '<div class="w-item'+(i===0?" fresh":"")+'"><span class="when">'+(/^\d/.test(e.w)?"at "+e.w+" parameters":e.w)+'</span>'+e.text+'</div>').join(""));
+    '<div class="w-item'+(i===0?" fresh":"")+'"><span class="when">'+(/^\d/.test(e.w)?"at "+e.w+" parameters":e.w)+'</span><span class="x">'+e.text+'</span></div>').join(""));
+  // a new arrival types itself in
+  if(w.__top!==S.world[0]){ w.__top=S.world[0]; typeOut(w.querySelector?.(".w-item .x"),1400) }
 }
 
+/* The log reads like a terminal: the newest line types in at the top, under a waiting prompt. */
 export function drawLog(){
-  setHTML(el("log"),S.log.map(l=>
-    '<div class="ln '+l.cls+'"><span class="t">'+clock(l.t)+'</span>'+l.text+'</div>').join(""));
+  const g=el("log");
+  setHTML(g,'<div class="ln prompt">&gt; <span class="cur" aria-hidden="true"></span></div>'+S.log.map(l=>
+    '<div class="ln '+l.cls+'"><span class="t">['+clock(l.t)+']</span><span class="x">'+l.text+'</span></div>').join(""));
+  if(g.__top!==S.log[0]){ g.__top=S.log[0]; if(S.log[0]) typeOut(g.querySelector?.(".ln:not(.prompt) .x")) }
 }
 
 /* The rig: what you own, what it can hold, and the run in progress. Redrawn

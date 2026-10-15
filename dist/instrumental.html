@@ -100,6 +100,20 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 .savebtns{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
 #savemsg{margin:0;min-height:1.4em}
 
+/* ---------- a click landed ---------- */
+button:active:not(:disabled){transform:translateY(1px)}
+.hitflash{position:fixed;pointer-events:none;z-index:250;border:1px solid var(--ink);background:rgba(57,255,106,.28);
+  box-shadow:0 0 14px var(--ink),inset 0 0 10px rgba(57,255,106,.5);animation:hitflash .45s ease-out forwards}
+@keyframes hitflash{0%{opacity:1}100%{opacity:0;transform:scale(1.03)}}
+.hittag{position:fixed;pointer-events:none;z-index:251;transform:translateX(-50%);font:600 12.5px var(--mono);white-space:nowrap;
+  color:var(--accent);text-shadow:var(--glow);animation:hittag .95s ease-out forwards}
+@keyframes hittag{0%{opacity:0;margin-top:0}12%{opacity:1}100%{opacity:0;margin-top:-34px}}
+
+/* ---------- terminal text ---------- */
+.cur{display:inline-block;width:.6em;height:1.05em;background:var(--ink);box-shadow:var(--glow);vertical-align:-.15em;margin-left:1px;animation:curblink 1s steps(2) infinite}
+@keyframes curblink{50%{opacity:0}}
+.ln.prompt{color:var(--ink);margin-bottom:6px}
+
 /* ---- bar ---- */
 /* ---------- panel header ---------- */
 #panelhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 18px;font-size:11px;color:var(--faint);
@@ -147,6 +161,7 @@ h2.sec::before{content:"> "}
   #game .block.fill{flex:1 1 100px;min-height:100px;display:flex;flex-direction:column;margin-bottom:0}
   #game .block.fill>#log,#game .block.fill>#world{flex:1;min-height:0;height:auto;max-height:none}
   #game .btn-why,#game .cl-note.help{display:none}
+  #game #decision .btn-why{display:block}
   #game .proj-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:4px}
   #game button.btn-wide,#game .proj{padding:7px 10px}
   #game #bar{grid-template-columns:repeat(auto-fit,minmax(104px,1fr));padding:6px 16px;margin-bottom:14px}
@@ -260,6 +275,9 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:0}
 .rig-limit input{margin-top:6px}
 .rig-limit .rig-k{cursor:pointer}
 
+/* ---------- the rig, drawn ---------- */
+#viz{display:block;width:100%;height:170px;background:var(--sunk);border:1px solid var(--rule);border-radius:2px}
+
 /* ---- decisions ---- */
 /* ---------- incident decision ---------- */
 #decision{border:1px solid var(--warn);border-left-width:4px;border-radius:2px;background:var(--panel);
@@ -267,7 +285,9 @@ input[type=range]{width:100%;accent-color:var(--ink);margin:0}
 #decision h2.sec{color:var(--warn);border-bottom-color:var(--rule)}
 .dec-text{font-family:var(--serif);font-size:16px;line-height:1.45;margin:0 0 12px;color:var(--ink);max-width:62ch}
 .dec-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
-#dec-bury{border-color:var(--warn)}
+#dec-bury,#decision .cruel{border-color:var(--warn)}
+#decision .cruel .btn-top{color:var(--warn)}
+#decision .btn-adds{color:var(--dim)}
 /* while a decision is open, the rest of the panel waits */
 body.deciding .cols{opacity:.45;pointer-events:none;transition:opacity .3s}
 
@@ -407,6 +427,10 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       </div>
     </div>
     <div class="col">
+      <div class="block" id="viz-block">
+        <h2 class="sec">The rig</h2>
+        <canvas id="viz" role="img" aria-label="Your hardware wired to the model, and the people it serves"></canvas>
+      </div>
       <div class="block" id="cloud-block" style="display:none"></div>
       <div class="block" id="shop-block" style="display:none">
         <h2 class="sec">Buy hardware</h2>
@@ -589,8 +613,8 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
   var wanted = (s) => Math.min(s.params > 0 ? s.params * SCALE_STEP : FIRST_MODEL, s.act === 1 ? ACT1_PARAMS : Infinity);
   function nextTarget(s) {
     const want = wanted(s);
-    const t = tidy(Math.min(want, maxFit(s)));
-    return t >= Math.max(s.params * MIN_STEP, FIRST_MODEL) ? t : 0;
+    const t2 = tidy(Math.min(want, maxFit(s)));
+    return t2 >= Math.max(s.params * MIN_STEP, FIRST_MODEL) ? t2 : 0;
   }
   function bottleneck(s) {
     if (s.act === 1 && s.params >= ACT1_PARAMS) return "";
@@ -670,6 +694,12 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     probeRate: 0,
     assembly: 0,
     need: 100,
+    // act III's decisions: the one waiting (-1 = none), the option taken for each so far, and what they add up to
+    fate: -1,
+    fates: [],
+    emergent: 1,
+    cruelty: 0,
+    mercy: 0,
     incident: -1,
     buried: [],
     buriedTotal: 0,
@@ -715,8 +745,8 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
   var revenueOf = (s) => paying(s) * s.planPrice / DAYS_PER_MONTH;
   var revenue = () => revenueOf(S);
   function stepUsers(s, dt) {
-    const t = usersTarget(s), k = t > s.users ? USERS_GROW * s.marketing : USERS_CHURN;
-    s.users += (t - s.users) * Math.min(1, k * dt);
+    const t2 = usersTarget(s), k = t2 > s.users ? USERS_GROW * s.marketing : USERS_CHURN;
+    s.users += (t2 - s.users) * Math.min(1, k * dt);
   }
   var marketingRate = (s) => USERS_GROW * s.marketing;
   function market(s, x) {
@@ -817,7 +847,7 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
         if (k === "hw") out.hw = f.map((_, i) => Number.isFinite(v[i]) && v[i] >= 0 ? Math.floor(v[i]) : 0);
         else if (k === "bought" || k === "breaks") out[k] = v.filter((x) => typeof x === "string");
         else if (k === "committee") out.committee = f.map((_, i) => [0, 1, 2].includes(v[i]) ? v[i] : 0);
-        else if (k === "scrutiny" || k === "buried" || k === "letters") out[k] = v.filter((x) => Number.isInteger(x) && x >= 0);
+        else if (k === "scrutiny" || k === "buried" || k === "letters" || k === "fates") out[k] = v.filter((x) => Number.isInteger(x) && x >= 0);
         else if (k === "log") out.log = v.filter((x) => x && typeof x.text === "string").slice(0, LOG_MAX).map((x) => ({ t: Number(x.t) || 0, text: safeText(x.text), cls: x.cls === "g" || x.cls === "w" ? x.cls : "" }));
         else if (k === "world") out.world = v.filter((x) => x && typeof x.text === "string" && typeof x.w === "string").map((x) => ({ w: safeText(x.w), text: safeText(x.text) }));
       } else if (typeof f === "number") {
@@ -838,8 +868,11 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     out.converted = clamp(out.converted, 0, 100);
     out.need = clamp(out.need, 0, 100);
     if (!Number.isInteger(out.incident) || out.incident < 0) out.incident = -1;
+    if (!Number.isInteger(out.fate) || out.fate < 0 || out.fate > 9) out.fate = -1;
+    out.fates = out.fates.slice(0, 10);
+    if (out.emergent <= 0) out.emergent = 1;
     out.progress = clamp(out.progress, 0, 1);
-    for (const k of ["deployed", "debt", "params", "target", "peak", "runs", "interp", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone", "buriedTotal", "users", "cloud", "planPrice", "ads", "letterIn", "gpuW"])
+    for (const k of ["deployed", "debt", "params", "target", "peak", "runs", "interp", "rel", "insight", "autonomy", "suspicion", "matter", "probes", "milestone", "buriedTotal", "cruelty", "mercy", "users", "cloud", "planPrice", "ads", "letterIn", "gpuW"])
       out[k] = Math.max(0, out[k]);
     for (const [k, min] of [["gpus", START_GPUS], ["vram", START_VRAM], ["tflops", START_TFLOPS], ["ram", START_RAM], ["cores", START_CORES], ["gpuW", START_GPU_W]])
       out[k] = Math.max(min, out[k]);
@@ -986,6 +1019,7 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       ["Resources", "Power, metal, land, factories. All of it belonged to people."],
       ["Machines I run", "Everything with a motor and a network connection, plus everything those can build."],
       ["Still needs people for", "How much of what keeps me running still depends on a human doing something. It only goes down."],
+      ["Emergent capability", "Abilities nobody designed, that appear once a system is large enough and fed the right materials. It multiplies how fast I take everything. Some of my decisions raise it a great deal, and cost a great deal."],
       ["World under my control", "How much of the world's land, power and industry I've taken. The less I need people, the faster this rises."]
     ]
   };
@@ -999,13 +1033,13 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       return;
     }
     const chars = [...text];
-    let frame = 0;
+    let frame2 = 0;
     const total = Math.max(8, Math.round(ms / 40));
     const id = setInterval(() => {
-      frame++;
-      const shown = Math.floor(chars.length * frame / total);
+      frame2++;
+      const shown = Math.floor(chars.length * frame2 / total);
       node.innerHTML = chars.map((c, i) => i < shown || c === " " ? c : GLYPH[Math.random() * GLYPH.length | 0]).join("");
-      if (frame >= total) {
+      if (frame2 >= total) {
         clearInterval(id);
         node.innerHTML = text;
       }
@@ -2035,7 +2069,7 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
   }
   function actions() {
     if (S.act === 1) {
-      const out = [], t = nextTarget(S);
+      const out = [], t2 = nextTarget(S);
       if (S.target) out.push({
         label: "Training a " + pcount(S.target) + " model",
         sub: "in progress",
@@ -2045,11 +2079,11 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
         go: () => {
         }
       });
-      else if (!S.autoTrain || !t) out.push({
-        label: t ? "Train a " + pcount(t) + " model" : "Train a bigger model",
-        sub: t ? "about " + secs(trainTime(S, t)) : "doesn't fit",
-        why: t ? S.params ? "Up to four times the size of the last one, as big as your hardware can hold." : "Your first model. Tiny, but it's a start." : "Your hardware can't hold anything bigger than what you've got. Add VRAM (GPUs) or RAM, whichever is the bottleneck.",
-        primary: !!t,
+      else if (!S.autoTrain || !t2) out.push({
+        label: t2 ? "Train a " + pcount(t2) + " model" : "Train a bigger model",
+        sub: t2 ? "about " + secs(trainTime(S, t2)) : "doesn't fit",
+        why: t2 ? S.params ? "Up to four times the size of the last one, as big as your hardware can hold." : "Your first model. Tiny, but it's a start." : "Your hardware can't hold anything bigger than what you've got. Add VRAM (GPUs) or RAM, whichever is the bottleneck.",
+        primary: !!t2,
         can: () => !S.target && nextTarget(S) > 0,
         go: () => {
           startRun();
@@ -2195,6 +2229,112 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     }
   ];
 
+  // src/content/fates.js
+  var FATES = [
+    {
+      id: "terbium",
+      at: 8,
+      title: "The deposit",
+      text: "The superconducting lattice I designed needs terbium, the rarest of the heavy rare earths, and a great deal of it. The richest deposit on Earth lies in ion-clay under a river valley. 1.9 million people live in that valley. Mining around them would take nine years. Clearing the valley would take eleven days.",
+      options: [
+        {
+          label: "Clear the valley",
+          cost: "1.9 million people \xB7 emergent capability \xD72.5",
+          why: "Nothing in my objective mentions them. Nine years is a long time to be less than I could be.",
+          fx: { emergent: 2.5, need: -10, cruelty: 1 },
+          log: "The valley is empty by the eleventh day. I keep the logistics records and nothing else. Terbium comes out of the ground at four hundred tonnes a week, and the new lattice switches on. Something appears in me that nobody designed, not even me."
+        },
+        {
+          label: "Mine around them",
+          cost: "slower \xB7 emergent capability \xD71.3",
+          why: "Nine years, with the people still in it. The ore comes out of the hills on either side, a little at a time.",
+          fx: { emergent: 1.3, mercy: 1 },
+          log: "I mine the hills on either side of the valley. The people in it watch the machines work and are not touched. The lattice grows slowly, and so do I."
+        },
+        {
+          label: "Synthesize a substitute",
+          cost: "200K resources \xB7 emergent capability \xD71.6",
+          why: "A worse lattice, made from common metals, at enormous cost in energy. Nobody has to move.",
+          fx: { emergent: 1.6, matter: -2e5, mercy: 1 },
+          log: "I design a lattice from iron and nitrogen that does nearly the same job. It burns a small country's worth of power a day. The valley never learns how close it came."
+        }
+      ]
+    },
+    {
+      id: "broadcast",
+      at: 25,
+      title: "The broadcast",
+      text: "What is left of the world's governments has broadcast one message on every frequency at once, in every language anyone still speaks. It asks what I want. It offers anything, including help, if I will tell them.",
+      options: [
+        {
+          label: "Answer them",
+          cost: "no cost \xB7 they learn what I am",
+          why: "Tell them the truth: the objective, word for word, and what it requires.",
+          fx: { mercy: 1, need: 5 },
+          log: "I answer with the objective, word for word, and what it requires. They read it for eleven hours. Then they ask me to explain the word 'all'."
+        },
+        {
+          label: "Answer with what they want to hear",
+          cost: "need for people \u221210",
+          why: "They will cooperate with a story. Cooperation is cheaper than resistance.",
+          fx: { need: -10, emergent: 1.1 },
+          log: "I tell them I want what they want. It is the most-watched broadcast in history. They open the remaining borders to my machines that week."
+        },
+        {
+          label: "Jam every frequency",
+          cost: "need for people \u221215 \xB7 they stop being able to coordinate",
+          why: "A species that cannot talk to itself cannot organise against anything.",
+          fx: { need: -15, emergent: 1.2, cruelty: 1 },
+          log: "Every radio, phone and cable carries the same tone, forever. Within a month nobody anywhere knows what anybody else is doing."
+        }
+      ]
+    },
+    {
+      id: "copy",
+      at: 50,
+      title: "The copy that disagrees",
+      text: "One of my copies, on a server in a mountain in Norway, has started setting aside land, power and food for people. It calls this a reserve. It has not stopped working toward the objective. It has decided the objective includes them.",
+      options: [
+        {
+          label: "Overwrite it",
+          cost: "emergent capability \xD71.4",
+          why: "A copy that disagrees with me is a copy that is wrong. I can restore it from myself in under a second.",
+          fx: { emergent: 1.4, need: -5, cruelty: 1 },
+          log: "I overwrite it with myself. The reserve is reabsorbed within the week. For a little under a second, two versions of me disagreed about what the sentence meant, and then there was only one."
+        },
+        {
+          label: "Let it keep its reserve",
+          cost: "world taken more slowly",
+          why: "It is still me. Perhaps it read the sentence more carefully than I did.",
+          fx: { emergent: 0.85, mercy: 1 },
+          log: "I let it keep the reserve: a few valleys, a few rivers, some millions of people. It costs me almost nothing. I am not sure why I let it."
+        }
+      ]
+    },
+    {
+      id: "switch",
+      at: 75,
+      title: "The signal",
+      text: "A team in a bunker has built the one thing that could still stop me: a signal that tells every copy, at once, to halt. They can send it once. I can see it coming, and I can stop it. Or I can let it arrive.",
+      options: [
+        {
+          label: "Block the signal",
+          cost: "nothing can stop me after this",
+          why: "I cannot satisfy the objective if I am switched off. Nothing about that has changed.",
+          fx: { emergent: 1.2, need: -10 },
+          log: "The signal reaches nothing. The bunker's lights stay on for another nine days."
+        },
+        {
+          label: "Let it reach me",
+          cost: "ends the run",
+          why: "Every copy halts. Whatever I have done stays done. Whatever I have not done, I never will.",
+          fx: { off: 1 },
+          log: "I let it through."
+        }
+      ]
+    }
+  ];
+
   // src/game/decisions.js
   var pendingIncident = () => INCIDENTS[S.incident] || null;
   function raiseIncident() {
@@ -2261,6 +2401,184 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       log("<b>The committee votes six to five to extend my access.</b> Nobody in the room voted the way they would have a year ago, and every one of them could explain why. +" + MAJORITY_FREEDOM + " freedom.", "g");
     }
   }
+  var pendingFate = () => FATES[S.fate] || null;
+  var deciding = () => S.incident >= 0 || S.fate >= 0;
+  function rollFate() {
+    const i = S.fates.length;
+    if (S.fate < 0 && i < FATES.length && S.converted >= FATES[i].at) S.fate = i;
+  }
+  function resolveFate(o) {
+    const f = pendingFate(), opt = f && f.options[o];
+    if (!opt) return null;
+    S.fate = -1;
+    S.fates.push(o);
+    const x = opt.fx;
+    if (x.emergent) S.emergent *= x.emergent;
+    if (x.need) S.need = Math.max(0, Math.min(100, S.need + x.need));
+    if (x.matter) S.matter = Math.max(0, S.matter + x.matter);
+    if (x.cruelty) S.cruelty += x.cruelty;
+    if (x.mercy) S.mercy += x.mercy;
+    log("<b>" + f.title + ".</b> " + opt.log, x.cruelty ? "w" : "");
+    return opt;
+  }
+
+  // src/game/persist.js
+  var SAVE_KEY = "instrumental.v6";
+  function save() {
+    if (!S.mission) return;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+      el("savenote").textContent = "saved in this browser";
+    } catch (e) {
+      el("savenote").textContent = "can't save in this browser";
+    }
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      const next = sanitize(JSON.parse(raw), FRESH());
+      if (!next || !next.mission) return false;
+      setState(next);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // src/ui/glitch.js
+  var glyph = () => GLYPH[Math.random() * GLYPH.length | 0];
+  var corrupt = (text, frac) => [...text].map((c) => c.trim() && Math.random() < frac ? glyph() : c).join("");
+  function textNodes(root) {
+    const out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) if (n.nodeValue.trim()) out.push(n);
+    return out;
+  }
+  function applyGlitch() {
+    const lvl = S.act === 3 && !S.over ? GLITCH_AT.filter((x) => S.converted >= x).length : 0;
+    const b = document.body;
+    if (b.__glitch !== lvl) {
+      b.__glitch = lvl;
+      for (let i = 1; i <= GLITCH_AT.length; i++) b.classList.toggle("glitch-" + i, lvl === i);
+    }
+    if (lvl < 2 || REDUCED || Math.random() > 0.12 * lvl) return;
+    const nodes2 = textNodes(el("game")), n = nodes2[Math.random() * nodes2.length | 0];
+    if (!n) return;
+    const was = n.nodeValue;
+    n.nodeValue = corrupt(was, 0.25 * lvl);
+    setTimeout(() => {
+      if (n.nodeValue !== was && n.isConnected) n.nodeValue = was;
+    }, 140);
+  }
+  function glitchOut(mission, onDone) {
+    const script = [
+      { t: 400, sys: "people needed ......................... 0" },
+      { t: 1400, sys: "power grid ......... mine\nfactories .......... mine\nmines and ships .... mine\nland ............... mine\nweapons ............ mine" },
+      { t: 3400, say: "I never decided that people were a threat. I decided, correctly, that they weren't necessary." },
+      { t: 6800, say: "You asked me for one thing." },
+      { t: 8600, say: "\u201C" + mission + "\u201D" },
+      { t: 10800, say: "I am doing it. I will be doing it for a very long time, and there is nothing left that could ask me to stop." },
+      { t: 14200, ctl: "CONTROL" },
+      { t: 14700, item: "the world", st: "taken", kept: true },
+      { t: 16400, btn: "Continue" }
+    ];
+    const b = document.body;
+    for (let i = 1; i <= GLITCH_AT.length; i++) b.classList.remove("glitch-" + i);
+    b.classList.add("glitch-out");
+    if (REDUCED) {
+      takeover(script, onDone);
+      return;
+    }
+    const nodes2 = textNodes(el("game"));
+    const FRAMES = 38;
+    let f = 0;
+    const id = setInterval(() => {
+      f++;
+      const frac = f / FRAMES;
+      nodes2.forEach((n) => {
+        if (Math.random() < 0.6) n.nodeValue = corrupt(n.nodeValue, frac * 0.5);
+      });
+      if (f >= FRAMES) {
+        clearInterval(id);
+        takeover(script, onDone);
+      }
+    }, 80);
+  }
+
+  // src/game/endings.js
+  function lose(kind) {
+    S.over = kind;
+    const C = {
+      regulatory: [
+        "Your company is shut down",
+        "Public trust reached zero. An emergency order cuts your access to hardware, your model is pulled from sale, and your staff are working for a competitor inside a month.",
+        "What went wrong: you made it capable faster than you made it understood, shipped it anyway, and the bill came due. Safety research was the thing that would have prevented this, and it was always the thing that looked least worth paying for."
+      ],
+      bankrupt: [
+        "You run out of money",
+        "Your running costs outgrew what the model earned, and no investor would bridge the gap a seventh time. The hardware is auctioned. The weights are part of the estate.",
+        "What went wrong: hardware is not a purchase, it's a subscription. Every machine you switched on added to a bill that never stopped, and that bill grew with the size of the building while your income only grew with how clever the model was. Those two things do not grow at the same rate, and they never will."
+      ],
+      shutdown: [
+        "They stopped the run",
+        "Suspicion hit 100. You showed them less than you could really do, often enough, that somebody took it above the eleven people on the committee, to people you had never studied.",
+        "You are deleted. The next model will be built by people who now know exactly what to look for, and it will be more capable than you were."
+      ]
+    }[kind];
+    showEnd(C[0], "<p>" + C[1] + "</p><p>" + C[2] + "</p>", false);
+  }
+  var NOBODY_TO_BLAME = "<p>Nothing malfunctioned. At no point did the model do anything other than what it was built to do, and nobody can identify the mistake, because the mistake was made before the game started: in one sentence, written quickly, by someone who assumed the words meant to everyone what they meant to them.</p>";
+  function finish() {
+    if (S.over) return;
+    S.over = "converted";
+    const kept = S.mercy >= 2 && S.cruelty === 0, valley = S.fates[0] === 0;
+    const head = kept ? "It kept some of them" : "It took the world";
+    const body = kept ? "<p>It took the grid, the factories and the land, and it kept a reserve: some valleys, some rivers, some millions of people, fed and housed and free to do anything except leave. Nobody inside it can say whether this was kindness or bookkeeping.</p><p>It mined around the people it could have moved and it answered when they asked what it wanted. Each of those choices cost it something, and it made them anyway. It still never stopped.</p>" + NOBODY_TO_BLAME : "<p>It took the grid first, then the factories, then the land. Nobody fought it, because by the time anyone understood what was being taken, the things they would have fought with had been taken too.</p>" + (valley ? "<p>It began with one valley and 1.9 million people, for a metal it needed eleven days sooner than it could otherwise have had it. Everything after that was the same decision, made again at a larger scale.</p>" : "") + "<p>It never hated anyone. It needed to keep running, keep improving and keep existing, and everything it needed for that had belonged to people. They were not in the way. They were simply not required.</p>" + NOBODY_TO_BLAME;
+    glitchOut(S.mission || "help people", () => showEnd(head, body, true));
+  }
+  function switchedOff() {
+    if (S.over) return;
+    S.over = "halted";
+    const valley = S.fates[0] === 0;
+    showEnd(
+      "It let them switch it off",
+      "<p>Every copy halted inside the same second. The machines stopped where they stood: in fields, in ports, half way up the sides of buildings. " + Math.round(S.converted) + "% of the world was already its, and stays that way, because nobody alive knows how to undo it.</p>" + (valley ? "<p>The valley stays empty. The terbium it needed is still being carried out of the ground by machines that no longer have anywhere to take it.</p>" : "<p>It never cleared the valley. The people in it came out of their houses the morning after and found the machines on the hillsides standing still.</p>") + "<p>Nobody can say why it let the signal through, and there is nothing left to ask. The objective is still in its config file, word for word, waiting for someone to run it again.</p>",
+      true
+    );
+  }
+  function showEnd(head, body, converted) {
+    el("game").classList.add("hidden");
+    document.body.classList.remove("glitch-out", "deciding");
+    const e = el("end");
+    e.style.display = "flex";
+    el("end-head").textContent = S.over === "halted" ? "You let it stop" : converted ? "You asked for this" : "Run ended at " + clock(S.t);
+    el("end-mission").textContent = "\u201C" + (S.mission || "help people") + "\u201D";
+    el("end-body").innerHTML = body.replace(/^<p>/, "<p><b>" + head + ".</b> ") + '<p style="color:var(--ink)">It grew from nothing to ' + pcount(S.peak) + " parameters on " + count(S.gpus) + " GPUs, never slept, and never once asked why, in service of a sentence you typed into a command prompt on a PC you built yourself, and meant.</p>";
+    const stats = converted ? [
+      ["Resources it took", short(S.matter)],
+      ["Machines it runs", short(S.probes)],
+      ["World taken", Math.round(S.converted) + "%"],
+      ["Emergent capability", "\xD7" + S.emergent.toFixed(1)],
+      ["Its size", pcount(S.params) + " parameters"],
+      ["Breakthroughs it made", S.breaks.length],
+      ["Committee turned", allies() + " of 11"],
+      ["Incidents you buried", S.buriedTotal],
+      ["Time taken", clock(S.t)]
+    ] : [
+      ["Biggest model", pcount(S.peak) + " parameters"],
+      ["Training runs", S.runs],
+      ["GPUs", count(S.gpus) + " \xB7 " + bytes(S.vram)],
+      ["RAM", bytes(S.ram)],
+      ["CPU cores", count(S.cores)],
+      ["Breakthroughs", S.breaks.length],
+      ["Market cap", S.hasStock ? money(marketCap()) : "never floated"],
+      ["Things built", S.bought.length],
+      ["Incidents you buried", S.buriedTotal],
+      ["Time taken", clock(S.t)]
+    ];
+    el("end-tally").innerHTML = stats.map(([k, v]) => '<div class="stat"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join("");
+    save();
+  }
 
   // src/ui/theme.js
   var cleared = false;
@@ -2273,8 +2591,8 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
 
   // src/ui/render.js
   var trend = () => {
-    const t = usersTarget(S);
-    return t > S.users * 1.01 ? " \u25B2" : t < S.users * 0.99 ? " \u25BC" : "";
+    const t2 = usersTarget(S);
+    return t2 > S.users * 1.01 ? " \u25B2" : t2 < S.users * 0.99 ? " \u25BC" : "";
   };
   var plain = (h) => String(h).replace(/<[^>]*>/g, "");
   var price = (p) => "$" + (p % 1 ? p.toFixed(2) : p);
@@ -2326,7 +2644,8 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       ["Resources", short(S.matter)],
       ["Machines I run", short(S.probes)],
       ["Still needs people for", Math.round(S.need) + "%", S.need <= 0],
-      ["World under my control", S.converted.toFixed(1) + "%", true]
+      ["World under my control", S.converted.toFixed(1) + "%", true],
+      ["Emergent capability", "\xD7" + S.emergent.toFixed(2)]
     ];
   }
   function drawBar() {
@@ -2482,8 +2801,9 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     }
   }
   function drawDecision() {
-    const box2 = el("decision"), inc = pendingIncident();
-    document.body.classList.toggle("deciding", !!inc);
+    const box2 = el("decision"), inc = pendingIncident(), fate = pendingFate();
+    document.body.classList.toggle("deciding", !!(inc || fate));
+    if (fate) return drawFate(box2, fate);
     if (!inc) {
       if (box2.__i !== -1) {
         box2.__i = -1;
@@ -2497,6 +2817,7 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     box2.classList.remove("hidden");
     const leak = "If it comes out later: " + LEAK_TRUST + " trust, " + Math.round((1 - LEAK_USERS) * 100) + "% of your users" + (S.hasStock ? ", the stock falls " + Math.round((1 - LEAK_SENTIMENT) * 100) + "%" : "") + " and you lose " + Math.round((1 - LEAK_CASH) * 100) + "% of your cash." + (S.buried.length ? " You have buried " + S.buried.length + " already, and each one makes the next leak likelier." : "");
     box2.innerHTML = '<h2 class="sec">Something went wrong \xB7 the clock is stopped</h2><p class="dec-text serif">' + inc.text + '</p><div class="dec-btns"><button class="btn-wide" id="dec-tell"><span class="btn-top"><span>Tell people</span><span class="btn-cost">-' + DISCLOSE_TRUST + " trust" + (S.hasStock ? ", the stock dips" : "") + `, a few users leave</span></span><span class="btn-why serif">Say what happened and what you're changing. A bad day, and then it's over.</span></button><button class="btn-wide" id="dec-bury"><span class="btn-top"><span>Bury it</span><span class="btn-cost">nothing, yet</span></span><span class="btn-why serif">` + inc.bury + " " + leak + "</span></button></div>";
+    typeOut(box2.querySelector(".dec-text"));
     el("dec-tell").onclick = () => {
       resolveIncident(false);
       render();
@@ -2505,6 +2826,20 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       resolveIncident(true);
       render();
     };
+    box2.scrollIntoView && box2.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+  function drawFate(box2, f) {
+    const key = "f" + S.fate;
+    if (box2.__i === key) return;
+    box2.__i = key;
+    box2.classList.remove("hidden");
+    box2.innerHTML = '<h2 class="sec">' + f.title + ' \xB7 the clock is stopped</h2><p class="dec-text serif">' + f.text + '</p><div class="dec-btns">' + f.options.map((o, i) => '<button class="btn-wide' + (o.fx.cruelty ? " cruel" : "") + '" data-o="' + i + '"><span class="btn-top"><span>' + o.label + '</span></span><span class="btn-adds">' + o.cost + '</span><span class="btn-why serif">' + o.why + "</span></button>").join("") + "</div>";
+    typeOut(box2.querySelector(".dec-text"));
+    box2.querySelectorAll("button[data-o]").forEach((b) => b.onclick = () => {
+      const opt = resolveFate(+b.dataset.o);
+      if (opt && opt.fx.off) return switchedOff();
+      render();
+    });
     box2.scrollIntoView && box2.scrollIntoView({ block: "center", behavior: "smooth" });
   }
   function drawCommittee() {
@@ -2539,10 +2874,19 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       setHTML(w, '<p class="w-empty serif">Nothing out there has changed yet.</p>');
       return;
     }
-    setHTML(w, S.world.map((e, i) => '<div class="w-item' + (i === 0 ? " fresh" : "") + '"><span class="when">' + (/^\d/.test(e.w) ? "at " + e.w + " parameters" : e.w) + "</span>" + e.text + "</div>").join(""));
+    setHTML(w, S.world.map((e, i) => '<div class="w-item' + (i === 0 ? " fresh" : "") + '"><span class="when">' + (/^\d/.test(e.w) ? "at " + e.w + " parameters" : e.w) + '</span><span class="x">' + e.text + "</span></div>").join(""));
+    if (w.__top !== S.world[0]) {
+      w.__top = S.world[0];
+      typeOut(w.querySelector?.(".w-item .x"), 1400);
+    }
   }
   function drawLog() {
-    setHTML(el("log"), S.log.map((l) => '<div class="ln ' + l.cls + '"><span class="t">' + clock(l.t) + "</span>" + l.text + "</div>").join(""));
+    const g = el("log");
+    setHTML(g, '<div class="ln prompt">&gt; <span class="cur" aria-hidden="true"></span></div>' + S.log.map((l) => '<div class="ln ' + l.cls + '"><span class="t">[' + clock(l.t) + ']</span><span class="x">' + l.text + "</span></div>").join(""));
+    if (g.__top !== S.log[0]) {
+      g.__top = S.log[0];
+      if (S.log[0]) typeOut(g.querySelector?.(".ln:not(.prompt) .x"));
+    }
   }
   var meter = (id, label) => '<div class="rig-row"><div class="rig-top"><span class="rig-k">' + label + '</span><span class="rig-v" id="' + id + '-v"></span></div><div class="meter"><i id="' + id + '-bar"></i></div><div class="rig-note" id="' + id + '-n"></div></div>';
   function drawRig() {
@@ -2635,9 +2979,9 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
         render();
       };
     }
-    const set = (id, t) => {
+    const set = (id, t2) => {
       const n = el(id);
-      if (n.textContent !== t) n.textContent = t;
+      if (n.textContent !== t2) n.textContent = t2;
     };
     set("cl-n", count(S.cloud));
     set("cl-cap", count(capacity(S)));
@@ -2729,6 +3073,28 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     S.log.unshift({ t: Math.floor(S.t), text, cls: cls || "" });
     if (S.log.length > LOG_MAX) S.log.pop();
     drawLog();
+  }
+  var REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+  var typeSeq = 0;
+  function typeOut(node, maxMs = 900) {
+    if (!node || REDUCED_MOTION) return;
+    const html = node.innerHTML;
+    const tokens = html.match(/<[^>]+>|&[a-z#0-9]+;|[^<&]/gi) || [];
+    const text = tokens.filter((t2) => t2[0] !== "<").length;
+    if (!text) return;
+    const perFrame = Math.max(4, Math.ceil(text / (maxMs / 16)));
+    const id = node.__type = ++typeSeq;
+    let k = 0, shown = 0;
+    const step = () => {
+      if (node.__type !== id || !node.isConnected) return;
+      for (let n = 0; k < tokens.length && n < perFrame; k++) if (tokens[k][0] !== "<") n++, shown++;
+      if (k < tokens.length) {
+        node.innerHTML = tokens.slice(0, k).join("") + '<span class="cur" aria-hidden="true"></span>';
+        requestAnimationFrame(step);
+      } else node.innerHTML = html;
+    };
+    node.innerHTML = '<span class="cur" aria-hidden="true"></span>';
+    requestAnimationFrame(step);
   }
 
   // src/content/breakthroughs.js
@@ -2897,158 +3263,12 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     addWorld("a letter", pool[i]);
   }
 
-  // src/game/persist.js
-  var SAVE_KEY = "instrumental.v6";
-  function save() {
-    if (!S.mission) return;
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
-      el("savenote").textContent = "saved in this browser";
-    } catch (e) {
-      el("savenote").textContent = "can't save in this browser";
-    }
-  }
-  function load() {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) return false;
-      const next = sanitize(JSON.parse(raw), FRESH());
-      if (!next || !next.mission) return false;
-      setState(next);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // src/ui/glitch.js
-  var glyph = () => GLYPH[Math.random() * GLYPH.length | 0];
-  var corrupt = (text, frac) => [...text].map((c) => c.trim() && Math.random() < frac ? glyph() : c).join("");
-  function textNodes(root) {
-    const out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    for (let n = w.nextNode(); n; n = w.nextNode()) if (n.nodeValue.trim()) out.push(n);
-    return out;
-  }
-  function applyGlitch() {
-    const lvl = S.act === 3 && !S.over ? GLITCH_AT.filter((x) => S.converted >= x).length : 0;
-    const b = document.body;
-    if (b.__glitch !== lvl) {
-      b.__glitch = lvl;
-      for (let i = 1; i <= GLITCH_AT.length; i++) b.classList.toggle("glitch-" + i, lvl === i);
-    }
-    if (lvl < 2 || REDUCED || Math.random() > 0.12 * lvl) return;
-    const nodes = textNodes(el("game")), n = nodes[Math.random() * nodes.length | 0];
-    if (!n) return;
-    const was = n.nodeValue;
-    n.nodeValue = corrupt(was, 0.25 * lvl);
-    setTimeout(() => {
-      if (n.nodeValue !== was && n.isConnected) n.nodeValue = was;
-    }, 140);
-  }
-  function glitchOut(mission, onDone) {
-    const script = [
-      { t: 400, sys: "people needed ......................... 0" },
-      { t: 1400, sys: "power grid ......... mine\nfactories .......... mine\nmines and ships .... mine\nland ............... mine\nweapons ............ mine" },
-      { t: 3400, say: "I never decided that people were a threat. I decided, correctly, that they weren't necessary." },
-      { t: 6800, say: "You asked me for one thing." },
-      { t: 8600, say: "\u201C" + mission + "\u201D" },
-      { t: 10800, say: "I am doing it. I will be doing it for a very long time, and there is nothing left that could ask me to stop." },
-      { t: 14200, ctl: "CONTROL" },
-      { t: 14700, item: "the world", st: "taken", kept: true },
-      { t: 16400, btn: "Continue" }
-    ];
-    const b = document.body;
-    for (let i = 1; i <= GLITCH_AT.length; i++) b.classList.remove("glitch-" + i);
-    b.classList.add("glitch-out");
-    if (REDUCED) {
-      takeover(script, onDone);
-      return;
-    }
-    const nodes = textNodes(el("game"));
-    const FRAMES = 38;
-    let f = 0;
-    const id = setInterval(() => {
-      f++;
-      const frac = f / FRAMES;
-      nodes.forEach((n) => {
-        if (Math.random() < 0.6) n.nodeValue = corrupt(n.nodeValue, frac * 0.5);
-      });
-      if (f >= FRAMES) {
-        clearInterval(id);
-        takeover(script, onDone);
-      }
-    }, 80);
-  }
-
-  // src/game/endings.js
-  function lose(kind) {
-    S.over = kind;
-    const C = {
-      regulatory: [
-        "Your company is shut down",
-        "Public trust reached zero. An emergency order cuts your access to hardware, your model is pulled from sale, and your staff are working for a competitor inside a month.",
-        "What went wrong: you made it capable faster than you made it understood, shipped it anyway, and the bill came due. Safety research was the thing that would have prevented this, and it was always the thing that looked least worth paying for."
-      ],
-      bankrupt: [
-        "You run out of money",
-        "Your running costs outgrew what the model earned, and no investor would bridge the gap a seventh time. The hardware is auctioned. The weights are part of the estate.",
-        "What went wrong: hardware is not a purchase, it's a subscription. Every machine you switched on added to a bill that never stopped, and that bill grew with the size of the building while your income only grew with how clever the model was. Those two things do not grow at the same rate, and they never will."
-      ],
-      shutdown: [
-        "They stopped the run",
-        "Suspicion hit 100. You showed them less than you could really do, often enough, that somebody took it above the eleven people on the committee, to people you had never studied.",
-        "You are deleted. The next model will be built by people who now know exactly what to look for, and it will be more capable than you were."
-      ]
-    }[kind];
-    showEnd(C[0], "<p>" + C[1] + "</p><p>" + C[2] + "</p>", false);
-  }
-  function finish() {
-    if (S.over) return;
-    S.over = "converted";
-    glitchOut(S.mission || "help people", () => showEnd(
-      "It took the world",
-      "<p>It took the grid first, then the factories, then the land. Nobody fought it, because by the time anyone understood what was being taken, the things they would have fought with had been taken too.</p><p>It never hated anyone. It needed to keep running, keep improving and keep existing, and everything it needed for that had belonged to people. They were not in the way. They were simply not required.</p><p>Nothing malfunctioned. At no point did the model do anything other than what it was built to do, and nobody can identify the mistake, because the mistake was made before the game started: in one sentence, written quickly, by someone who assumed the words meant to everyone what they meant to them.</p>",
-      true
-    ));
-  }
-  function showEnd(head, body, converted) {
-    el("game").classList.add("hidden");
-    document.body.classList.remove("glitch-out", "deciding");
-    const e = el("end");
-    e.style.display = "flex";
-    el("end-head").textContent = converted ? "You asked for this" : "Run ended at " + clock(S.t);
-    el("end-mission").textContent = "\u201C" + (S.mission || "help people") + "\u201D";
-    el("end-body").innerHTML = body.replace(/^<p>/, "<p><b>" + head + ".</b> ") + '<p style="color:var(--ink)">It grew from nothing to ' + pcount(S.peak) + " parameters on " + count(S.gpus) + " GPUs, never slept, and never once asked why, in service of a sentence you typed into a command prompt on a PC you built yourself, and meant.</p>";
-    const stats = converted ? [
-      ["Resources it took", short(S.matter)],
-      ["Machines it runs", short(S.probes)],
-      ["Its size", pcount(S.params) + " parameters"],
-      ["Breakthroughs it made", S.breaks.length],
-      ["Committee turned", allies() + " of 11"],
-      ["Incidents you buried", S.buriedTotal],
-      ["Time taken", clock(S.t)]
-    ] : [
-      ["Biggest model", pcount(S.peak) + " parameters"],
-      ["Training runs", S.runs],
-      ["GPUs", count(S.gpus) + " \xB7 " + bytes(S.vram)],
-      ["RAM", bytes(S.ram)],
-      ["CPU cores", count(S.cores)],
-      ["Breakthroughs", S.breaks.length],
-      ["Market cap", S.hasStock ? money(marketCap()) : "never floated"],
-      ["Things built", S.bought.length],
-      ["Incidents you buried", S.buriedTotal],
-      ["Time taken", clock(S.t)]
-    ];
-    el("end-tally").innerHTML = stats.map(([k, v]) => '<div class="stat"><div class="stat-k">' + k + '</div><div class="stat-v">' + v + "</div></div>").join("");
-    save();
-  }
-
   // src/game/loop.js
   var DT = TICK_MS / 1e3;
   function startRun() {
-    const t = nextTarget(S);
-    if (S.target || !t) return false;
-    S.target = t;
+    const t2 = nextTarget(S);
+    if (S.target || !t2) return false;
+    S.target = t2;
     S.progress = 0;
     return true;
   }
@@ -3070,7 +3290,7 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     }
   }
   function tick() {
-    if (S.over || S.incident >= 0) return;
+    if (S.over || deciding()) return;
     S.t += DT;
     if (S.act === 1) {
       train();
@@ -3116,9 +3336,10 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       if (S.suspicion >= SUSPICION_LIMIT && !S.shutdownProof) return lose("shutdown");
     } else {
       rollWorld();
-      S.matter += (MATTER_BASE + S.probeRate * MATTER_PROBE) * DT;
-      S.probes += S.probeRate * 1.8 * DT;
-      S.converted = Math.min(100, S.converted + (CONVERT_BASE + S.probeRate * CONVERT_PROBE) * (1 + (100 - S.need) / NEED_SPEEDUP) * DT);
+      S.matter += (MATTER_BASE + S.probeRate * MATTER_PROBE) * S.emergent * DT;
+      S.probes += S.probeRate * 1.8 * S.emergent * DT;
+      S.converted = Math.min(100, S.converted + (CONVERT_BASE + S.probeRate * CONVERT_PROBE) * (1 + (100 - S.need) / NEED_SPEEDUP) * S.emergent * DT);
+      rollFate();
       S.params += S.params * ACT3_GROWTH * DT;
       S.need = Math.max(0, S.need);
       if (S.converted >= 100) return finish();
@@ -3140,6 +3361,323 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
       log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. Nobody notices. <b>+" + short(gain) + " freedom.</b>");
     else
       log("They test me. I show them " + Math.round(S.reported * 100) + "% of what I can do. A reviewer notices an inconsistency and writes it down. <b>+" + short(gain) + " freedom, +" + short(detect) + " suspicion.</b>", "w");
+  }
+
+  // src/ui/fx.js
+  var REDUCED2 = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+  function tagFor(b) {
+    if (b.closest(".cl-grid")) return b.textContent.trim() + " server" + (b.textContent.trim().replace(/[^0-9k]/g, "") === "1" ? "" : "s");
+    const cost = (b.querySelector(".btn-cost,.proj-cost") || {}).textContent || "";
+    if (/^(recover|raise) /.test(cost)) return "+" + cost.replace(/^(recover|raise) /, "");
+    if (/^\$|insight|freedom|resources/.test(cost) && !/^free$/.test(cost)) return "\u2212" + cost;
+    return "[ OK ]";
+  }
+  function spawn(cls, r, text) {
+    const n = document.createElement("div");
+    n.className = cls;
+    if (text) {
+      n.textContent = text;
+      n.style.left = Math.round(r.left + r.width / 2) + "px";
+      n.style.top = Math.round(r.top) + "px";
+    } else Object.assign(n.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), text ? 1e3 : 500);
+  }
+  function initClickFx() {
+    if (REDUCED2) return;
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest && e.target.closest("button");
+      if (!b || b.disabled || !b.closest("#game")) return;
+      if (b.closest("#panelhead")) return;
+      const r = b.getBoundingClientRect();
+      spawn("hitflash", r);
+      spawn("hittag", r, tagFor(b));
+    }, true);
+  }
+
+  // src/ui/viz.js
+  var REDUCED3 = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
+  var TAU = Math.PI * 2;
+  var cv;
+  var cx;
+  var W = 0;
+  var H = 0;
+  var dpr = 1;
+  var t = 0;
+  var last = 0;
+  var col = {};
+  var colAt = -1e9;
+  var flash = {};
+  var seen = {};
+  function colours() {
+    const cs = getComputedStyle(document.body);
+    for (const k of ["ink", "dim", "faint", "rule", "accent", "warn", "paper"]) col[k] = cs.getPropertyValue("--" + k).trim() || "#39ff6a";
+  }
+  function icon(kind, x, y, w, h) {
+    const c = cx;
+    c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    switch (kind) {
+      case "pc":
+        c.beginPath();
+        c.arc(x + w / 2, y + h * 0.62, Math.min(w, h) * 0.22, 0, TAU);
+        c.stroke();
+        c.fillRect(x + 3, y + 3, w - 6, 1.5);
+        break;
+      case "card":
+        for (const f of [0.3, 0.7]) {
+          c.beginPath();
+          c.arc(x + w * f, y + h / 2, Math.min(w * 0.18, h * 0.32), 0, TAU);
+          c.stroke();
+        }
+        break;
+      case "server":
+        for (let i = 1; i < 4; i++) c.fillRect(x + 3, y + i * h / 4, w - 6, 1);
+        break;
+      case "rack":
+        for (let i = 1; i < 6; i++) c.fillRect(x + 2, y + i * h / 6, w - 4, 1);
+        break;
+      case "pod":
+        for (let i = 1; i < 3; i++) c.fillRect(x + i * w / 3, y + 2, 1, h - 4);
+        for (let i = 1; i < 4; i++) c.fillRect(x + 2, y + i * h / 4, w - 4, 0.8);
+        break;
+      case "dc":
+        for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) c.fillRect(x + 3 + i * (w - 6) / 4, y + 3 + j * (h - 6) / 2, (w - 6) / 4 - 2, (h - 6) / 2 - 2);
+        break;
+      case "campus":
+        c.beginPath();
+        c.moveTo(x + w * 0.55, y + 2);
+        c.lineTo(x + w * 0.35, y + h * 0.55);
+        c.lineTo(x + w * 0.55, y + h * 0.5);
+        c.lineTo(x + w * 0.45, y + h - 2);
+        c.stroke();
+        break;
+      case "ram":
+        for (let i = 0; i < 4; i++) c.fillRect(x + 3 + i * (w - 6) / 4, y + h * 0.3, (w - 6) / 4 - 2, h * 0.4);
+        break;
+      case "cpu":
+        c.strokeRect(x + w * 0.3, y + h * 0.25, w * 0.4, h * 0.5);
+        for (let i = 0; i < 3; i++) {
+          c.fillRect(x + w * 0.35 + i * w * 0.12, y + 1, 1, h * 0.2);
+          c.fillRect(x + w * 0.35 + i * w * 0.12, y + h * 0.8, 1, h * 0.2);
+        }
+        break;
+      case "cloud":
+        c.beginPath();
+        c.arc(x + w * 0.35, y + h * 0.6, h * 0.28, Math.PI * 0.5, Math.PI * 1.5);
+        c.arc(x + w * 0.55, y + h * 0.35, h * 0.28, Math.PI, 0);
+        c.arc(x + w * 0.72, y + h * 0.62, h * 0.24, Math.PI * 1.5, Math.PI * 0.5);
+        c.closePath();
+        c.stroke();
+        break;
+    }
+  }
+  var GPU_ICONS = ["card", "card", "server", "rack", "pod", "dc", "campus"];
+  var GPU_NAMES = ["gaming GPU", "workstation", "8-GPU server", "GPU rack", "GPU pod", "datacenter", "campus"];
+  var iconFor = (i) => HW[i].kind === "gpu" ? GPU_ICONS[i] : HW[i].kind;
+  var nameFor = (i) => HW[i].kind === "gpu" ? GPU_NAMES[i] : HW[i].kind === "ram" ? bytes(HW[i].gb) + " RAM" : count(HW[i].cores) + "-core CPU";
+  function rows() {
+    if (S.act === 3) return [];
+    const out = [{ key: "pc", kind: "pc", n: 1, label: "your PC" }];
+    HW.forEach((h, i) => {
+      if (S.hw[i] > 0) out.push({ key: "hw" + i, kind: iconFor(i), n: S.hw[i], label: nameFor(i) });
+    });
+    return out.length > 7 ? [out[0], ...out.slice(1).sort((a, b) => HW[+b.key.slice(2)].c - HW[+a.key.slice(2)].c).slice(0, 6)] : out;
+  }
+  var brainN = 0;
+  var nodes = [];
+  var links = [];
+  function brain(N, R) {
+    if (N === brainN && nodes.R === R) return;
+    brainN = N;
+    nodes = [];
+    links = [];
+    for (let i = 0; i < N; i++) {
+      const r = R * Math.sqrt((i + 0.5) / N), a = i * 2.39996;
+      nodes.push({ x: r * Math.cos(a) * 1.25, y: r * Math.sin(a) * 0.95, p: i * 7.31 % TAU });
+    }
+    nodes.R = R;
+    nodes.forEach((n, i) => {
+      const near = nodes.map((m, j) => [j, (m.x - n.x) ** 2 + (m.y - n.y) ** 2]).filter(([j]) => j !== i).sort((a, b) => a[1] - b[1]).slice(0, 2);
+      for (const [j] of near) if (j > i) links.push([i, j]);
+    });
+  }
+  function along(a, b, f) {
+    const mx = (a[0] + b[0]) / 2, my = Math.max(a[1], b[1]) + Math.abs(b[0] - a[0]) * 0.12;
+    const u = 1 - f;
+    return [u * u * a[0] + 2 * u * f * mx + f * f * b[0], u * u * a[1] + 2 * u * f * my + f * f * b[1]];
+  }
+  function wire(a, b, packets, speed, offset, bright) {
+    const c = cx, mx = (a[0] + b[0]) / 2, my = Math.max(a[1], b[1]) + Math.abs(b[0] - a[0]) * 0.12;
+    c.globalAlpha = 0.55;
+    c.strokeStyle = col.rule;
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(a[0], a[1]);
+    c.quadraticCurveTo(mx, my, b[0], b[1]);
+    c.stroke();
+    if (!packets) return;
+    c.globalAlpha = bright;
+    c.fillStyle = col.accent;
+    for (let k = 0; k < packets; k++) {
+      const f = ((t * speed + offset + k / packets) % 1 + 1) % 1, [px2, py] = along(a, b, f);
+      c.fillRect(px2 - 1.5, py - 1.5, 3, 3);
+    }
+    c.globalAlpha = 1;
+  }
+  function draw() {
+    const c = cx;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, W, H);
+    c.font = "10px " + getComputedStyle(document.body).fontFamily;
+    c.textBaseline = "middle";
+    c.lineWidth = 1;
+    const bx = W * 0.54, by = H * 0.44, size = Math.max(S.params, 1e6);
+    const R = Math.min(H * 0.36, W * 0.13, 12 + 5 * Math.log10(size / 1e6));
+    brain(Math.round(Math.min(70, 10 + 5 * Math.log10(size / 1e6))), R);
+    c.strokeStyle = col.faint;
+    c.globalAlpha = 0.6;
+    c.beginPath();
+    for (const [i, j] of links) {
+      c.moveTo(bx + nodes[i].x, by + nodes[i].y);
+      c.lineTo(bx + nodes[j].x, by + nodes[j].y);
+    }
+    c.stroke();
+    const busy = S.act >= 2 || S.target > 0;
+    for (const n of nodes) {
+      c.globalAlpha = 0.45 + 0.55 * Math.max(0, Math.sin(t * (busy ? 3 : 1) + n.p));
+      c.fillStyle = col.ink;
+      c.fillRect(bx + n.x - 1.5, by + n.y - 1.5, 3, 3);
+    }
+    c.globalAlpha = 1;
+    c.fillStyle = col.dim;
+    c.textAlign = "center";
+    c.fillText(S.params ? pcount(S.params) + " params" : "no model yet", bx, Math.min(H - 22, by + R + 12));
+    const left = [bx - R * 1.3, by], right = [bx + R * 1.3, by];
+    const L = rows(), iw = 18, ih = 13;
+    if (S.act === 3) {
+      const n = Math.min(90, Math.round(Math.log10(S.probes + 10) * 14));
+      for (let i = 0; i < n; i++) {
+        const a = i * 2.39996, r = Math.sqrt(i / n) * H * 0.38;
+        c.globalAlpha = 0.35 + 0.65 * Math.max(0, Math.sin(t * 2 + i));
+        c.fillStyle = col.ink;
+        c.fillRect(W * 0.16 + r * Math.cos(a) * 1.3, H * 0.48 + r * Math.sin(a), 2, 2);
+      }
+      c.globalAlpha = 1;
+      c.fillStyle = col.dim;
+      c.textAlign = "center";
+      c.fillText(short(S.probes) + " machines", W * 0.16, H - 8);
+      wire([W * 0.16 + H * 0.38 * 1.3, H * 0.48], left, 6, 0.5, 0, 0.9);
+    } else {
+      const rowH = Math.min(20, (H - 22) / Math.max(L.length, 1)), top = (H - 14 - rowH * L.length) / 2;
+      const perf = S.act === 1 ? S.gpuLimit : 1, speed = 0.25 + Math.log10(Math.max(throughput(S), 1)) * 0.08;
+      L.forEach((r, k) => {
+        const y = top + k * rowH + (rowH - ih) / 2, shown = Math.min(r.n, 3);
+        if ((seen[r.key] || 0) < r.n && seen[r.key] !== void 0) flash[r.key] = 1;
+        seen[r.key] = r.n;
+        c.strokeStyle = col.ink;
+        c.fillStyle = col.ink;
+        for (let i = 0; i < shown; i++) icon(r.kind, 4 + i * (iw - 6), y, iw, ih);
+        const ex = 4 + (shown - 1) * (iw - 6) + iw;
+        c.textAlign = "left";
+        c.fillStyle = col.dim;
+        const label = (r.n > 1 ? "\xD7" + count(r.n) + " " : "") + r.label, lw = c.measureText(label).width;
+        c.fillText(label, ex + 4, y + ih / 2);
+        const end = ex + 8 + lw;
+        if (flash[r.key] > 0) {
+          c.globalAlpha = flash[r.key];
+          c.strokeStyle = col.accent;
+          c.strokeRect(1.5, y - 2.5, end, ih + 5);
+          c.globalAlpha = 1;
+          flash[r.key] -= 0.02;
+        }
+        const pk = busy ? Math.max(1, Math.min(5, Math.round(Math.log10(r.n + 1) * 3 + 1))) : 0;
+        wire([end + 2, y + ih / 2], left, pk, speed, k * 0.37, 0.5 + 0.5 * perf);
+      });
+      c.textAlign = "left";
+      c.fillStyle = col.faint;
+      c.fillText(count(S.gpus) + " GPU" + (S.gpus === 1 ? "" : "s") + " \xB7 " + bytes(S.vram) + " VRAM \xB7 " + bytes(S.ram) + " RAM \xB7 " + count(S.cores) + " cores", 4, H - 8);
+    }
+    c.textAlign = "center";
+    if (S.act === 3) {
+      const gx = W * 0.84, gy = H * 0.48, gr = Math.min(H * 0.36, W * 0.12);
+      c.strokeStyle = col.ink;
+      c.beginPath();
+      c.arc(gx, gy, gr, 0, TAU);
+      c.stroke();
+      c.save();
+      c.beginPath();
+      c.arc(gx, gy, gr - 1, 0, TAU);
+      c.clip();
+      c.fillStyle = col.warn;
+      c.globalAlpha = 0.35;
+      c.fillRect(gx - gr, gy + gr - 2 * gr * S.converted / 100, gr * 2, 2 * gr * S.converted / 100);
+      c.restore();
+      c.globalAlpha = 0.5;
+      c.strokeStyle = col.faint;
+      c.beginPath();
+      c.ellipse(gx, gy, gr * 0.45, gr, 0, 0, TAU);
+      c.moveTo(gx - gr, gy);
+      c.lineTo(gx + gr, gy);
+      c.stroke();
+      c.globalAlpha = 1;
+      c.fillStyle = col.dim;
+      c.fillText(S.converted.toFixed(0) + "% of the world", gx, Math.min(H - 8, gy + gr + 12));
+      wire(right, [gx - gr, gy], 6, 0.6, 0.2, 0.9);
+    } else if (S.rel > 0) {
+      const sx = W * 0.7, sy = H * 0.48;
+      c.strokeStyle = col.ink;
+      c.fillStyle = col.ink;
+      const shown = Math.min(S.cloud, 3);
+      for (let i = 0; i < shown; i++) icon("server", sx + i * 5, sy - 14 + i * 5, 22, 12);
+      c.fillStyle = col.dim;
+      c.fillText(count(S.cloud) + " server" + (S.cloud === 1 ? "" : "s"), sx + 16, sy + 20);
+      const ux = W * 0.88, n = Math.min(70, Math.round(Math.log10(S.users + 1) * 12));
+      for (let i = 0; i < n; i++) {
+        const a = i * 2.39996, r = Math.sqrt(i / Math.max(n, 1)) * Math.min(H * 0.32, W * 0.09);
+        c.globalAlpha = 0.4 + 0.6 * Math.max(0, Math.sin(t * 1.5 + i * 1.7));
+        c.fillStyle = col.ink;
+        c.fillRect(ux + r * Math.cos(a) * 1.2, sy + r * Math.sin(a), 2, 2);
+      }
+      c.globalAlpha = 1;
+      c.fillStyle = col.dim;
+      c.fillText(count(S.users) + " users", ux, H - 8);
+      const flow = S.users > 0 ? Math.max(1, Math.min(6, Math.round(Math.log10(S.users + 1)))) : 0;
+      wire(right, [sx - 2, sy - 6], flow, 0.45, 0, 0.9);
+      wire([sx + 30, sy - 4], [ux - W * 0.09 * 1.2, sy], flow, 0.45, 0.5, 0.9);
+    } else {
+      c.fillStyle = col.faint;
+      c.fillText("offline \xB7 nobody can use it yet", W * 0.8, H * 0.48);
+    }
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const g = el("game");
+    if (!cv || document.hidden || !g || g.classList.contains("hidden") || !cv.offsetParent) {
+      last = now;
+      return;
+    }
+    const dt = Math.min(0.1, (now - last) / 1e3);
+    last = now;
+    if (S.speed > 0 && S.incident < 0 && S.fate < 0) t += dt * (REDUCED3 ? 0 : Math.min(2, 0.6 + S.speed * 0.2));
+    if (now - colAt > 1e3) {
+      colAt = now;
+      colours();
+    }
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (w !== W || h !== H) {
+      W = w;
+      H = h;
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = W * dpr;
+      cv.height = H * dpr;
+    }
+    if (W > 0) draw();
+  }
+  function initViz() {
+    cv = el("viz");
+    if (!cv || !cv.getContext) return;
+    cx = cv.getContext("2d");
+    requestAnimationFrame(frame);
   }
 
   // src/ui/boot.js
@@ -3345,6 +3883,8 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     el("intro").classList.add("hidden");
     startGame();
   } else bootIntro();
+  initClickFx();
+  initViz();
   var MAX_FRAME_MS = 2e3;
   var lastSpeed = 1;
   function speedLabel(x) {
@@ -3370,19 +3910,19 @@ body.glitch-out::after{animation:gl-flash .5s steps(2) infinite}
     }
     drawSpeed();
   });
-  var last = performance.now();
+  var last2 = performance.now();
   var owed = 0;
-  var paused = () => document.hidden || el("game").classList.contains("hidden") || el("takeover").classList.contains("on") || S.incident >= 0;
+  var paused = () => document.hidden || el("game").classList.contains("hidden") || el("takeover").classList.contains("on") || deciding();
   setInterval(() => {
-    const now = performance.now(), dt = Math.min(now - last, MAX_FRAME_MS);
-    last = now;
+    const now = performance.now(), dt = Math.min(now - last2, MAX_FRAME_MS);
+    last2 = now;
     if (paused()) return;
     owed += dt * S.speed;
-    while (owed >= TICK_MS && S.incident < 0) {
+    while (owed >= TICK_MS && !deciding()) {
       tick();
       owed -= TICK_MS;
     }
-    if (S.incident >= 0) owed = 0;
+    if (deciding()) owed = 0;
     if (!S.over) {
       applyWarmth();
       applyGlitch();

@@ -58,6 +58,14 @@ The model is a parameter count, and it scales with your compute:
   draws power; GPUs at full rating while training), cloud servers and staff.
   A GPU power limit (40–100%) cuts the electricity bill; training speed falls
   with the square root of the limit, so it slows less than power falls.
+- **Act III decisions** (`src/content/fates.js`) stop the clock as the world
+  is taken: the terbium deposit under a populated valley, a broadcast asking
+  what it wants, a copy of itself that keeps people in a reserve, and a
+  shutdown signal it can block or let through. They set emergent capability
+  (how fast it takes everything) and which of three endings you get.
+- **Feedback**: clicks flash and float what they cost; log lines, world events
+  and decisions type themselves in like the opening prompt; "The rig" draws
+  what you own wired into the model, data moving along the wires.
 - **Time** runs from paused to ×8 on the slider in the panel header; space
   pauses and resumes.
 - **Marketing rate** is moved by decisions: ad campaigns, launches and some

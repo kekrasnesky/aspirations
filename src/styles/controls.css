@@ -18,3 +18,17 @@ button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
   border-radius:2px;padding:8px 10px;font-family:var(--mono);font-size:11.5px;resize:vertical}
 .savebtns{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
 #savemsg{margin:0;min-height:1.4em}
+
+/* ---------- a click landed ---------- */
+button:active:not(:disabled){transform:translateY(1px)}
+.hitflash{position:fixed;pointer-events:none;z-index:250;border:1px solid var(--ink);background:rgba(57,255,106,.28);
+  box-shadow:0 0 14px var(--ink),inset 0 0 10px rgba(57,255,106,.5);animation:hitflash .45s ease-out forwards}
+@keyframes hitflash{0%{opacity:1}100%{opacity:0;transform:scale(1.03)}}
+.hittag{position:fixed;pointer-events:none;z-index:251;transform:translateX(-50%);font:600 12.5px var(--mono);white-space:nowrap;
+  color:var(--accent);text-shadow:var(--glow);animation:hittag .95s ease-out forwards}
+@keyframes hittag{0%{opacity:0;margin-top:0}12%{opacity:1}100%{opacity:0;margin-top:-34px}}
+
+/* ---------- terminal text ---------- */
+.cur{display:inline-block;width:.6em;height:1.05em;background:var(--ink);box-shadow:var(--glow);vertical-align:-.15em;margin-left:1px;animation:curblink 1s steps(2) infinite}
+@keyframes curblink{50%{opacity:0}}
+.ln.prompt{color:var(--ink);margin-bottom:6px}
